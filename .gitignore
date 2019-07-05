@@ -1,0 +1,11 @@
+.helm
+.helm/*
+build
+build/*
+config
+config/*
+.idea
+.vscode
+.idea/*
+.vscode/*
+
