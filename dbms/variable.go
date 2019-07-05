@@ -1,0 +1,85 @@
+package dbms
+
+import (
+	"github.com/jinzhu/gorm"
+	"github.com/softplan/tenkai-api/dbms/model"
+)
+
+
+// EditVariable - Edit an existent variable
+func (database *Database) EditVariable(data model.Variable) error {
+	if err := database.Db.Save(&data).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+//CreateVariable - Create a new environment
+func (database *Database) CreateVariable(variable model.Variable) error {
+
+	var variableEntity model.Variable
+
+	//Verify if update
+	if err := database.Db.Where(&model.Variable{EnvironmentID: variable.EnvironmentID,
+		Scope: variable.Scope,
+		Name:  variable.Name}).First(&variableEntity).Error; err == nil {
+
+		variableEntity.Value = variable.Value
+
+		if err := database.Db.Save(variableEntity).Error; err != nil {
+			return err
+		}
+
+	} else {
+
+		if err := database.Db.Create(&variable).Error; err != nil {
+			return err
+		}
+
+	}
+
+	return nil
+}
+
+//GetAllVariablesByEnvironment - Retrieve all variables
+func (database *Database) GetAllVariablesByEnvironment(envID int) ([]model.Variable, error) {
+	variables := make([]model.Variable, 0)
+	var env model.Environment
+
+	if err := database.Db.First(&env, envID).Error; err == nil {
+		if err := database.Db.Model(&env).Related(&variables).Error; err != nil {
+			if gorm.IsRecordNotFoundError(err) {
+				return nil, err
+			} else {
+				return nil, err
+			}
+		}
+	} else {
+		return nil, err
+	}
+	return variables, nil
+}
+
+
+
+//GetAllVariablesByEnvironmentAndScope - Retrieve all variables
+func (database *Database) GetAllVariablesByEnvironmentAndScope(envID int, scope string) ([]model.Variable, error) {
+	variables := make([]model.Variable, 0)
+
+	if err := database.Db.Where(&model.Variable{EnvironmentID: envID,
+		Scope: scope,
+	}).Find(&variables).Error; err != nil {
+		return nil, err
+	}
+
+	return variables, nil
+}
+
+//DeleteVariable - Delete environment
+func (database *Database) DeleteVariable(id int) error {
+	if err := database.Db.Unscoped().Delete(model.Variable{}, id).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
