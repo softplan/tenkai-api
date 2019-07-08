@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	string_util "github.com/softplan/tenkai-api/util"
 	"io"
 	"io/ioutil"
@@ -57,6 +59,45 @@ func (appContext *appContext) getChartVariables(w http.ResponseWriter, r *http.R
 	w.Write(result)
 }
 
+
+func (appContext *appContext) multipleInstall(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	var payload model.MultipleInstallPayload
+	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
+	if err != nil {
+		log.Fatalln("Error on body", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if err := r.Body.Close(); err != nil {
+		log.Fatalln("Error - body closed", err)
+	}
+
+	if err := json.Unmarshal(body, &payload); err != nil {
+		log.Fatalln("Error unmarshalling data", err)
+		w.WriteHeader(422)
+		if err := json.NewEncoder(w).Encode(err); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		return
+	}
+
+	out := &bytes.Buffer{}
+
+	for _, element := range payload.Deployables {
+		err = appContext.simpleInstall(element.EnvironmentID, element.Chart,  element.Name, out)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			break
+		}
+	}
+
+	fmt.Println(out.String())
+
+}
+
 func (appContext *appContext) install(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
@@ -80,32 +121,40 @@ func (appContext *appContext) install(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	out := &bytes.Buffer{}
+
+	err = appContext.simpleInstall(payload.EnvironmentID, payload.Chart,  payload.Name, out)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	fmt.Println(out.String())
+
+}
+
+func (appContext *appContext) simpleInstall(envId int, chart string, name string, out *bytes.Buffer) error {
 	//Locate Environment
-	environment, err := appContext.database.GetByID(payload.EnvironmentID)
-
-
-	variables, err := appContext.database.GetAllVariablesByEnvironmentAndScope(payload.EnvironmentID, payload.Chart)
-
+	environment, err := appContext.database.GetByID(envId)
+	variables, err := appContext.database.GetAllVariablesByEnvironmentAndScope(envId, chart)
 	var args []string
 	for _, item := range variables {
 		if len(item.Name) > 0 {
 			args = append(args, normalizeVariableName(item.Name)+"="+replace(item.Value, *environment, variables))
 		}
 	}
-
 	//Add Default Gateway
 	if len(environment.Gateway) > 0 {
 		args = append(args, "istio.virtualservices.gateways[0]="+environment.Gateway)
 	}
-
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		return err
 	} else {
-		name := payload.Name + "-" + environment.Namespace
+		name := name + "-" + environment.Namespace
 		kubeConfig := global.KUBECONFIG_BASE_PATH + environment.Group + "_" + environment.Name
-		helmapi.Upgrade(kubeConfig , name, payload.Chart, environment.Namespace, args)
+		helmapi.Upgrade(kubeConfig , name, chart, environment.Namespace, args, out)
 	}
-
+	return nil
 }
 
 
