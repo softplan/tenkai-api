@@ -56,6 +56,8 @@ func startHTTPServer(appContext *appContext) {
 	r := mux.NewRouter()
 
 	r.HandleFunc("/install", appContext.install).Methods("POST")
+	r.HandleFunc("/multipleInstall", appContext.multipleInstall).Methods("POST")
+
 
 	r.HandleFunc("/listVariables", appContext.getVariablesByEnvironmentAndScope).Methods("POST")
 	r.HandleFunc("/saveVariableValues", appContext.saveVariableValues).Methods("POST")

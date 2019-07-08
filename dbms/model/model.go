@@ -74,3 +74,7 @@ type InstallPayload struct {
 	Chart         string             `json:"chart"`
 	Name          string             `json:"name"`
 }
+
+type MultipleInstallPayload struct {
+	Deployables	[]InstallPayload `json:"deployables"`
+}
