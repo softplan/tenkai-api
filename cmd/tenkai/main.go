@@ -31,7 +31,6 @@ func main() {
 		helmapi.InitializeHelm()
 	}
 
-
 	global.Logger.Info(logFields, "carregando configurações")
 
 	config, error := configs.ReadConfig(configFileName)
