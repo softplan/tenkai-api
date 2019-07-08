@@ -68,10 +68,9 @@ type InstallArguments struct {
 	Value string `json:"value"`
 }
 
-//InstallPayload Struct
+//SimpleInstallPayload Struct
 type InstallPayload struct {
 	EnvironmentID int                `json:"environmentId"`
 	Chart         string             `json:"chart"`
 	Name          string             `json:"name"`
-	Arguments     []InstallArguments `json:"arguments"`
 }

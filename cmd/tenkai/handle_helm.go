@@ -58,10 +58,8 @@ func (appContext *appContext) getChartVariables(w http.ResponseWriter, r *http.R
 }
 
 func (appContext *appContext) install(w http.ResponseWriter, r *http.Request) {
-
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
-
 	var payload model.InstallPayload
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
@@ -69,7 +67,6 @@ func (appContext *appContext) install(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
 	if err := r.Body.Close(); err != nil {
 		log.Fatalln("Error - body closed", err)
 	}
@@ -86,13 +83,13 @@ func (appContext *appContext) install(w http.ResponseWriter, r *http.Request) {
 	//Locate Environment
 	environment, err := appContext.database.GetByID(payload.EnvironmentID)
 
+
+	variables, err := appContext.database.GetAllVariablesByEnvironmentAndScope(payload.EnvironmentID, payload.Chart)
+
 	var args []string
-
-	variables := appContext.getGlobalVariables(int(environment.ID))
-
-	for _, item := range payload.Arguments {
+	for _, item := range variables {
 		if len(item.Name) > 0 {
-			args = append(args, item.Name+"="+replace(item.Value, *environment, variables))
+			args = append(args, normalizeVariableName(item.Name)+"="+replace(item.Value, *environment, variables))
 		}
 	}
 
@@ -111,6 +108,7 @@ func (appContext *appContext) install(w http.ResponseWriter, r *http.Request) {
 
 }
 
+
 func replace(value string, environment model.Environment, variables []model.Variable) string {
 	newValue := strings.Replace(value, "${NAMESPACE}", environment.Namespace, -1)
 	keywords := string_util.GetReplacebleKeyName(newValue)
@@ -123,6 +121,14 @@ func replace(value string, environment model.Environment, variables []model.Vari
 		}
 	}
 	return newValue
+}
+
+func normalizeVariableName(value string) string {
+	if strings.Index(value, "istio") > -1 {
+		return value
+	} else {
+		return "app." + value
+	}
 }
 
 func (appContext *appContext) getGlobalVariables(id int) []model.Variable {
