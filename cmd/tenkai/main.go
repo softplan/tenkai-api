@@ -68,17 +68,22 @@ func startHTTPServer(appContext *appContext) {
 	r.HandleFunc("/variables", appContext.addVariables).Methods("POST")
 	r.HandleFunc("/variables/{envId}", appContext.getVariables).Methods("GET")
 	r.HandleFunc("/variables/delete/{id}", appContext.deleteVariable).Methods("DELETE")
-	r.HandleFunc("/variables/edit", appContext.editVariable).Methods("PUT")
+	r.HandleFunc("/variables/edit", appContext.editVariable).Methods("POST")
 
 
 	r.HandleFunc("/environments/delete/{id}", appContext.deleteEnvironment).Methods("DELETE")
-	r.HandleFunc("/environments/edit", appContext.editEnvironment).Methods("PUT")
+	r.HandleFunc("/environments/edit", appContext.editEnvironment).Methods("POST")
 	r.HandleFunc("/environments", appContext.addEnvironments).Methods("POST")
 	r.HandleFunc("/environments", appContext.getEnvironments).Methods("GET")
 
 	r.HandleFunc("/repositories", appContext.listRepositories).Methods("GET")
 	r.HandleFunc("/repositories", appContext.newRepository).Methods("POST")
 	r.HandleFunc("/repositories/{name}", appContext.deleteRepository).Methods("DELETE")
+
+	r.HandleFunc("/releases", appContext.listReleases).Methods("GET")
+	r.HandleFunc("/releases", appContext.newRelease).Methods("POST")
+	r.HandleFunc("/releases/{id}", appContext.deleteRelease).Methods("DELETE")
+
 
 	r.HandleFunc("/", appContext.rootHandler)
 

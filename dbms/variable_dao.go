@@ -47,7 +47,7 @@ func (database *Database) GetAllVariablesByEnvironment(envID int) ([]model.Varia
 	var env model.Environment
 
 	if err := database.Db.First(&env, envID).Error; err == nil {
-		if err := database.Db.Model(&env).Related(&variables).Error; err != nil {
+		if err := database.Db.Model(&env).Order("scope").Related(&variables).Error; err != nil {
 			if gorm.IsRecordNotFoundError(err) {
 				return nil, err
 			} else {

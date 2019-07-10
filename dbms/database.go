@@ -24,5 +24,6 @@ func (database *Database) Connect(dbmsUri string) {
 
 	database.Db.AutoMigrate(&model.Environment{})
 	database.Db.AutoMigrate(&model.Variable{})
+	database.Db.AutoMigrate(&model.Release{})
 
 }
