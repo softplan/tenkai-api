@@ -23,10 +23,16 @@ func (appContext *appContext) listCharts(w http.ResponseWriter, r *http.Request)
 	vars := mux.Vars(r)
 	repo := vars["repo"]
 
+	all, ok := r.URL.Query()["all"]
+	allVersions := true
+	if ok && len(all[0]) > 0 {
+		allVersions = all[0] == "true"
+	}
+
 	helmapi.RepoUpdate()
 
 	searchTerms := []string{repo}
-	searchResult := helmapi.SearchCharts(searchTerms)
+	searchResult := helmapi.SearchCharts(searchTerms, allVersions)
 	result := &model.ChartsResult{Charts: *searchResult}
 
 	data, _ := json.Marshal(result)
@@ -137,10 +143,12 @@ func (appContext *appContext) simpleInstall(envId int, chart string, name string
 	//Locate Environment
 	environment, err := appContext.database.GetByID(envId)
 	variables, err := appContext.database.GetAllVariablesByEnvironmentAndScope(envId, chart)
+	globalVariables := appContext.getGlobalVariables(int(environment.ID))
+
 	var args []string
 	for _, item := range variables {
 		if len(item.Name) > 0 {
-			args = append(args, normalizeVariableName(item.Name)+"="+replace(item.Value, *environment, variables))
+			args = append(args, normalizeVariableName(item.Name)+"="+replace(item.Value, *environment, globalVariables))
 		}
 	}
 	//Add Default Gateway

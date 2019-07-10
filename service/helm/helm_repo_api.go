@@ -27,7 +27,7 @@ type searchCmd struct {
 }
 
 //SearchCharts Methotd
-func SearchCharts(searchTerms []string) *[]model.SearchResult {
+func SearchCharts(searchTerms []string, allVersions bool) *[]model.SearchResult {
 
 	logFields := global.AppFields{global.FUNCTION: "SearchCharts"}
 
@@ -37,7 +37,7 @@ func SearchCharts(searchTerms []string) *[]model.SearchResult {
 
 	var z helmpath.Home = global.HELM_DIR
 	sc.helmhome = z
-	sc.versions = true
+	sc.versions = allVersions
 
 	error := sc.run(searchTerms)
 
