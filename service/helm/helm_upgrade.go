@@ -54,7 +54,7 @@ type upgradeCmd struct {
 }
 
 //Upgrade Method
-func Upgrade(kubeconfig string, release string, chart string, namespace string, variables []string, out *bytes.Buffer)  {
+func Upgrade(kubeconfig string, release string, chart string, namespace string, variables []string, out *bytes.Buffer) error {
 
 	settings.KubeConfig = kubeconfig
 	settings.Home = global.HELM_DIR
@@ -78,11 +78,13 @@ func Upgrade(kubeconfig string, release string, chart string, namespace string, 
 	upgrade.wait = upgrade.wait || upgrade.atomic
 	upgrade.namespace = namespace
 
-	upgrade.run()
+	err := upgrade.run()
 
 	teardown()
 	settings.TillerHost = ""
 	settings.KubeConfig = ""
+
+	return err
 
 }
 

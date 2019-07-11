@@ -58,7 +58,6 @@ func startHTTPServer(appContext *appContext) {
 	r.HandleFunc("/install", appContext.install).Methods("POST")
 	r.HandleFunc("/multipleInstall", appContext.multipleInstall).Methods("POST")
 
-
 	r.HandleFunc("/listVariables", appContext.getVariablesByEnvironmentAndScope).Methods("POST")
 	r.HandleFunc("/saveVariableValues", appContext.saveVariableValues).Methods("POST")
 	r.HandleFunc("/getChartVariables/{chartRepo}/{chartName}", appContext.getChartVariables).Methods("GET")
@@ -84,6 +83,9 @@ func startHTTPServer(appContext *appContext) {
 	r.HandleFunc("/releases", appContext.newRelease).Methods("POST")
 	r.HandleFunc("/releases/{id}", appContext.deleteRelease).Methods("DELETE")
 
+	r.HandleFunc("/dependencies", appContext.listDependencies).Methods("GET")
+	r.HandleFunc("/dependencies", appContext.newDependency).Methods("POST")
+	r.HandleFunc("/dependencies/{id}", appContext.deleteDependency).Methods("DELETE")
 
 	r.HandleFunc("/", appContext.rootHandler)
 

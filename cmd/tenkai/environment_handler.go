@@ -54,7 +54,6 @@ func (appContext *appContext) editEnvironment(w http.ResponseWriter, r *http.Req
 
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
-		log.Fatalln("Error on body", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -66,7 +65,6 @@ func (appContext *appContext) editEnvironment(w http.ResponseWriter, r *http.Req
 	if err := json.Unmarshal(body, &data); err != nil {
 		w.WriteHeader(422)
 		if err := json.NewEncoder(w).Encode(err); err != nil {
-			log.Fatalln("Error unmarshalling data", err)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 		return
