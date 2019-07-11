@@ -95,7 +95,9 @@ func (appContext *appContext) multipleInstall(w http.ResponseWriter, r *http.Req
 	for _, element := range payload.Deployables {
 		err = appContext.simpleInstall(element.EnvironmentID, element.Chart,  element.Name, out)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			if err := json.NewEncoder(w).Encode(err); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+			}
 			break
 		}
 	}
@@ -129,10 +131,14 @@ func (appContext *appContext) install(w http.ResponseWriter, r *http.Request) {
 
 	out := &bytes.Buffer{}
 
+	//TODO Verify if chart exists
+
 	err = appContext.simpleInstall(payload.EnvironmentID, payload.Chart,  payload.Name, out)
 
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		if err := json.NewEncoder(w).Encode(err); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 	}
 
 	fmt.Println(out.String())
@@ -160,7 +166,10 @@ func (appContext *appContext) simpleInstall(envId int, chart string, name string
 	} else {
 		name := name + "-" + environment.Namespace
 		kubeConfig := global.KUBECONFIG_BASE_PATH + environment.Group + "_" + environment.Name
-		helmapi.Upgrade(kubeConfig , name, chart, environment.Namespace, args, out)
+		err := helmapi.Upgrade(kubeConfig , name, chart, environment.Namespace, args, out)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
