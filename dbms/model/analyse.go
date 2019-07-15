@@ -1,21 +1,16 @@
 package model
 
-type DepAnalyseResponse struct {
-	analyses []DepAnalyse
-}
-
 type DepAnalyse struct {
-	nodes []string
-	links []DepLink
+	Nodes []string  `json:"nodes"`
+	Links []DepLink `json:"links"`
 }
 
 type DepLink struct {
-	source string
-	target string
+	Source string `json:"source"`
+	Target string `json:"target"`
 }
 
 type DepAnalyseRequest struct {
-	chartName string
-	tag string
+	ChartName string
+	Tag       string
 }
-

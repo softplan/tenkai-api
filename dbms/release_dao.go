@@ -30,3 +30,4 @@ func (database *Database) ListRelease(chartName string) ([]model.Release, error)
 	}
 	return releases, nil
 }
+
