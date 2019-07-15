@@ -7,7 +7,6 @@ import (
 	"github.com/softplan/tenkai-api/global"
 	helmapi "github.com/softplan/tenkai-api/service/helm"
 	"github.com/softplan/tenkai-api/util"
-	"log"
 	"net/http"
 )
 
@@ -18,14 +17,17 @@ func (appContext *appContext) listRepositories(w http.ResponseWriter, r *http.Re
 	result := &model.RepositoryResult{}
 
 	repositories, error := helmapi.GetRepositories()
-	if error == nil {
-		result.Repositories = repositories
-		data, _ := json.Marshal(result)
-		w.WriteHeader(http.StatusOK)
-		w.Write(data)
-	} else {
-		w.WriteHeader(http.StatusInternalServerError)
+	if error != nil {
+		if err := json.NewEncoder(w).Encode(error); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		return
 	}
+
+	result.Repositories = repositories
+	data, _ := json.Marshal(result)
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
 
 }
 
@@ -35,17 +37,7 @@ func (appContext *appContext) newRepository(w http.ResponseWriter, r *http.Reque
 
 	var payload model.Repository
 
-	body, error := util.GetHttpBody(r)
-	if error != nil {
-		w.WriteHeader(422)
-		if err := json.NewEncoder(w).Encode(error); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
-		return
-	}
-
-	if err := json.Unmarshal(body, &payload); err != nil {
-		log.Fatalln("Error unmarshalling data", err)
+	if err := util.UnmarshalPayload(r, &payload); err != nil {
 		w.WriteHeader(422)
 		if err := json.NewEncoder(w).Encode(err); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -57,7 +49,6 @@ func (appContext *appContext) newRepository(w http.ResponseWriter, r *http.Reque
 
 		logFields := global.AppFields{global.FUNCTION: "newRepository"}
 		global.Logger.Error(logFields, "Error creating repository:" + error.Error())
-
 
 		w.WriteHeader(512)
 		if err := json.NewEncoder(w).Encode(error); err != nil {

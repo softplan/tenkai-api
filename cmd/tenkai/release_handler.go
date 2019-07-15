@@ -16,17 +16,7 @@ func (appContext *appContext) newRelease(w http.ResponseWriter, r *http.Request)
 
 	var payload model.Release
 
-	body, error := util.GetHttpBody(r)
-	if error != nil {
-		w.WriteHeader(422)
-		if err := json.NewEncoder(w).Encode(error); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
-		return
-	}
-
-	if err := json.Unmarshal(body, &payload); err != nil {
-		log.Fatalln("Error unmarshalling data", err)
+	if err := util.UnmarshalPayload(r, &payload); err != nil {
 		w.WriteHeader(422)
 		if err := json.NewEncoder(w).Encode(err); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -35,7 +25,9 @@ func (appContext *appContext) newRelease(w http.ResponseWriter, r *http.Request)
 	}
 
 	if err := appContext.database.CreateRelease(payload); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		if err := json.NewEncoder(w).Encode(err); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -63,23 +55,25 @@ func (appContext *appContext) deleteRelease(w http.ResponseWriter, r *http.Reque
 }
 
 func (appContext *appContext) listReleases(w http.ResponseWriter, r *http.Request) {
+
 	chartName, ok := r.URL.Query()["chartName"]
-	if ok {
-		releaseResult := &model.ReleaseResult{}
-		var err error
-		if releaseResult.Releases, err = appContext.database.ListRelease(chartName[0]); err == nil {
-			data, _ := json.Marshal(releaseResult)
-			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-			w.WriteHeader(http.StatusOK)
-			w.Write(data)
-		} else {
-			if err := json.NewEncoder(w).Encode(err); err != nil {
-				log.Fatalln("Error unmarshalling data", err)
-				w.WriteHeader(http.StatusInternalServerError)
-			}
-		}
-	} else {
+	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
-	return
+
+	releaseResult := &model.ReleaseResult{}
+	var err error
+	if releaseResult.Releases, err = appContext.database.ListRelease(chartName[0]); err != nil {
+		if err := json.NewEncoder(w).Encode(err); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		return
+	}
+
+	data, _ := json.Marshal(releaseResult)
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+
 }

@@ -4,10 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	string_util "github.com/softplan/tenkai-api/util"
-	"io"
-	"io/ioutil"
-	"log"
+	"github.com/softplan/tenkai-api/util"
 	"net/http"
 
 	"strings"
@@ -19,6 +16,8 @@ import (
 )
 
 func (appContext *appContext) listCharts(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
 	vars := mux.Vars(r)
 	repo := vars["repo"]
@@ -36,18 +35,19 @@ func (appContext *appContext) listCharts(w http.ResponseWriter, r *http.Request)
 	result := &model.ChartsResult{Charts: *searchResult}
 
 	data, _ := json.Marshal(result)
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
+
 
 }
 
 func (appContext *appContext) listHelmDeployments(w http.ResponseWriter, r *http.Request) {
 
-	result := helmapi.ListHelmDeployments()
-
-	data, _ := json.Marshal(result)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+
+	result := helmapi.ListHelmDeployments()
+	data, _ := json.Marshal(result)
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 
@@ -55,14 +55,17 @@ func (appContext *appContext) listHelmDeployments(w http.ResponseWriter, r *http
 
 func (appContext *appContext) getChartVariables(w http.ResponseWriter, r *http.Request) {
 
+	w.Header().Set("Content-Type", "application/json")
+
 	vars := mux.Vars(r)
 	chartRepo := vars["chartRepo"]
 	chartName := vars["chartName"]
 
 	result, _ := helmapi.GetValues(chartRepo + "/" + chartName)
 
-	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	w.Write(result)
+
 }
 
 
@@ -71,18 +74,8 @@ func (appContext *appContext) multipleInstall(w http.ResponseWriter, r *http.Req
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 	var payload model.MultipleInstallPayload
-	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
-	if err != nil {
-		log.Fatalln("Error on body", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	if err := r.Body.Close(); err != nil {
-		log.Fatalln("Error - body closed", err)
-	}
 
-	if err := json.Unmarshal(body, &payload); err != nil {
-		log.Fatalln("Error unmarshalling data", err)
+	if err := util.UnmarshalPayload(r, &payload); err != nil {
 		w.WriteHeader(422)
 		if err := json.NewEncoder(w).Encode(err); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -93,16 +86,17 @@ func (appContext *appContext) multipleInstall(w http.ResponseWriter, r *http.Req
 	out := &bytes.Buffer{}
 
 	for _, element := range payload.Deployables {
-		err = appContext.simpleInstall(element.EnvironmentID, element.Chart,  element.Name, out)
+		err := appContext.simpleInstall(element.EnvironmentID, element.Chart,  element.Name, out)
 		if err != nil {
 			if err := json.NewEncoder(w).Encode(err); err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 			}
-			break
+			return
 		}
 	}
 
 	fmt.Println(out.String())
+	w.WriteHeader(http.StatusOK)
 
 }
 
@@ -110,18 +104,8 @@ func (appContext *appContext) install(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 	var payload model.InstallPayload
-	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
-	if err != nil {
-		log.Fatalln("Error on body", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	if err := r.Body.Close(); err != nil {
-		log.Fatalln("Error - body closed", err)
-	}
 
-	if err := json.Unmarshal(body, &payload); err != nil {
-		log.Fatalln("Error unmarshalling data", err)
+	if err := util.UnmarshalPayload(r, &payload); err != nil {
 		w.WriteHeader(422)
 		if err := json.NewEncoder(w).Encode(err); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -132,16 +116,16 @@ func (appContext *appContext) install(w http.ResponseWriter, r *http.Request) {
 	out := &bytes.Buffer{}
 
 	//TODO Verify if chart exists
-
-	err = appContext.simpleInstall(payload.EnvironmentID, payload.Chart,  payload.Name, out)
-
+	err := appContext.simpleInstall(payload.EnvironmentID, payload.Chart,  payload.Name, out)
 	if err != nil {
 		if err := json.NewEncoder(w).Encode(err); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
+		return
 	}
 
 	fmt.Println(out.String())
+	w.WriteHeader(http.StatusOK)
 
 }
 
@@ -177,7 +161,7 @@ func (appContext *appContext) simpleInstall(envId int, chart string, name string
 
 func replace(value string, environment model.Environment, variables []model.Variable) string {
 	newValue := strings.Replace(value, "${NAMESPACE}", environment.Namespace, -1)
-	keywords := string_util.GetReplacebleKeyName(newValue)
+	keywords := util.GetReplacebleKeyName(newValue)
 	for _, keyword := range keywords {
 		for _, element := range variables {
 			if element.Name == keyword {

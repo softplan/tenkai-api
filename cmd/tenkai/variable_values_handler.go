@@ -2,9 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"io"
-	"io/ioutil"
-	"log"
+	"github.com/softplan/tenkai-api/util"
 	"net/http"
 
 	"github.com/softplan/tenkai-api/dbms/model"
@@ -12,21 +10,9 @@ import (
 
 func (appContext *appContext) saveVariableValues(w http.ResponseWriter, r *http.Request) {
 
-	var data model.VariableData
+	var payload model.VariableData
 
-	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
-	if err != nil {
-		log.Fatalln("Error on body", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	if err := r.Body.Close(); err != nil {
-		log.Fatalln("Error - body closed", err)
-	}
-
-	if err := json.Unmarshal(body, &data); err != nil {
-		log.Fatalln("Error unmarshalling data", err)
+	if err := util.UnmarshalPayload(r, &payload); err != nil {
 		w.WriteHeader(422)
 		if err := json.NewEncoder(w).Encode(err); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -34,9 +20,11 @@ func (appContext *appContext) saveVariableValues(w http.ResponseWriter, r *http.
 		return
 	}
 
-	for _, item := range data.Data {
+	for _, item := range payload.Data {
 		if err := appContext.database.CreateVariable(item); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			if err := json.NewEncoder(w).Encode(err); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+			}
 			return
 		}
 	}
@@ -52,19 +40,7 @@ func (appContext *appContext) getVariablesByEnvironmentAndScope(w http.ResponseW
 
 	var payload Payload
 
-	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
-	if err != nil {
-		log.Fatalln("Error on body", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	if err := r.Body.Close(); err != nil {
-		log.Fatalln("Error - body closed", err)
-	}
-
-	if err := json.Unmarshal(body, &payload); err != nil {
-		log.Fatalln("Error unmarshalling data", err)
+	if err := util.UnmarshalPayload(r, &payload); err != nil {
 		w.WriteHeader(422)
 		if err := json.NewEncoder(w).Encode(err); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -74,17 +50,20 @@ func (appContext *appContext) getVariablesByEnvironmentAndScope(w http.ResponseW
 
 	variableResult := &model.VariablesResult{}
 
-	if variableResult.Variables, err = appContext.database.GetAllVariablesByEnvironmentAndScope(payload.EnvironmentID, payload.Scope); err == nil {
-		data, _ := json.Marshal(variableResult)
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(http.StatusOK)
-		w.Write(data)
-	} else {
+	var err error
+	if variableResult.Variables, err = appContext.database.GetAllVariablesByEnvironmentAndScope(payload.EnvironmentID, payload.Scope); err != nil {
 		if err := json.NewEncoder(w).Encode(err); err != nil {
-			log.Fatalln("Error unmarshalling data", err)
-			w.WriteHeader(http.StatusInternalServerError)
+			if err := json.NewEncoder(w).Encode(err); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+			return
 		}
 	}
-	return
+	data, _ := json.Marshal(variableResult)
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+
+
 
 }

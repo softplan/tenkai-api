@@ -16,16 +16,7 @@ func (appContext *appContext) newDependency(w http.ResponseWriter, r *http.Reque
 
 	var payload model.Dependency
 
-	body, error := util.GetHttpBody(r)
-	if error != nil {
-		w.WriteHeader(422)
-		if err := json.NewEncoder(w).Encode(error); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
-		return
-	}
-
-	if err := json.Unmarshal(body, &payload); err != nil {
+	if err := util.UnmarshalPayload(r, &payload); err != nil {
 		w.WriteHeader(422)
 		if err := json.NewEncoder(w).Encode(err); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -39,7 +30,6 @@ func (appContext *appContext) newDependency(w http.ResponseWriter, r *http.Reque
 	}
 
 	w.WriteHeader(http.StatusCreated)
-
 
 }
 
@@ -63,25 +53,46 @@ func (appContext *appContext) deleteDependency(w http.ResponseWriter, r *http.Re
 
 func (appContext *appContext) listDependencies(w http.ResponseWriter, r *http.Request) {
 
-	releaseId, ok := r.URL.Query()["releaseId"]
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
-	if ok {
-		id, _ := strconv.Atoi(releaseId[0])
-		dependencyResult := &model.DependencyResult{}
-		var err error
-		if dependencyResult.Dependencies, err = appContext.database.ListDependencies(id); err == nil {
-			data, _ := json.Marshal(dependencyResult)
-			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-			w.WriteHeader(http.StatusOK)
-			w.Write(data)
-		} else {
-			if err := json.NewEncoder(w).Encode(err); err != nil {
-				log.Fatalln("Error unmarshalling data", err)
-				w.WriteHeader(http.StatusInternalServerError)
-			}
-		}
-	} else {
+	releaseId, ok := r.URL.Query()["releaseId"]
+	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
-	return
+
+	id, _ := strconv.Atoi(releaseId[0])
+	dependencyResult := &model.DependencyResult{}
+	var err error
+
+	if dependencyResult.Dependencies, err = appContext.database.ListDependencies(id); err != nil {
+		if err := json.NewEncoder(w).Encode(err); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		return
+	}
+	data, _ := json.Marshal(dependencyResult)
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+
 }
+
+
+func (appContext *appContext) analyse(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+
+	var payload model.DepAnalyseRequest
+	if err := util.UnmarshalPayload(r, &payload); err != nil {
+		w.WriteHeader(422)
+		if err := json.NewEncoder(w).Encode(err); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+}
+
+
