@@ -1,17 +1,16 @@
 package main
 
 import (
-	"github.com/gorilla/mux"
 	"encoding/base64"
 	"encoding/json"
+	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/global"
-	"io"
-	"io/ioutil"
+	"github.com/softplan/tenkai-api/util"
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"strconv"
+	"strings"
 
 	"github.com/softplan/tenkai-api/dbms/model"
 )
@@ -50,30 +49,24 @@ func (appContext *appContext) deleteEnvironment(w http.ResponseWriter, r *http.R
 }
 
 func (appContext *appContext) editEnvironment(w http.ResponseWriter, r *http.Request) {
-	var data model.DataElement
 
-	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	var payload model.DataElement
 
-	if err := r.Body.Close(); err != nil {
-		log.Fatalln("Error - body closed", err)
-	}
-
-	if err := json.Unmarshal(body, &data); err != nil {
+	if err := util.UnmarshalPayload(r, &payload); err != nil {
 		w.WriteHeader(422)
 		if err := json.NewEncoder(w).Encode(err); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 		return
 	}
-	env := data.Data
+
+	env := payload.Data
 
 	result, error := appContext.database.GetByID(int(env.ID))
 	if error != nil {
-		log.Fatalln("Error retrieving environment by ID", error)
+		if err := json.NewEncoder(w).Encode(error); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -84,7 +77,9 @@ func (appContext *appContext) editEnvironment(w http.ResponseWriter, r *http.Req
 		env.CACertificate, env.ClusterURI, env.Namespace)
 
 	if err := appContext.database.EditEnvironment(env); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		if err := json.NewEncoder(w).Encode(error); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -93,34 +88,25 @@ func (appContext *appContext) editEnvironment(w http.ResponseWriter, r *http.Req
 
 func (appContext *appContext) addEnvironments(w http.ResponseWriter, r *http.Request) {
 
-	var data model.DataElement
+	var payload model.DataElement
 
-	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
-	if err != nil {
-		log.Fatalln("Error on body", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	if err := r.Body.Close(); err != nil {
-		log.Fatalln("Error - body closed", err)
-	}
-
-	if err := json.Unmarshal(body, &data); err != nil {
+	if err := util.UnmarshalPayload(r, &payload); err != nil {
 		w.WriteHeader(422)
 		if err := json.NewEncoder(w).Encode(err); err != nil {
-			log.Fatalln("Error unmarshalling data", err)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 		return
 	}
-	env := data.Data
+
+	env := payload.Data
 
 	createEnvironmentFile(env.Name, env.Token, env.Group+"_"+env.Name,
 		env.CACertificate, env.ClusterURI, env.Namespace)
 
 	if err := appContext.database.CreateEnvironment(env); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		if err := json.NewEncoder(w).Encode(err); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -131,22 +117,23 @@ func (appContext *appContext) addEnvironments(w http.ResponseWriter, r *http.Req
 
 func (appContext *appContext) getEnvironments(w http.ResponseWriter, r *http.Request) {
 
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
 	envResult := &model.EnvResult{}
-	var err error
 
-	if envResult.Envs, err = appContext.database.GetAllEnvironments(); err == nil {
-		data, _ := json.Marshal(envResult)
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(http.StatusOK)
-		w.Write(data)
-	} else {
+	var err error
+	if envResult.Envs, err = appContext.database.GetAllEnvironments(); err != nil {
 		if err := json.NewEncoder(w).Encode(err); err != nil {
-			log.Fatalln("Error unmarshalling data", err)
-			w.WriteHeader(http.StatusInternalServerError)
+			if err := json.NewEncoder(w).Encode(err); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+			return
 		}
 	}
-	return
+
+	w.WriteHeader(http.StatusOK)
+	data, _ := json.Marshal(envResult)
+	w.Write(data)
 
 }
 

@@ -87,6 +87,8 @@ func startHTTPServer(appContext *appContext) {
 	r.HandleFunc("/dependencies", appContext.newDependency).Methods("POST")
 	r.HandleFunc("/dependencies/{id}", appContext.deleteDependency).Methods("DELETE")
 
+	r.HandleFunc("/analyse", appContext.analyse).Methods("POST")
+
 	r.HandleFunc("/", appContext.rootHandler)
 
 	log.Fatal(http.ListenAndServe(":"+port, corsMiddleware(r)))
