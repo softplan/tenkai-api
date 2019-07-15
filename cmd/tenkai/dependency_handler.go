@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/dbms/model"
+	service_tenkai "github.com/softplan/tenkai-api/service/tenkai"
 	"github.com/softplan/tenkai-api/util"
 	"log"
 	"net/http"
@@ -91,7 +92,13 @@ func (appContext *appContext) analyse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var analyse model.DepAnalyse
+
+	service_tenkai.Analyse(appContext.database, "", payload.ChartName, payload.Tag, &analyse)
+
+	data, _ := json.Marshal(analyse)
 	w.WriteHeader(http.StatusOK)
+	w.Write(data)
 
 }
 

@@ -23,7 +23,7 @@ func (database *Database) ListDependencies(releaseId int) ([]model.Dependency, e
 	dependencies := make([]model.Dependency, 0)
 	if err := database.Db.Where(&model.Dependency{ReleaseID: releaseId}).Find(&dependencies).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
-			return nil, err
+			return make([]model.Dependency,0), nil
 		} else {
 			return nil, err
 		}
