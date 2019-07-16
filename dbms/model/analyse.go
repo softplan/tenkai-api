@@ -1,8 +1,12 @@
 package model
 
 type DepAnalyse struct {
-	Nodes []string  `json:"nodes"`
+	Nodes []Node   `json:"nodes"`
 	Links []DepLink `json:"links"`
+}
+
+type Node struct {
+	ID string `json:"id"`
 }
 
 type DepLink struct {

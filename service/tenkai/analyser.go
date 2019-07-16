@@ -9,14 +9,14 @@ import (
 func Analyse(database dbms.Database, parent string, chartName string, tag string, analyse *model.DepAnalyse) {
 
 	if analyse.Nodes == nil {
-		analyse.Nodes = make([]string, 0)
+		analyse.Nodes = make([]model.Node, 0)
 	}
 
 	if len(parent) > 0 && analyse.Links == nil {
 		analyse.Links = make([]model.DepLink, 0)
 	}
 
-	analyse.Nodes = append(analyse.Nodes, chartName)
+	analyse.Nodes = append(analyse.Nodes, model.Node{ID : getNodeName(chartName, tag)})
 	if len(parent) > 0 {
 		analyse.Links = append(analyse.Links, model.DepLink{Source: parent, Target: getNodeName(chartName, tag)})
 	}
