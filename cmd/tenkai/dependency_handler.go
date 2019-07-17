@@ -96,6 +96,10 @@ func (appContext *appContext) analyse(w http.ResponseWriter, r *http.Request) {
 
 	service_tenkai.Analyse(appContext.database, "", payload.ChartName, payload.Tag, &analyse)
 
+	if analyse.Links == nil {
+		analyse.Links = make([]model.DepLink,0)
+	}
+
 	data, _ := json.Marshal(analyse)
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)

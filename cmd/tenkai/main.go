@@ -60,7 +60,7 @@ func startHTTPServer(appContext *appContext) {
 
 	r.HandleFunc("/listVariables", appContext.getVariablesByEnvironmentAndScope).Methods("POST")
 	r.HandleFunc("/saveVariableValues", appContext.saveVariableValues).Methods("POST")
-	r.HandleFunc("/getChartVariables/{chartRepo}/{chartName}", appContext.getChartVariables).Methods("GET")
+	r.HandleFunc("/getChartVariables", appContext.getChartVariables).Methods("POST")
 	r.HandleFunc("/listHelmDeployments", appContext.listHelmDeployments).Methods("GET")
 	r.HandleFunc("/charts/{repo}", appContext.listCharts).Methods("GET")
 

@@ -70,11 +70,16 @@ type InstallArguments struct {
 
 //SimpleInstallPayload Struct
 type InstallPayload struct {
-	EnvironmentID int                `json:"environmentId"`
-	Chart         string             `json:"chart"`
-	Name          string             `json:"name"`
+	EnvironmentID int    `json:"environmentId"`
+	Chart         string `json:"chart"`
+	Name          string `json:"name"`
 }
 
 type MultipleInstallPayload struct {
-	Deployables	[]InstallPayload `json:"deployables"`
+	Deployables []InstallPayload `json:"deployables"`
+}
+
+type GetChartRequest struct {
+	ChartName    string `json:"chartName"`
+	ChartVersion string `json:"chartVersion"`
 }
