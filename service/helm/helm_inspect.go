@@ -34,10 +34,14 @@ type inspectCmd struct {
 }
 
 //GetValues Method
-func GetValues(chartName string) ([]byte, error) {
+func GetValues(chartName string, version string) ([]byte, error) {
 
 	insp := &inspectCmd{
 		out: os.Stdout,
+	}
+
+	if len(version) > 0 {
+		insp.version = version
 	}
 
 	settings.Home = global.HELM_DIR

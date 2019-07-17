@@ -55,13 +55,19 @@ func (appContext *appContext) listHelmDeployments(w http.ResponseWriter, r *http
 
 func (appContext *appContext) getChartVariables(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	var payload model.GetChartRequest
 
-	vars := mux.Vars(r)
-	chartRepo := vars["chartRepo"]
-	chartName := vars["chartName"]
+	if err := util.UnmarshalPayload(r, &payload); err != nil {
+		w.WriteHeader(422)
+		if err := json.NewEncoder(w).Encode(err); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		return
+	}
 
-	result, _ := helmapi.GetValues(chartRepo + "/" + chartName)
+	result, _ := helmapi.GetValues(payload.ChartName, payload.ChartVersion)
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(result)
@@ -130,8 +136,12 @@ func (appContext *appContext) install(w http.ResponseWriter, r *http.Request) {
 }
 
 func (appContext *appContext) simpleInstall(envId int, chart string, name string, out *bytes.Buffer) error {
+
 	//Locate Environment
 	environment, err := appContext.database.GetByID(envId)
+
+	//TODO - VERIFY IF CONFIG FILE EXISTS !!! This is the cause of  u.client.ReleaseHistory fail sometimes.
+
 	variables, err := appContext.database.GetAllVariablesByEnvironmentAndScope(envId, chart)
 	globalVariables := appContext.getGlobalVariables(int(environment.ID))
 
@@ -174,7 +184,7 @@ func replace(value string, environment model.Environment, variables []model.Vari
 }
 
 func normalizeVariableName(value string) string {
-	if strings.Index(value, "istio") > -1 {
+	if strings.Index(value, "istio.") > -1 || (strings.Index(value, "image.")) > -1 {
 		return value
 	} else {
 		return "app." + value

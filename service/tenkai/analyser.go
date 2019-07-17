@@ -40,7 +40,7 @@ func getParentName(dependency model.Dependency) string {
 }
 
 func getNodeName(chartName string, version string) string {
-	return chartName + "-" + version
+	return chartName + ":" + version
 }
 
 func getMatchedVersions(chartName string, tag string) []model.DepAnalyseRequest {
