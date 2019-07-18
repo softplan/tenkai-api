@@ -37,7 +37,6 @@ func RepoUpdate() error {
 
 }
 
-
 func (u *repoUpdateCmd) run() error {
 	f, err := repo.LoadRepositoriesFile(u.home.RepositoryFile())
 	if err != nil {

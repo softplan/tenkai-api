@@ -22,7 +22,7 @@ func GetReplacebleKeyName(value string) []string {
 func getVariableValue(value string, start int, end int) string {
 	if start > -1 {
 		if (end > -1) && (end > start) {
-			return value[start+2:end]
+			return value[start+2 : end]
 		}
 	}
 	return ""

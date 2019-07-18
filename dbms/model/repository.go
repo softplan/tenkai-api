@@ -1,10 +1,10 @@
 package model
 
 type Repository struct {
-	Name	 	string  `json:"name"`
-	Url 		string  `json:"url"`
-	Username 	string  `json:"username"`
-	Password 	string  `json:"password"`
+	Name     string `json:"name"`
+	Url      string `json:"url"`
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 type RepositoryResult struct {

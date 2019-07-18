@@ -12,7 +12,6 @@ import (
 )
 
 const (
-
 	stableRepositoryURL = "https://kubernetes-charts.storage.googleapis.com"
 
 	localRepositoryURL = "http://127.0.0.1:8879/charts"
@@ -31,7 +30,7 @@ func InitializeHelm() {
 	settings.TLSEnable = false
 	settings.TLSVerify = false
 	settings.TillerConnectionTimeout = 1200
-	Initialize(global.HELM_DIR, os.Stdout,true, settings)
+	Initialize(global.HELM_DIR, os.Stdout, true, settings)
 }
 
 // Initialize initializes local config

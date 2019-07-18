@@ -14,13 +14,13 @@ func GetRepositories() ([]model.Repository, error) {
 
 	logFields := global.AppFields{global.FUNCTION: "GetRepositories"}
 
-	global.Logger.Info(logFields, "Starting GetRepositories: " + settings.Home.RepositoryFile())
+	global.Logger.Info(logFields, "Starting GetRepositories: "+settings.Home.RepositoryFile())
 
 	var repositories []model.Repository
 
 	f, err := repo.LoadRepositoriesFile(settings.Home.RepositoryFile())
 	if err != nil {
-		global.Logger.Error(logFields, "Error loading repositories " + err.Error())
+		global.Logger.Error(logFields, "Error loading repositories "+err.Error())
 		return nil, err
 	}
 	if len(f.Repositories) == 0 {
@@ -37,4 +37,3 @@ func GetRepositories() ([]model.Repository, error) {
 
 	return repositories, nil
 }
-

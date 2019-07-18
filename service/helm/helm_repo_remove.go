@@ -25,7 +25,6 @@ func RemoveRepository(name string) error {
 	return nil
 }
 
-
 func (r *repoRemoveCmd) run() error {
 	return removeRepoLine(r.out, r.name, r.home)
 }
@@ -62,4 +61,3 @@ func removeRepoCache(name string, home helmpath.Home) error {
 	}
 	return nil
 }
-

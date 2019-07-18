@@ -89,21 +89,20 @@ func addRepository(name, url, username, password string, home helmpath.Home, cer
 		return err
 	}
 
-/*
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify : true},
-		DisableCompression: true,
-		Proxy:              http.ProxyFromEnvironment,
-	}
-	r.Client.Client.Transport = tr
- */
-
+	/*
+		tr := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify : true},
+			DisableCompression: true,
+			Proxy:              http.ProxyFromEnvironment,
+		}
+		r.Client.Client.Transport = tr
+	*/
 
 	if err := r.DownloadIndexFile(""); err != nil {
 		return fmt.Errorf("Looks like %q is not a valid chart repository or cannot be reached: %s", url, err.Error())
 	}
 
-	c.Cache="./" + c.Name + "-index.yaml"
+	c.Cache = "./" + c.Name + "-index.yaml"
 	f.Update(&c)
 
 	return f.WriteFile(home.RepositoryFile(), 0644)

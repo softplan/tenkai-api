@@ -39,7 +39,7 @@ func (appContext *appContext) deleteEnvironment(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	if err := removeEnvironmentFile(env.Group+"_"+env.Name); err != nil {
+	if err := removeEnvironmentFile(env.Group + "_" + env.Name); err != nil {
 		log.Println("Error deleting environment file: ", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
@@ -70,7 +70,7 @@ func (appContext *appContext) editEnvironment(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	oldFile := result.Group+"_"+result.Name
+	oldFile := result.Group + "_" + result.Name
 	removeEnvironmentFile(oldFile)
 
 	createEnvironmentFile(env.Name, env.Token, env.Group+"_"+env.Name,
@@ -112,7 +112,6 @@ func (appContext *appContext) addEnvironments(w http.ResponseWriter, r *http.Req
 
 	w.WriteHeader(http.StatusCreated)
 
-
 }
 
 func (appContext *appContext) getEnvironments(w http.ResponseWriter, r *http.Request) {
@@ -139,7 +138,7 @@ func (appContext *appContext) getEnvironments(w http.ResponseWriter, r *http.Req
 
 func removeEnvironmentFile(fileName string) error {
 	log.Println("Removing file: " + fileName)
-	
+
 	if _, err := os.Stat("./" + fileName); err == nil {
 		err := os.Remove("./" + fileName)
 		if err != nil {
