@@ -64,6 +64,4 @@ func (appContext *appContext) getVariablesByEnvironmentAndScope(w http.ResponseW
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 
-
-
 }

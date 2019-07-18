@@ -1,11 +1,11 @@
 package util
 
 import (
+	"encoding/json"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"encoding/json"
 )
 
 func GetHttpBody(r *http.Request) ([]byte, error) {

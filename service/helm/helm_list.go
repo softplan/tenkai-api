@@ -65,7 +65,7 @@ func ListHelmDeployments() *HelmListResult {
 	list := &listCmd{out: os.Stdout}
 	setupConnection()
 	list.client = newClient()
-	resultListResult, _:= list.run()
+	resultListResult, _ := list.run()
 
 	teardown()
 	settings.TillerHost = ""

@@ -5,7 +5,6 @@ import (
 	"github.com/softplan/tenkai-api/dbms/model"
 )
 
-
 // EditVariable - Edit an existent variable
 func (database *Database) EditVariable(data model.Variable) error {
 	if err := database.Db.Save(&data).Error; err != nil {
@@ -60,8 +59,6 @@ func (database *Database) GetAllVariablesByEnvironment(envID int) ([]model.Varia
 	return variables, nil
 }
 
-
-
 //GetAllVariablesByEnvironmentAndScope - Retrieve all variables
 func (database *Database) GetAllVariablesByEnvironmentAndScope(envID int, scope string) ([]model.Variable, error) {
 	variables := make([]model.Variable, 0)
@@ -82,4 +79,3 @@ func (database *Database) DeleteVariable(id int) error {
 	}
 	return nil
 }
-

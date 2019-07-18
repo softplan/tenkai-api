@@ -47,7 +47,6 @@ func (appContext *appContext) editVariable(w http.ResponseWriter, r *http.Reques
 
 }
 
-
 func (appContext *appContext) addVariables(w http.ResponseWriter, r *http.Request) {
 
 	var payload model.DataVariableElement
@@ -68,7 +67,6 @@ func (appContext *appContext) addVariables(w http.ResponseWriter, r *http.Reques
 	w.WriteHeader(http.StatusCreated)
 
 }
-
 
 func (appContext *appContext) getVariables(w http.ResponseWriter, r *http.Request) {
 
@@ -91,6 +89,5 @@ func (appContext *appContext) getVariables(w http.ResponseWriter, r *http.Reques
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
-
 
 }

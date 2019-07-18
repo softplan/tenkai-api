@@ -15,7 +15,7 @@ type Server struct {
 //Configuration - Configuração geral da aplicação
 type Configuration struct {
 	Server Server
-	App App
+	App    App
 }
 
 type Dbms struct {

@@ -69,7 +69,6 @@ func startHTTPServer(appContext *appContext) {
 	r.HandleFunc("/variables/delete/{id}", appContext.deleteVariable).Methods("DELETE")
 	r.HandleFunc("/variables/edit", appContext.editVariable).Methods("POST")
 
-
 	r.HandleFunc("/environments/delete/{id}", appContext.deleteEnvironment).Methods("DELETE")
 	r.HandleFunc("/environments/edit", appContext.editEnvironment).Methods("POST")
 	r.HandleFunc("/environments", appContext.addEnvironments).Methods("POST")

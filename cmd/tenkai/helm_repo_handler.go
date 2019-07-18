@@ -48,7 +48,7 @@ func (appContext *appContext) newRepository(w http.ResponseWriter, r *http.Reque
 	if error := helmapi.AddRepository(payload); error != nil {
 
 		logFields := global.AppFields{global.FUNCTION: "newRepository"}
-		global.Logger.Error(logFields, "Error creating repository:" + error.Error())
+		global.Logger.Error(logFields, "Error creating repository:"+error.Error())
 
 		w.WriteHeader(512)
 		if err := json.NewEncoder(w).Encode(error); err != nil {
@@ -63,10 +63,10 @@ func (appContext *appContext) newRepository(w http.ResponseWriter, r *http.Reque
 func (appContext *appContext) deleteRepository(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
-	name:= vars["name"]
+	name := vars["name"]
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	if error :=  helmapi.RemoveRepository(name); error != nil {
+	if error := helmapi.RemoveRepository(name); error != nil {
 		w.WriteHeader(512)
 		if err := json.NewEncoder(w).Encode(error); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)

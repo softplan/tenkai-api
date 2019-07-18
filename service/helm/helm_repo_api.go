@@ -43,7 +43,7 @@ func SearchCharts(searchTerms []string, allVersions bool) *[]model.SearchResult 
 
 	if error != nil {
 
-		global.Logger.Error(logFields, "Error listing charts" + error.Error())
+		global.Logger.Error(logFields, "Error listing charts"+error.Error())
 	}
 
 	global.Logger.Info(logFields, "Filling model")

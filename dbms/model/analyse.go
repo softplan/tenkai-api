@@ -1,12 +1,15 @@
 package model
 
 type DepAnalyse struct {
-	Nodes []Node   `json:"nodes"`
+	Nodes []Node    `json:"nodes"`
 	Links []DepLink `json:"links"`
 }
 
 type Node struct {
-	ID string `json:"id"`
+	ID         string `json:"id"`
+	Color      string `json:"color"`
+	SymbolType string `json:"symbolType"`
+	Svg        string `json:"svg"`
 }
 
 type DepLink struct {
@@ -15,6 +18,7 @@ type DepLink struct {
 }
 
 type DepAnalyseRequest struct {
-	ChartName string
-	Tag       string
+	EnvironmentID int    `json:"environmentId"`
+	ChartName     string `json:"chartName"`
+	Tag           string `json:"tag"`
 }

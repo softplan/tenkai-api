@@ -33,13 +33,12 @@ func (appContext *appContext) newRelease(w http.ResponseWriter, r *http.Request)
 
 	w.WriteHeader(http.StatusCreated)
 
-
 }
 
 func (appContext *appContext) deleteRelease(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
-	sl:= vars["id"]
+	sl := vars["id"]
 	id, _ := strconv.Atoi(sl)
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")

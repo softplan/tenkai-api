@@ -39,7 +39,6 @@ func (appContext *appContext) listCharts(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 
-
 }
 
 func (appContext *appContext) listHelmDeployments(w http.ResponseWriter, r *http.Request) {
@@ -74,7 +73,6 @@ func (appContext *appContext) getChartVariables(w http.ResponseWriter, r *http.R
 
 }
 
-
 func (appContext *appContext) multipleInstall(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -92,7 +90,7 @@ func (appContext *appContext) multipleInstall(w http.ResponseWriter, r *http.Req
 	out := &bytes.Buffer{}
 
 	for _, element := range payload.Deployables {
-		err := appContext.simpleInstall(element.EnvironmentID, element.Chart,  element.Name, out)
+		err := appContext.simpleInstall(element.EnvironmentID, element.Chart, element.Name, out)
 		if err != nil {
 			if err := json.NewEncoder(w).Encode(err); err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
@@ -122,7 +120,7 @@ func (appContext *appContext) install(w http.ResponseWriter, r *http.Request) {
 	out := &bytes.Buffer{}
 
 	//TODO Verify if chart exists
-	err := appContext.simpleInstall(payload.EnvironmentID, payload.Chart,  payload.Name, out)
+	err := appContext.simpleInstall(payload.EnvironmentID, payload.Chart, payload.Name, out)
 	if err != nil {
 		if err := json.NewEncoder(w).Encode(err); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -160,7 +158,7 @@ func (appContext *appContext) simpleInstall(envId int, chart string, name string
 	} else {
 		name := name + "-" + environment.Namespace
 		kubeConfig := global.KUBECONFIG_BASE_PATH + environment.Group + "_" + environment.Name
-		err := helmapi.Upgrade(kubeConfig , name, chart, environment.Namespace, args, out)
+		err := helmapi.Upgrade(kubeConfig, name, chart, environment.Namespace, args, out)
 		if err != nil {
 			return err
 		}
@@ -168,14 +166,13 @@ func (appContext *appContext) simpleInstall(envId int, chart string, name string
 	return nil
 }
 
-
 func replace(value string, environment model.Environment, variables []model.Variable) string {
 	newValue := strings.Replace(value, "${NAMESPACE}", environment.Namespace, -1)
 	keywords := util.GetReplacebleKeyName(newValue)
 	for _, keyword := range keywords {
 		for _, element := range variables {
 			if element.Name == keyword {
-				newValue = strings.Replace(newValue, "${" + element.Name + "}", element.Value, -1)
+				newValue = strings.Replace(newValue, "${"+element.Name+"}", element.Value, -1)
 				break
 			}
 		}
@@ -195,4 +192,3 @@ func (appContext *appContext) getGlobalVariables(id int) []model.Variable {
 	variables, _ := appContext.database.GetAllVariablesByEnvironmentAndScope(id, "global")
 	return variables
 }
-

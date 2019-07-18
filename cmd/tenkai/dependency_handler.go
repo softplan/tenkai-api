@@ -37,7 +37,7 @@ func (appContext *appContext) newDependency(w http.ResponseWriter, r *http.Reque
 func (appContext *appContext) deleteDependency(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
-	sl:= vars["id"]
+	sl := vars["id"]
 	id, _ := strconv.Atoi(sl)
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -78,7 +78,6 @@ func (appContext *appContext) listDependencies(w http.ResponseWriter, r *http.Re
 
 }
 
-
 func (appContext *appContext) analyse(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -94,10 +93,10 @@ func (appContext *appContext) analyse(w http.ResponseWriter, r *http.Request) {
 
 	var analyse model.DepAnalyse
 
-	service_tenkai.Analyse(appContext.database, "", payload.ChartName, payload.Tag, &analyse)
+	service_tenkai.Analyse(appContext.database, payload, &analyse)
 
 	if analyse.Links == nil {
-		analyse.Links = make([]model.DepLink,0)
+		analyse.Links = make([]model.DepLink, 0)
 	}
 
 	data, _ := json.Marshal(analyse)
@@ -105,5 +104,3 @@ func (appContext *appContext) analyse(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 
 }
-
-

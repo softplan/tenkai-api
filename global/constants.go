@@ -1,11 +1,8 @@
 package global
 
-
-
 const (
 	//FUNCTION id of a method log
-	FUNCTION string = "function"
+	FUNCTION             string = "function"
 	KUBECONFIG_BASE_PATH string = "./config/"
-	HELM_DIR = "./.helm/"
-
+	HELM_DIR                    = "./.helm/"
 )
