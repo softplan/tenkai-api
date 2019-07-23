@@ -22,7 +22,6 @@ import (
 	"net/http"
 	"strings"
 
-	"crypto/tls"
 	"k8s.io/helm/pkg/tlsutil"
 	"k8s.io/helm/pkg/version"
 )
@@ -86,17 +85,13 @@ func NewHTTPGetter(URL, CertFile, KeyFile, CAFile string) (*HttpGetter, error) {
 		DisableCompression: true,
 		Proxy:              http.ProxyFromEnvironment,
 	}
-
 	if (CertFile != "" && KeyFile != "") || CAFile != "" {
 		tlsConf, err := tlsutil.NewTLSConfig(URL, CertFile, KeyFile, CAFile)
 		if err != nil {
 			return &client, fmt.Errorf("can't create TLS config: %s", err.Error())
 		}
 		tr.TLSClientConfig = tlsConf
-	} else {
-		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify : true}
 	}
-
 	client.client = &http.Client{Transport: tr}
 	return &client, nil
 }

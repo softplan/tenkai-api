@@ -29,17 +29,14 @@ func (appContext *appContext) editVariable(w http.ResponseWriter, r *http.Reques
 	var payload model.DataVariableElement
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		w.WriteHeader(422)
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(err)
 		return
 	}
 
 	if err := appContext.database.EditVariable(payload.Data); err != nil {
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(err)
 		return
 	}
 
@@ -52,15 +49,14 @@ func (appContext *appContext) addVariables(w http.ResponseWriter, r *http.Reques
 	var payload model.DataVariableElement
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		w.WriteHeader(422)
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(err)
 		return
 	}
 
 	if err := appContext.database.EditVariable(payload.Data); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(err)
 		return
 	}
 
@@ -78,9 +74,8 @@ func (appContext *appContext) getVariables(w http.ResponseWriter, r *http.Reques
 	var err error
 	if variableResult.Variables, err = appContext.database.GetAllVariablesByEnvironment(id); err != nil {
 		if err := json.NewEncoder(w).Encode(err); err != nil {
-			if err := json.NewEncoder(w).Encode(err); err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-			}
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(err)
 			return
 		}
 	}

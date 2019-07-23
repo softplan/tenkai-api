@@ -6,11 +6,11 @@ import (
 )
 
 //CreateEnvironment - Create a new environment
-func (database *Database) CreateEnvironment(env model.Environment) error {
+func (database *Database) CreateEnvironment(env model.Environment) (int, error) {
 	if err := database.Db.Create(&env).Error; err != nil {
-		return err
+		return -1, err
 	}
-	return nil
+	return int(env.ID), nil
 }
 
 // EditEnvironment - Updates an existing environment

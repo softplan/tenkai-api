@@ -17,17 +17,14 @@ func (appContext *appContext) newRelease(w http.ResponseWriter, r *http.Request)
 	var payload model.Release
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		w.WriteHeader(422)
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(err)
 		return
 	}
 
 	if err := appContext.database.CreateRelease(payload); err != nil {
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(err)
 		return
 	}
 
@@ -64,9 +61,8 @@ func (appContext *appContext) listReleases(w http.ResponseWriter, r *http.Reques
 	releaseResult := &model.ReleaseResult{}
 	var err error
 	if releaseResult.Releases, err = appContext.database.ListRelease(chartName[0]); err != nil {
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(err)
 		return
 	}
 

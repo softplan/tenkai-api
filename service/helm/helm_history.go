@@ -57,26 +57,23 @@ func IsThereAnyPodWithThisVersion(kubeconfig string, namespace string, releaseNa
 }
 
 func GetReleaseHistory(kubeconfig string, releaseName string) (bool, error) {
-
 	settings.KubeConfig = kubeconfig
 	settings.Home = global.HELM_DIR
 	settings.TillerNamespace = "kube-system"
 	settings.TLSEnable = false
 	settings.TLSVerify = false
 	settings.TillerConnectionTimeout = 1200
-
-	setupConnection()
-
-	his := &historyCmd{out: os.Stdout, helmc: newClient()}
-	his.rls = releaseName
-	his.max = 1
-	deployed, error := his.verifyItDeployed()
-
-	teardown()
-	settings.TillerHost = ""
-
-	return deployed, error
-
+	err := setupConnection()
+	deployed := false
+	if err == nil {
+		his := &historyCmd{out: os.Stdout, helmc: newClient()}
+		his.rls = releaseName
+		his.max = 1
+		deployed, err = his.verifyItDeployed()
+		teardown()
+		settings.TillerHost = ""
+	}
+	return deployed, err
 }
 
 func (cmd *historyCmd) verifyItDeployed() (bool, error) {

@@ -13,18 +13,15 @@ func (appContext *appContext) saveVariableValues(w http.ResponseWriter, r *http.
 	var payload model.VariableData
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		w.WriteHeader(422)
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(err)
 		return
 	}
 
 	for _, item := range payload.Data {
 		if err := appContext.database.CreateVariable(item); err != nil {
-			if err := json.NewEncoder(w).Encode(err); err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-			}
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(err)
 			return
 		}
 	}
@@ -41,10 +38,8 @@ func (appContext *appContext) getVariablesByEnvironmentAndScope(w http.ResponseW
 	var payload Payload
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		w.WriteHeader(422)
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(err)
 		return
 	}
 
@@ -52,12 +47,9 @@ func (appContext *appContext) getVariablesByEnvironmentAndScope(w http.ResponseW
 
 	var err error
 	if variableResult.Variables, err = appContext.database.GetAllVariablesByEnvironmentAndScope(payload.EnvironmentID, payload.Scope); err != nil {
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			if err := json.NewEncoder(w).Encode(err); err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-			}
-			return
-		}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(err)
+		return
 	}
 	data, _ := json.Marshal(variableResult)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
