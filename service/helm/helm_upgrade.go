@@ -65,27 +65,25 @@ func Upgrade(kubeconfig string, release string, chart string, namespace string, 
 
 	upgrade := &upgradeCmd{out: out}
 
-	setupConnection()
-	upgrade.client = newClient()
-	upgrade.version = ">0.0.0-0"
-	upgrade.install = true
-	upgrade.recreate = true
-	upgrade.force = true
-	upgrade.release = release
-	upgrade.chart = chart
-	upgrade.values = variables
-	upgrade.client = ensureHelmClient(upgrade.client)
-	upgrade.wait = upgrade.wait || upgrade.atomic
-	upgrade.namespace = namespace
-
-	err := upgrade.run()
-
-	teardown()
-	settings.TillerHost = ""
-	settings.KubeConfig = ""
-
+	err := setupConnection()
+	if err == nil {
+		upgrade.client = newClient()
+		upgrade.version = ">0.0.0-0"
+		upgrade.install = true
+		upgrade.recreate = true
+		upgrade.force = true
+		upgrade.release = release
+		upgrade.chart = chart
+		upgrade.values = variables
+		upgrade.client = ensureHelmClient(upgrade.client)
+		upgrade.wait = upgrade.wait || upgrade.atomic
+		upgrade.namespace = namespace
+		err = upgrade.run()
+		teardown()
+		settings.TillerHost = ""
+		settings.KubeConfig = ""
+	}
 	return err
-
 }
 
 func (u *upgradeCmd) run() error {
@@ -94,6 +92,7 @@ func (u *upgradeCmd) run() error {
 		return err
 	}
 
+	//TODO - VERIFY IF CONFIG FILE EXISTS !!! This is the cause of  u.client.ReleaseHistory fail sometimes.
 	releaseHistory, err := u.client.ReleaseHistory(u.release, helm.WithMaxHistory(1))
 
 	if u.install {

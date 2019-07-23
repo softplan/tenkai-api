@@ -9,9 +9,13 @@ import (
 	"strings"
 )
 
-func Analyse(database dbms.Database, payload model.DepAnalyseRequest, analyse *model.DepAnalyse) {
+func Analyse(database dbms.Database, payload model.DepAnalyseRequest, analyse *model.DepAnalyse) error {
 	innerAnalyse(database, "", payload.ChartName, payload.Tag, analyse)
-	analyseIfDeployed(database, payload, analyse)
+	err := analyseIfDeployed(database, payload, analyse)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func innerAnalyse(database dbms.Database, parent string, chartName string, tag string, analyse *model.DepAnalyse) {
@@ -66,7 +70,7 @@ func getMatchedVersions(chartName string, tag string) []model.DepAnalyseRequest 
 	return result
 }
 
-func analyseIfDeployed(database dbms.Database, payload model.DepAnalyseRequest, analyse *model.DepAnalyse) {
+func analyseIfDeployed(database dbms.Database, payload model.DepAnalyseRequest, analyse *model.DepAnalyse) error {
 
 	//Find environment
 	environment, _ := database.GetByID(payload.EnvironmentID)
@@ -75,18 +79,29 @@ func analyseIfDeployed(database dbms.Database, payload model.DepAnalyseRequest, 
 		releaseName := removeTag(removeRepo(element.ID)) + "-" + environment.Namespace
 
 		kubeConfig := global.KUBECONFIG_BASE_PATH + environment.Group + "_" + environment.Name
-		identifyDeployedReleased(kubeConfig, analyse, environment.Namespace, releaseName, onlyTag(removeRepo(element.ID)), index)
+		err := identifyDeployedReleased(kubeConfig, analyse, environment.Namespace, releaseName, onlyTag(removeRepo(element.ID)), index)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 
 }
 
-func identifyDeployedReleased(kubeconfig string, analyse *model.DepAnalyse, namespace, releaseName string, tag string, index int) {
-	deployed, _ := helmapi.GetReleaseHistory(kubeconfig, releaseName)
+func identifyDeployedReleased(kubeconfig string, analyse *model.DepAnalyse, namespace, releaseName string, tag string, index int) error {
+	deployed, err := helmapi.GetReleaseHistory(kubeconfig, releaseName)
+	if err != nil {
+		deployed = false
+	}
+
 	if !deployed {
 		analyse.Nodes[index].Svg = "https://dev.w3.org/SVG/tools/svgweb/samples/svg-files/no.svg"
 	} else {
 		//Verify if version is OK.
-		versionMatched, _ := helmapi.IsThereAnyPodWithThisVersion(kubeconfig, namespace, releaseName, tag)
+		versionMatched, err := helmapi.IsThereAnyPodWithThisVersion(kubeconfig, namespace, releaseName, tag)
+		if err != nil {
+			return err
+		}
 		if !versionMatched {
 			analyse.Nodes[index].SymbolType = "triangle"
 		} else {
@@ -94,6 +109,7 @@ func identifyDeployedReleased(kubeconfig string, analyse *model.DepAnalyse, name
 			analyse.Nodes[index].Color = "green"
 		}
 	}
+	return nil
 }
 
 func onlyTag(value string) string {

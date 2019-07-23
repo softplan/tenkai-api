@@ -53,10 +53,8 @@ func (appContext *appContext) editEnvironment(w http.ResponseWriter, r *http.Req
 	var payload model.DataElement
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		w.WriteHeader(422)
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(err)
 		return
 	}
 
@@ -64,9 +62,8 @@ func (appContext *appContext) editEnvironment(w http.ResponseWriter, r *http.Req
 
 	result, error := appContext.database.GetByID(int(env.ID))
 	if error != nil {
-		if err := json.NewEncoder(w).Encode(error); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(error)
 		return
 	}
 
@@ -77,14 +74,76 @@ func (appContext *appContext) editEnvironment(w http.ResponseWriter, r *http.Req
 		env.CACertificate, env.ClusterURI, env.Namespace)
 
 	if err := appContext.database.EditEnvironment(env); err != nil {
-		if err := json.NewEncoder(w).Encode(error); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(err)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 }
+
+
+func (appContext *appContext) duplicateEnvironments(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	log.Println("Duplicating environment: ", vars["id"])
+
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		log.Println("Error processing parameter id: ", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	environment, error := appContext.database.GetByID(id)
+	if error != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(error)
+		return
+	}
+
+	variables, error := appContext.database.GetAllVariablesByEnvironment(id)
+
+
+	var env model.Environment
+	env.Namespace = environment.Namespace
+	env.Name = environment.Name + "-Copy"
+	env.Group = environment.Group
+	env.CACertificate = environment.CACertificate
+	env.Token = environment.Token
+	env.ClusterURI = environment.ClusterURI
+	env.Gateway = environment.Gateway
+
+	createEnvironmentFile(env.Name, env.Token, env.Group+"_"+env.Name,
+		env.CACertificate, env.ClusterURI, env.Namespace)
+
+	var envId int
+	if envId, err = appContext.database.CreateEnvironment(env); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(err)
+		return
+	}
+
+	var newVariable *model.Variable
+	for _, variable:= range variables {
+		newVariable = &model.Variable{}
+		newVariable.Name = variable.Name
+		newVariable.EnvironmentID = envId
+		newVariable.Value = variable.Value
+		newVariable.Description = variable.Description
+		newVariable.Scope = variable.Scope
+
+		if err := appContext.database.CreateVariable(*newVariable); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(err)
+			return
+		}
+	}
+
+	w.WriteHeader(http.StatusCreated)
+
+}
+
 
 func (appContext *appContext) addEnvironments(w http.ResponseWriter, r *http.Request) {
 
@@ -92,9 +151,8 @@ func (appContext *appContext) addEnvironments(w http.ResponseWriter, r *http.Req
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
 		w.WriteHeader(422)
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(err)
 		return
 	}
 
@@ -103,10 +161,9 @@ func (appContext *appContext) addEnvironments(w http.ResponseWriter, r *http.Req
 	createEnvironmentFile(env.Name, env.Token, env.Group+"_"+env.Name,
 		env.CACertificate, env.ClusterURI, env.Namespace)
 
-	if err := appContext.database.CreateEnvironment(env); err != nil {
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+	if _, err := appContext.database.CreateEnvironment(env); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(err)
 		return
 	}
 
@@ -123,9 +180,8 @@ func (appContext *appContext) getEnvironments(w http.ResponseWriter, r *http.Req
 	var err error
 	if envResult.Envs, err = appContext.database.GetAllEnvironments(); err != nil {
 		if err := json.NewEncoder(w).Encode(err); err != nil {
-			if err := json.NewEncoder(w).Encode(err); err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-			}
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(err)
 			return
 		}
 	}

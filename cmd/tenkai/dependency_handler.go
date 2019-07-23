@@ -93,7 +93,13 @@ func (appContext *appContext) analyse(w http.ResponseWriter, r *http.Request) {
 
 	var analyse model.DepAnalyse
 
-	service_tenkai.Analyse(appContext.database, payload, &analyse)
+	err := service_tenkai.Analyse(appContext.database, payload, &analyse)
+	if err != nil {
+		if err := json.NewEncoder(w).Encode(err); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		return
+	}
 
 	if analyse.Links == nil {
 		analyse.Links = make([]model.DepLink, 0)

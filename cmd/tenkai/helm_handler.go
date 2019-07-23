@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/softplan/tenkai-api/util"
 	"net/http"
+
+	"github.com/softplan/tenkai-api/util"
 
 	"strings"
 
@@ -55,14 +56,11 @@ func (appContext *appContext) listHelmDeployments(w http.ResponseWriter, r *http
 func (appContext *appContext) getChartVariables(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
 	var payload model.GetChartRequest
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		w.WriteHeader(422)
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(err)
 		return
 	}
 
@@ -76,14 +74,11 @@ func (appContext *appContext) getChartVariables(w http.ResponseWriter, r *http.R
 func (appContext *appContext) multipleInstall(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
 	var payload model.MultipleInstallPayload
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		w.WriteHeader(422)
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(err)
 		return
 	}
 
@@ -92,9 +87,8 @@ func (appContext *appContext) multipleInstall(w http.ResponseWriter, r *http.Req
 	for _, element := range payload.Deployables {
 		err := appContext.simpleInstall(element.EnvironmentID, element.Chart, element.Name, out)
 		if err != nil {
-			if err := json.NewEncoder(w).Encode(err); err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-			}
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(err)
 			return
 		}
 	}
@@ -106,14 +100,11 @@ func (appContext *appContext) multipleInstall(w http.ResponseWriter, r *http.Req
 
 func (appContext *appContext) install(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
 	var payload model.InstallPayload
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		w.WriteHeader(422)
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(err)
 		return
 	}
 
@@ -122,9 +113,8 @@ func (appContext *appContext) install(w http.ResponseWriter, r *http.Request) {
 	//TODO Verify if chart exists
 	err := appContext.simpleInstall(payload.EnvironmentID, payload.Chart, payload.Name, out)
 	if err != nil {
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(err)
 		return
 	}
 
@@ -140,7 +130,11 @@ func (appContext *appContext) simpleInstall(envId int, chart string, name string
 
 	//TODO - VERIFY IF CONFIG FILE EXISTS !!! This is the cause of  u.client.ReleaseHistory fail sometimes.
 
-	variables, err := appContext.database.GetAllVariablesByEnvironmentAndScope(envId, chart)
+	searchTerm := chart
+	if strings.Index(name, "configmap") > -1 {
+		searchTerm = name
+	}
+	variables, err := appContext.database.GetAllVariablesByEnvironmentAndScope(envId, searchTerm)
 	globalVariables := appContext.getGlobalVariables(int(environment.ID))
 
 	var args []string
@@ -183,9 +177,8 @@ func replace(value string, environment model.Environment, variables []model.Vari
 func normalizeVariableName(value string) string {
 	if strings.Index(value, "istio.") > -1 || (strings.Index(value, "image.")) > -1 {
 		return value
-	} else {
-		return "app." + value
 	}
+	return "app." + value
 }
 
 func (appContext *appContext) getGlobalVariables(id int) []model.Variable {
