@@ -139,7 +139,7 @@ func (appContext *appContext) simpleInstall(envId int, chart string, name string
 
 	var args []string
 	for _, item := range variables {
-		if len(item.Name) > 0 {
+		if len(item.Name) > 0 && len(item.Value) > 0 {
 			args = append(args, normalizeVariableName(item.Name)+"="+replace(item.Value, *environment, globalVariables))
 		}
 	}
