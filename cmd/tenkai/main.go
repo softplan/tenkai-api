@@ -87,6 +87,15 @@ func startHTTPServer(appContext *appContext) {
 	r.HandleFunc("/dependencies", appContext.newDependency).Methods("POST")
 	r.HandleFunc("/dependencies/{id}", appContext.deleteDependency).Methods("DELETE")
 
+	r.HandleFunc("/solutions", appContext.listSolution).Methods("GET")
+	r.HandleFunc("/solutions", appContext.newSolution).Methods("POST")
+	r.HandleFunc("/solutions/edit", appContext.editSolution).Methods("POST")
+	r.HandleFunc("/solutions/{id}", appContext.deleteSolution).Methods("DELETE")
+
+	r.HandleFunc("/solutionCharts", appContext.listSolutionCharts).Methods("GET")
+	r.HandleFunc("/solutionCharts", appContext.newSolutionChart).Methods("POST")
+	r.HandleFunc("/solutionCharts/{id}", appContext.deleteSolutionChart).Methods("DELETE")
+
 	r.HandleFunc("/analyse", appContext.analyse).Methods("POST")
 
 	r.HandleFunc("/", appContext.rootHandler)
