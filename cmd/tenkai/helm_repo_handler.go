@@ -10,6 +10,13 @@ import (
 	"net/http"
 )
 
+
+
+func (appContext *appContext) repoUpdate(w http.ResponseWriter, r *http.Request) {
+
+	helmapi.RepoUpdate()
+}
+
 func (appContext *appContext) listRepositories(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")

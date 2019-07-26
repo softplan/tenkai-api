@@ -98,6 +98,9 @@ func startHTTPServer(appContext *appContext) {
 
 	r.HandleFunc("/analyse", appContext.analyse).Methods("POST")
 
+	r.HandleFunc("/repoUpdate", appContext.repoUpdate).Methods("GET")
+
+
 	r.HandleFunc("/", appContext.rootHandler)
 
 	log.Fatal(http.ListenAndServe(":"+port, corsMiddleware(r)))
