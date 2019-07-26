@@ -29,8 +29,6 @@ func (appContext *appContext) listCharts(w http.ResponseWriter, r *http.Request)
 		allVersions = all[0] == "true"
 	}
 
-	helmapi.RepoUpdate()
-
 	searchTerms := []string{repo}
 	searchResult := helmapi.SearchCharts(searchTerms, allVersions)
 	result := &model.ChartsResult{Charts: *searchResult}
