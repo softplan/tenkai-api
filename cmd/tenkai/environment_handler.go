@@ -22,26 +22,26 @@ func (appContext *appContext) deleteEnvironment(w http.ResponseWriter, r *http.R
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
 		log.Println("Error processing parameter id: ", err)
-		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	env, error := appContext.database.GetByID(id)
 	if error != nil {
 		log.Println("Error retrieving environment by ID: ", error)
-		w.WriteHeader(http.StatusNotFound)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	if err := appContext.database.DeleteEnvironment(*env); err != nil {
 		log.Println("Error deleting environment: ", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	if err := removeEnvironmentFile(env.Group + "_" + env.Name); err != nil {
 		log.Println("Error deleting environment file: ", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -53,17 +53,15 @@ func (appContext *appContext) editEnvironment(w http.ResponseWriter, r *http.Req
 	var payload model.DataElement
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	env := payload.Data
 
-	result, error := appContext.database.GetByID(int(env.ID))
-	if error != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(error)
+	result, err := appContext.database.GetByID(int(env.ID))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -74,8 +72,7 @@ func (appContext *appContext) editEnvironment(w http.ResponseWriter, r *http.Req
 		env.CACertificate, env.ClusterURI, env.Namespace)
 
 	if err := appContext.database.EditEnvironment(env); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -91,19 +88,21 @@ func (appContext *appContext) duplicateEnvironments(w http.ResponseWriter, r *ht
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
 		log.Println("Error processing parameter id: ", err)
-		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	environment, error := appContext.database.GetByID(id)
-	if error != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(error)
+	environment, err := appContext.database.GetByID(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	variables, error := appContext.database.GetAllVariablesByEnvironment(id)
-
+	variables, err := appContext.database.GetAllVariablesByEnvironment(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	var env model.Environment
 	env.Namespace = environment.Namespace
@@ -119,8 +118,7 @@ func (appContext *appContext) duplicateEnvironments(w http.ResponseWriter, r *ht
 
 	var envId int
 	if envId, err = appContext.database.CreateEnvironment(env); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -134,8 +132,7 @@ func (appContext *appContext) duplicateEnvironments(w http.ResponseWriter, r *ht
 		newVariable.Scope = variable.Scope
 
 		if err := appContext.database.CreateVariable(*newVariable); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}
@@ -150,9 +147,7 @@ func (appContext *appContext) addEnvironments(w http.ResponseWriter, r *http.Req
 	var payload model.DataElement
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		w.WriteHeader(422)
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -162,8 +157,7 @@ func (appContext *appContext) addEnvironments(w http.ResponseWriter, r *http.Req
 		env.CACertificate, env.ClusterURI, env.Namespace)
 
 	if _, err := appContext.database.CreateEnvironment(env); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -179,11 +173,8 @@ func (appContext *appContext) getEnvironments(w http.ResponseWriter, r *http.Req
 
 	var err error
 	if envResult.Envs, err = appContext.database.GetAllEnvironments(); err != nil {
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(err)
-			return
-		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
