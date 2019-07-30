@@ -57,8 +57,7 @@ func (appContext *appContext) getChartVariables(w http.ResponseWriter, r *http.R
 	var payload model.GetChartRequest
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(err)
+		http.Error(w, err.Error(), 501)
 		return
 	}
 
@@ -75,8 +74,7 @@ func (appContext *appContext) multipleInstall(w http.ResponseWriter, r *http.Req
 	var payload model.MultipleInstallPayload
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(err)
+		http.Error(w, err.Error(), 501)
 		return
 	}
 
@@ -85,8 +83,7 @@ func (appContext *appContext) multipleInstall(w http.ResponseWriter, r *http.Req
 	for _, element := range payload.Deployables {
 		err := appContext.simpleInstall(element.EnvironmentID, element.Chart, element.Name, out)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(err)
+			http.Error(w, err.Error(), 501)
 			return
 		}
 	}
@@ -101,8 +98,7 @@ func (appContext *appContext) install(w http.ResponseWriter, r *http.Request) {
 	var payload model.InstallPayload
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(err)
+		http.Error(w, err.Error(), 501)
 		return
 	}
 
@@ -111,12 +107,12 @@ func (appContext *appContext) install(w http.ResponseWriter, r *http.Request) {
 	//TODO Verify if chart exists
 	err := appContext.simpleInstall(payload.EnvironmentID, payload.Chart, payload.Name, out)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(err)
+		fmt.Println(out.String())
+		http.Error(w, err.Error(), 501)
 		return
 	}
 
-	fmt.Println(out.String())
+
 	w.WriteHeader(http.StatusOK)
 
 }

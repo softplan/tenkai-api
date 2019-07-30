@@ -5,7 +5,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/dbms/model"
 	"github.com/softplan/tenkai-api/util"
-	"log"
 	"net/http"
 	"strconv"
 )
@@ -17,15 +16,12 @@ func (appContext *appContext) newSolutionChart(w http.ResponseWriter, r *http.Re
 	var payload model.SolutionChart
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		w.WriteHeader(422)
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	if err := appContext.database.CreateSolutionChart(payload); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -42,8 +38,7 @@ func (appContext *appContext) deleteSolutionChart(w http.ResponseWriter, r *http
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
 	if err := appContext.database.DeleteSolutionChart(id); err != nil {
-		log.Println("Error deleting environment: ", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -66,9 +61,7 @@ func (appContext *appContext) listSolutionCharts(w http.ResponseWriter, r *http.
 	var err error
 
 	if result.List, err = appContext.database.ListSolutionChart(id); err != nil {
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	data, _ := json.Marshal(result)

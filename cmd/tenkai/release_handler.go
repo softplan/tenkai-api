@@ -17,14 +17,12 @@ func (appContext *appContext) newRelease(w http.ResponseWriter, r *http.Request)
 	var payload model.Release
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	if err := appContext.database.CreateRelease(payload); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -42,7 +40,7 @@ func (appContext *appContext) deleteRelease(w http.ResponseWriter, r *http.Reque
 
 	if err := appContext.database.DeleteRelease(id); err != nil {
 		log.Println("Error deleting environment: ", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -61,8 +59,7 @@ func (appContext *appContext) listReleases(w http.ResponseWriter, r *http.Reques
 	releaseResult := &model.ReleaseResult{}
 	var err error
 	if releaseResult.Releases, err = appContext.database.ListRelease(chartName[0]); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 

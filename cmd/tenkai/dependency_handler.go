@@ -18,15 +18,12 @@ func (appContext *appContext) newDependency(w http.ResponseWriter, r *http.Reque
 	var payload model.Dependency
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		w.WriteHeader(422)
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		http.Error(w, err.Error(), 501)
 		return
 	}
 
 	if err := appContext.database.CreateDependency(payload); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, err.Error(), 501)
 		return
 	}
 
@@ -44,7 +41,7 @@ func (appContext *appContext) deleteDependency(w http.ResponseWriter, r *http.Re
 
 	if err := appContext.database.DeleteDependency(id); err != nil {
 		log.Println("Error deleting environment: ", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -67,9 +64,7 @@ func (appContext *appContext) listDependencies(w http.ResponseWriter, r *http.Re
 	var err error
 
 	if dependencyResult.Dependencies, err = appContext.database.ListDependencies(id); err != nil {
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	data, _ := json.Marshal(dependencyResult)
@@ -84,10 +79,7 @@ func (appContext *appContext) analyse(w http.ResponseWriter, r *http.Request) {
 
 	var payload model.DepAnalyseRequest
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		w.WriteHeader(422)
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -95,9 +87,7 @@ func (appContext *appContext) analyse(w http.ResponseWriter, r *http.Request) {
 
 	err := service_tenkai.Analyse(appContext.database, payload, &analyse)
 	if err != nil {
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
