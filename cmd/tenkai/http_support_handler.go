@@ -1,10 +1,13 @@
 package main
 
 import (
+	"fmt"
+	"github.com/dgrijalva/jwt-go"
 	"net/http"
+	"strings"
 )
 
-func corsMiddleware(next http.Handler) http.Handler {
+func commonHandler(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -14,13 +17,36 @@ func corsMiddleware(next http.Handler) http.Handler {
 		if r.Method == "OPTIONS" {
 			return
 		}
+
+		reqToken := r.Header.Get("Authorization")
+		if len(reqToken) > 0 {
+
+			splitToken := strings.Split(reqToken, "Bearer ")
+			reqToken = splitToken[1]
+
+			token, _, errx := new(jwt.Parser).ParseUnverified(reqToken, jwt.MapClaims{})
+			if errx == nil {
+
+				if claims, ok := token.Claims.(jwt.MapClaims); ok {
+					r.Header.Set("principal", fmt.Sprintf("%v", claims["email"]))
+
+					fmt.Printf("%v %v", claims["email"], claims["preferred_username"])
+				} else {
+					fmt.Println(errx)
+				}
+
+			} else {
+				fmt.Println(errx)
+			}
+
+
+		}
+
+
 		next.ServeHTTP(w, r)
 	})
 }
 
-func use(h http.HandlerFunc, middleware ...func(http.HandlerFunc) http.HandlerFunc) http.HandlerFunc {
-	for _, m := range middleware {
-		h = m(h)
-	}
-	return h
-}
+
+
+
