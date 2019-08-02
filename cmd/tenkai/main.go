@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync"
 
 	"github.com/softplan/tenkai-api/configs"
 	"github.com/softplan/tenkai-api/global"
@@ -20,6 +21,7 @@ const (
 type appContext struct {
 	configuration *configs.Configuration
 	database      dbms.Database
+	mutex         sync.Mutex
 }
 
 func main() {
@@ -44,11 +46,15 @@ func main() {
 	appContext.database.Connect(dbmsUri)
 	defer appContext.database.Db.Close()
 
+
+
 	global.Logger.Info(logFields, "iniciando o servidor http")
 	startHTTPServer(appContext)
 }
 
 func startHTTPServer(appContext *appContext) {
+
+	//===
 
 	port := appContext.configuration.Server.Port
 	global.Logger.Info(global.AppFields{global.FUNCTION: "startHTTPServer", "port": port}, "online - listen and server")
@@ -100,9 +106,8 @@ func startHTTPServer(appContext *appContext) {
 
 	r.HandleFunc("/repoUpdate", appContext.repoUpdate).Methods("GET")
 
-
 	r.HandleFunc("/", appContext.rootHandler)
 
-	log.Fatal(http.ListenAndServe(":"+port, corsMiddleware(r)))
+	log.Fatal(http.ListenAndServe(":"+port, commonHandler(r)))
 
 }

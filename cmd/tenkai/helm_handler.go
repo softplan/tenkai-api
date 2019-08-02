@@ -4,9 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"net/http"
-
 	"github.com/softplan/tenkai-api/util"
+	"net/http"
 
 	"strings"
 
@@ -61,7 +60,9 @@ func (appContext *appContext) getChartVariables(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	appContext.mutex.Lock()
 	result, _ := helmapi.GetValues(payload.ChartName, payload.ChartVersion)
+	appContext.mutex.Unlock()
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(result)

@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/global"
 	"github.com/softplan/tenkai-api/util"
@@ -166,6 +167,10 @@ func (appContext *appContext) addEnvironments(w http.ResponseWriter, r *http.Req
 }
 
 func (appContext *appContext) getEnvironments(w http.ResponseWriter, r *http.Request) {
+
+	principal := r.Header.Get("principal")
+	fmt.Println(principal)
+
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
