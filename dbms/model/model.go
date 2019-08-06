@@ -14,6 +14,17 @@ type Environment struct {
 	Gateway       string `json:"gateway"`
 }
 
+type User struct {
+	gorm.Model
+	Email                string        `json:"email"`
+	DefaultEnvironmentID int           `json:"defaultEnvironmentID"`
+	Environments         []Environment `gorm:"many2many:user_environment;"`
+}
+
+type UserResult struct {
+	Users []User `json:"users"`
+}
+
 //EnvResult Model
 type EnvResult struct {
 	Envs []Environment

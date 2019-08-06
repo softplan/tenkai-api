@@ -3,8 +3,9 @@ package main
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"github.com/gorilla/mux"
+	"github.com/softplan/tenkai-api/dbms/model"
 	"github.com/softplan/tenkai-api/global"
 	"github.com/softplan/tenkai-api/util"
 	"log"
@@ -12,8 +13,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-
-	"github.com/softplan/tenkai-api/dbms/model"
 )
 
 func (appContext *appContext) deleteEnvironment(w http.ResponseWriter, r *http.Request) {
@@ -168,16 +167,16 @@ func (appContext *appContext) addEnvironments(w http.ResponseWriter, r *http.Req
 
 func (appContext *appContext) getEnvironments(w http.ResponseWriter, r *http.Request) {
 
-	principal := r.Header.Get("principal")
-	fmt.Println(principal)
-
+	var principal model.Principal
+	principalString := r.Header.Get("principal")
+	json.Unmarshal([]byte(principalString), &principal)
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
 	envResult := &model.EnvResult{}
 
 	var err error
-	if envResult.Envs, err = appContext.database.GetAllEnvironments(); err != nil {
+	if envResult.Envs, err = appContext.database.GetAllEnvironments(principal.Email); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -185,6 +184,51 @@ func (appContext *appContext) getEnvironments(w http.ResponseWriter, r *http.Req
 	w.WriteHeader(http.StatusOK)
 	data, _ := json.Marshal(envResult)
 	w.Write(data)
+
+}
+
+func contains(slice []string, item string) bool {
+	set := make(map[string]struct{}, len(slice))
+	for _, s := range slice {
+		set[s] = struct{}{}
+	}
+
+	_, ok := set[item]
+	return ok
+}
+
+
+
+func (appContext *appContext) getAllEnvironments(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+
+	var principal model.Principal
+	principalString := r.Header.Get("principal")
+	json.Unmarshal([]byte(principalString), &principal)
+
+
+	if contains(principal.Roles, "tenkai-admin") {
+
+		envResult := &model.EnvResult{}
+
+		var err error
+		if envResult.Envs, err = appContext.database.GetAllEnvironments(""); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		data, _ := json.Marshal(envResult)
+		w.Write(data)
+
+
+	} else {
+		http.Error(w,  errors.New("You should be admin").Error(), http.StatusUnauthorized)
+	}
+
+
+
 
 }
 

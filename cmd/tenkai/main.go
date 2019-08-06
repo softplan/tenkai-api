@@ -79,6 +79,8 @@ func startHTTPServer(appContext *appContext) {
 	r.HandleFunc("/environments/edit", appContext.editEnvironment).Methods("POST")
 	r.HandleFunc("/environments", appContext.addEnvironments).Methods("POST")
 	r.HandleFunc("/environments", appContext.getEnvironments).Methods("GET")
+	r.HandleFunc("/environments/all", appContext.getAllEnvironments).Methods("GET")
+
 	r.HandleFunc("/environments/duplicate/{id}", appContext.duplicateEnvironments).Methods("GET")
 
 	r.HandleFunc("/repositories", appContext.listRepositories).Methods("GET")
@@ -105,6 +107,13 @@ func startHTTPServer(appContext *appContext) {
 	r.HandleFunc("/analyse", appContext.analyse).Methods("POST")
 
 	r.HandleFunc("/repoUpdate", appContext.repoUpdate).Methods("GET")
+
+	r.HandleFunc("/users/createOrUpdate", appContext.createOrUpdateUser).Methods("POST")
+
+	r.HandleFunc("/users", appContext.newUser).Methods("POST")
+	r.HandleFunc("/users", appContext.listUsers).Methods("GET")
+
+	r.HandleFunc("/permissions/users/{userId}/environments/{environmentId}", appContext.newEnvironmentPermission).Methods("GET")
 
 	r.HandleFunc("/", appContext.rootHandler)
 

@@ -1,6 +1,8 @@
 package util
 
-import "strings"
+import (
+	"strings"
+)
 
 //GetReplacebleKeyName - Retrieve variable names
 func GetReplacebleKeyName(value string) []string {
@@ -27,3 +29,7 @@ func getVariableValue(value string, start int, end int) string {
 	}
 	return ""
 }
+
+
+
+

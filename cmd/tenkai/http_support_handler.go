@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/softplan/tenkai-api/dbms/model"
 	"net/http"
 	"strings"
 )
@@ -28,7 +30,24 @@ func commonHandler(next http.Handler) http.Handler {
 			if errx == nil {
 
 				if claims, ok := token.Claims.(jwt.MapClaims); ok {
-					r.Header.Set("principal", fmt.Sprintf("%v", claims["email"]))
+
+					var principal model.Principal
+
+					in := claims["realm_access"]
+
+					realmAccessMap := in.(map[string]interface{})
+					roles := realmAccessMap["roles"]
+					elements := roles.([]interface{})
+
+					for _, element := range elements {
+						principal.Roles = append(principal.Roles, element.(string))
+					}
+
+					principal.Name = fmt.Sprintf("%v", claims["name"])
+					principal.Email = fmt.Sprintf("%v", claims["email"])
+
+					data, _ := json.Marshal(principal)
+					r.Header.Set("principal", string(data))
 
 					fmt.Printf("%v %v", claims["email"], claims["preferred_username"])
 				} else {
