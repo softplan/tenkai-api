@@ -12,6 +12,26 @@ func (database *Database) CreateUser(user model.User) error {
 	return nil
 }
 
+func (database *Database) DeleteUser(id int) error {
+
+	var user model.User
+
+	if err := database.Db.First(&user, id).Error; err != nil {
+		return err
+	}
+
+	//Remove all associations
+	if err := database.Db.Model(&user).Association("Environments").Clear().Error; err != nil {
+		return err
+	}
+
+	if err := database.Db.Unscoped().Delete(&user).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (database *Database) AssociateEnvironmentUser(userId int, environmentId int) error {
 	var user model.User
 	var environment model.Environment
@@ -71,12 +91,16 @@ func (database *Database) CreateOrUpdateUser(user model.User) error {
 
 	} else {
 		//Create User
+		envsToAssociate := user.Environments
+
+		user.Environments = nil
+
 		if err := database.Db.Create(&user).Error; err != nil {
 			return err
 		}
 
 		//Associate Envs
-		for _, element := range user.Environments {
+		for _, element := range envsToAssociate {
 			var environment model.Environment
 			if err := database.Db.First(&environment, element.ID).Error; err != nil {
 				return err

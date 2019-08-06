@@ -2,13 +2,24 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/softplan/tenkai-api/util"
 	"net/http"
 
 	"github.com/softplan/tenkai-api/dbms/model"
 )
 
+
+
 func (appContext *appContext) saveVariableValues(w http.ResponseWriter, r *http.Request) {
+
+	principal := util.GetPrincipal(r)
+	if !contains(principal.Roles, TenkaiVariablesSave) {
+		http.Error(w,  errors.New("Access Denied").Error(), http.StatusUnauthorized)
+		return
+	}
+
+
 
 	var payload model.VariableData
 

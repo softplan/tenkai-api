@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/softplan/tenkai-api/util"
 	"log"
 	"net/http"
@@ -11,7 +12,17 @@ import (
 	"github.com/softplan/tenkai-api/dbms/model"
 )
 
+
+
+
 func (appContext *appContext) deleteVariable(w http.ResponseWriter, r *http.Request) {
+
+	principal := util.GetPrincipal(r)
+	if !contains(principal.Roles, TenkaiVariablesDelete) {
+		http.Error(w,  errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
+	}
+
+
 	vars := mux.Vars(r)
 	sl := vars["id"]
 	id, _ := strconv.Atoi(sl)
@@ -25,6 +36,12 @@ func (appContext *appContext) deleteVariable(w http.ResponseWriter, r *http.Requ
 }
 
 func (appContext *appContext) editVariable(w http.ResponseWriter, r *http.Request) {
+
+	principal := util.GetPrincipal(r)
+	if !contains(principal.Roles, TenkaiVariablesSave) {
+		http.Error(w,  errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
+	}
+
 
 	var payload model.DataVariableElement
 
@@ -43,6 +60,12 @@ func (appContext *appContext) editVariable(w http.ResponseWriter, r *http.Reques
 }
 
 func (appContext *appContext) addVariables(w http.ResponseWriter, r *http.Request) {
+
+	principal := util.GetPrincipal(r)
+	if !contains(principal.Roles, TenkaiVariablesSave) {
+		http.Error(w,  errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
+	}
+
 
 	var payload model.DataVariableElement
 
