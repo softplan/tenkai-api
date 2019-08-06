@@ -2,6 +2,7 @@ package util
 
 import (
 	"encoding/json"
+	"github.com/softplan/tenkai-api/dbms/model"
 	"io"
 	"io/ioutil"
 	"log"
@@ -30,4 +31,11 @@ func UnmarshalPayload(r *http.Request, payload interface{}) error {
 		return error
 	}
 	return nil
+}
+
+func GetPrincipal(r *http.Request) model.Principal {
+	var principal model.Principal
+	principalString := r.Header.Get("principal")
+	json.Unmarshal([]byte(principalString), &principal)
+	return principal
 }

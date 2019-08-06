@@ -15,7 +15,15 @@ import (
 	"strings"
 )
 
+
+
 func (appContext *appContext) deleteEnvironment(w http.ResponseWriter, r *http.Request) {
+
+	principal := util.GetPrincipal(r)
+	if !contains(principal.Roles, TenkaiAdmin) {
+		http.Error(w,  errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
+	}
+
 	vars := mux.Vars(r)
 	log.Println("Deleting environment: ", vars["id"])
 
@@ -50,6 +58,13 @@ func (appContext *appContext) deleteEnvironment(w http.ResponseWriter, r *http.R
 
 func (appContext *appContext) editEnvironment(w http.ResponseWriter, r *http.Request) {
 
+
+	principal := util.GetPrincipal(r)
+	if !contains(principal.Roles, TenkaiAdmin) {
+		http.Error(w,  errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
+	}
+
+
 	var payload model.DataElement
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
@@ -81,6 +96,12 @@ func (appContext *appContext) editEnvironment(w http.ResponseWriter, r *http.Req
 
 
 func (appContext *appContext) duplicateEnvironments(w http.ResponseWriter, r *http.Request) {
+
+	principal := util.GetPrincipal(r)
+	if !contains(principal.Roles, TenkaiAdmin) {
+		http.Error(w,  errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
+	}
+
 
 	vars := mux.Vars(r)
 	log.Println("Duplicating environment: ", vars["id"])
@@ -144,6 +165,12 @@ func (appContext *appContext) duplicateEnvironments(w http.ResponseWriter, r *ht
 
 func (appContext *appContext) addEnvironments(w http.ResponseWriter, r *http.Request) {
 
+	principal := util.GetPrincipal(r)
+	if !contains(principal.Roles, TenkaiAdmin) {
+		http.Error(w,  errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
+	}
+
+
 	var payload model.DataElement
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
@@ -167,9 +194,7 @@ func (appContext *appContext) addEnvironments(w http.ResponseWriter, r *http.Req
 
 func (appContext *appContext) getEnvironments(w http.ResponseWriter, r *http.Request) {
 
-	var principal model.Principal
-	principalString := r.Header.Get("principal")
-	json.Unmarshal([]byte(principalString), &principal)
+	principal := util.GetPrincipal(r)
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
@@ -203,30 +228,23 @@ func (appContext *appContext) getAllEnvironments(w http.ResponseWriter, r *http.
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
-	var principal model.Principal
-	principalString := r.Header.Get("principal")
-	json.Unmarshal([]byte(principalString), &principal)
+	principal := util.GetPrincipal(r)
 
-
-	if contains(principal.Roles, "tenkai-admin") {
-
-		envResult := &model.EnvResult{}
-
-		var err error
-		if envResult.Envs, err = appContext.database.GetAllEnvironments(""); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-		data, _ := json.Marshal(envResult)
-		w.Write(data)
-
-
-	} else {
-		http.Error(w,  errors.New("You should be admin").Error(), http.StatusUnauthorized)
+	if !contains(principal.Roles, TenkaiAdmin) {
+		http.Error(w,  errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
 	}
 
+	envResult := &model.EnvResult{}
+
+	var err error
+	if envResult.Envs, err = appContext.database.GetAllEnvironments(""); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	data, _ := json.Marshal(envResult)
+	w.Write(data)
 
 
 

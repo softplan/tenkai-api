@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/dbms/model"
 	helmapi "github.com/softplan/tenkai-api/service/helm"
@@ -36,6 +37,13 @@ func (appContext *appContext) listRepositories(w http.ResponseWriter, r *http.Re
 
 func (appContext *appContext) newRepository(w http.ResponseWriter, r *http.Request) {
 
+
+	principal := util.GetPrincipal(r)
+	if !contains(principal.Roles, TenkaiAdmin) {
+		http.Error(w,  errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
+	}
+
+
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
 	var payload model.Repository
@@ -54,6 +62,13 @@ func (appContext *appContext) newRepository(w http.ResponseWriter, r *http.Reque
 }
 
 func (appContext *appContext) deleteRepository(w http.ResponseWriter, r *http.Request) {
+
+	principal := util.GetPrincipal(r)
+	if !contains(principal.Roles, TenkaiAdmin) {
+		http.Error(w,  errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
+	}
+
+
 	vars := mux.Vars(r)
 	name := vars["name"]
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")

@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/softplan/tenkai-api/util"
 	"net/http"
@@ -14,6 +15,8 @@ import (
 	"github.com/softplan/tenkai-api/global"
 	"github.com/softplan/tenkai-api/service/helm"
 )
+
+
 
 func (appContext *appContext) listCharts(w http.ResponseWriter, r *http.Request) {
 
@@ -71,6 +74,13 @@ func (appContext *appContext) getChartVariables(w http.ResponseWriter, r *http.R
 
 func (appContext *appContext) multipleInstall(w http.ResponseWriter, r *http.Request) {
 
+
+	principal := util.GetPrincipal(r)
+	if !contains(principal.Roles, TenkaiHelmUpgrade) {
+		http.Error(w,  errors.New("Access Denied").Error(), http.StatusUnauthorized)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	var payload model.MultipleInstallPayload
 
@@ -95,6 +105,15 @@ func (appContext *appContext) multipleInstall(w http.ResponseWriter, r *http.Req
 }
 
 func (appContext *appContext) install(w http.ResponseWriter, r *http.Request) {
+
+
+	principal := util.GetPrincipal(r)
+	if !contains(principal.Roles, TenkaiHelmUpgrade) {
+		http.Error(w,  errors.New("Access Denied").Error(), http.StatusUnauthorized)
+		return
+	}
+
+
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	var payload model.InstallPayload
 
