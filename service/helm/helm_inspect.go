@@ -36,6 +36,8 @@ type inspectCmd struct {
 //GetValues Method
 func GetValues(chartName string, version string) ([]byte, error) {
 
+	logFields := global.AppFields{global.FUNCTION: "GetValues"}
+
 	insp := &inspectCmd{
 		out: os.Stdout,
 	}
@@ -46,16 +48,22 @@ func GetValues(chartName string, version string) ([]byte, error) {
 
 	settings.Home = global.HELM_DIR
 
+	global.Logger.Info(logFields, "insp.prepare()")
 	if err := insp.prepare(chartName); err != nil {
 		return nil, err
 	}
 
-	values, _ := insp.run()
+	global.Logger.Info(logFields, "before insp.run()")
+	values, err := insp.run()
+	if err != nil {
+		global.Logger.Error(logFields, err.Error())
+		return nil, err
+	}
 
 	j2, err := yaml.YAMLToJSON([]byte(values.Raw))
 
 	if err != nil {
-		fmt.Printf("err: %v\n", err)
+		global.Logger.Error(logFields, err.Error())
 		return nil, err
 	}
 
@@ -87,6 +95,9 @@ func (i *inspectCmd) run() (*chart.Config, error) {
 
 func locateChartPath(repoURL, username, password, name, version string, verify bool, keyring,
 	certFile, keyFile, caFile string) (string, error) {
+
+	logFields := global.AppFields{global.FUNCTION: "locateChartPath"}
+
 	name = strings.TrimSpace(name)
 	version = strings.TrimSpace(version)
 	if fi, err := os.Stat(name); err == nil {
@@ -125,9 +136,13 @@ func locateChartPath(repoURL, username, password, name, version string, verify b
 		dl.Verify = downloader.VerifyAlways
 	}
 	if repoURL != "" {
+
+		global.Logger.Info(global.AppFields{global.FUNCTION: "locateChartPath", "repoURL": repoURL}, "before FindChartInAuthRepoURL")
+
 		chartURL, err := repo.FindChartInAuthRepoURL(repoURL, username, password, name, version,
 			certFile, keyFile, caFile, getter.All(settings))
 		if err != nil {
+			global.Logger.Error(logFields, err.Error())
 			return "", err
 		}
 		name = chartURL
@@ -137,10 +152,12 @@ func locateChartPath(repoURL, username, password, name, version string, verify b
 		os.MkdirAll(settings.Home.Archive(), 0744)
 	}
 
+	global.Logger.Info(global.AppFields{global.FUNCTION: "locateChartPath", "name": name, "version": version}, "before DownloadTo")
 	filename, _, err := dl.DownloadTo(name, version, settings.Home.Archive())
 	if err == nil {
 		lname, err := filepath.Abs(filename)
 		if err != nil {
+			global.Logger.Error(global.AppFields{global.FUNCTION: "locateChartPath", "lname": lname, "err": err.Error()}, "Error download")
 			return filename, err
 		}
 		return lname, nil
@@ -148,5 +165,6 @@ func locateChartPath(repoURL, username, password, name, version string, verify b
 		return filename, err
 	}
 
+	global.Logger.Error(global.AppFields{global.FUNCTION: "locateChartPath", "filename": filename, "err": err.Error()}, "Before final return")
 	return filename, fmt.Errorf("failed to download %q (hint: running `helm repo update` may help)", name)
 }
