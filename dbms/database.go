@@ -29,6 +29,6 @@ func (database *Database) Connect(dbmsUri string) {
 	database.Db.AutoMigrate(&model.Solution{})
 	database.Db.AutoMigrate(&model.SolutionChart{}) //.AddForeignKey("solution_id", "solution(id)", "CASCADE", "RESTRICT")
 	database.Db.AutoMigrate(&model.User{})
-
+	database.Db.AutoMigrate(&model.ConfigMap{})
 
 }

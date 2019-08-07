@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -167,7 +168,7 @@ func (appContext *appContext) addEnvironments(w http.ResponseWriter, r *http.Req
 
 	principal := util.GetPrincipal(r)
 	if !contains(principal.Roles, TenkaiAdmin) {
-		http.Error(w,  errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
+		http.Error(w,  errors.New("Acccess Denied").Error(), http.StatusUnauthorized)
 	}
 
 
@@ -200,6 +201,11 @@ func (appContext *appContext) getEnvironments(w http.ResponseWriter, r *http.Req
 
 	envResult := &model.EnvResult{}
 
+	if len(principal.Email) <= 0 {
+		http.Error(w, errors.New("Acccess Denied").Error(), http.StatusInternalServerError)
+		return
+	}
+
 	var err error
 	if envResult.Envs, err = appContext.database.GetAllEnvironments(principal.Email); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -222,6 +228,38 @@ func contains(slice []string, item string) bool {
 	return ok
 }
 
+
+func (appContext *appContext) export(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "text/plain; charset=UTF-8")
+	w.Header().Set("Content-Disposition", "attachment; filename=environment.txt")
+
+	vars := mux.Vars(r)
+	log.Println("Deleting environment: ", vars["id"])
+
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		log.Println("Error processing parameter id: ", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var variables []model.Variable
+	if variables, err = appContext.database.GetAllVariablesByEnvironment(id); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	ibid := bytes.NewBufferString("\n")
+
+	for _, element := range variables {
+		ibid.WriteString(element.Scope + " " + element.Name + "=" + element.Value + "\n")
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(ibid.Bytes())
+
+}
 
 
 func (appContext *appContext) getAllEnvironments(w http.ResponseWriter, r *http.Request) {
