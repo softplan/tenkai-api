@@ -10,3 +10,7 @@ type Repository struct {
 type RepositoryResult struct {
 	Repositories []Repository `json:"repositories"`
 }
+
+type DefaultRepoRequest struct {
+	Reponame string `json:"reponame"`
+}

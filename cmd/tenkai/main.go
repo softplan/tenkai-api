@@ -80,6 +80,8 @@ func startHTTPServer(appContext *appContext) {
 	r.HandleFunc("/environments", appContext.addEnvironments).Methods("POST")
 	r.HandleFunc("/environments", appContext.getEnvironments).Methods("GET")
 	r.HandleFunc("/environments/all", appContext.getAllEnvironments).Methods("GET")
+	r.HandleFunc("/environments/export/{id}", appContext.export).Methods("GET")
+
 
 	r.HandleFunc("/environments/duplicate/{id}", appContext.duplicateEnvironments).Methods("GET")
 
@@ -107,6 +109,9 @@ func startHTTPServer(appContext *appContext) {
 	r.HandleFunc("/analyse", appContext.analyse).Methods("POST")
 
 	r.HandleFunc("/repoUpdate", appContext.repoUpdate).Methods("GET")
+
+	r.HandleFunc("/repo/default", appContext.setDefaultRepo).Methods("POST")
+	r.HandleFunc("/repo/default", appContext.getDefaultRepo).Methods("GET")
 
 	r.HandleFunc("/users/createOrUpdate", appContext.createOrUpdateUser).Methods("POST")
 
