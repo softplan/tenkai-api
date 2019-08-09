@@ -53,6 +53,37 @@ func (appContext *appContext) listHelmDeployments(w http.ResponseWriter, r *http
 
 }
 
+
+func (appContext *appContext) hasConfigMap(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+
+	var payload model.GetChartRequest
+
+	if err := util.UnmarshalPayload(r, &payload); err != nil {
+		http.Error(w, err.Error(), 501)
+		return
+	}
+
+	appContext.mutex.Lock()
+	result, _ := helmapi.GetDeployment(payload.ChartName, payload.ChartVersion)
+	appContext.mutex.Unlock()
+
+	deployment := string(result)
+
+	if strings.Index(deployment, "global-configmap") > 0 {
+		w.Write([]byte("{\"result\":\"true\"}"))
+	} else {
+		w.Write([]byte("{\"result\":\"false\"}"))
+
+	}
+
+
+	w.WriteHeader(http.StatusOK)
+
+
+}
+
 func (appContext *appContext) getChartVariables(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -189,7 +220,7 @@ func replace(value string, environment model.Environment, variables []model.Vari
 }
 
 func normalizeVariableName(value string) string {
-	if strings.Index(value, "istio.") > -1 || (strings.Index(value, "image.")) > -1 {
+	if strings.Index(value, "istio.") > -1 || (strings.Index(value, "image.")) > -1 || (strings.Index(value, "service.")) > -1  {
 		return value
 	}
 	return "app." + value

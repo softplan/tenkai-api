@@ -33,6 +33,39 @@ type inspectCmd struct {
 	caFile   string
 }
 
+
+func GetDeployment(chartName string, version string) ([]byte, error) {
+
+	logFields := global.AppFields{global.FUNCTION: "GetValues"}
+
+	insp := &inspectCmd{
+		out: os.Stdout,
+	}
+
+	if len(version) > 0 {
+		insp.version = version
+	}
+
+	settings.Home = global.HELM_DIR
+
+	global.Logger.Info(logFields, "insp.prepare()")
+	if err := insp.prepare(chartName); err != nil {
+		return nil, err
+	}
+
+	global.Logger.Info(logFields, "before insp.run()")
+	values, err := insp.runGetDeployment()
+	if err != nil {
+		global.Logger.Error(logFields, err.Error())
+		return nil, err
+	}
+
+	return values.Data, nil
+
+}
+
+
+
 //GetValues Method
 func GetValues(chartName string, version string) ([]byte, error) {
 
@@ -83,6 +116,22 @@ func (i *inspectCmd) prepare(chart string) error {
 	}
 	i.chartpath = cp
 	return nil
+}
+
+func (i *inspectCmd) runGetDeployment() (*chart.Template, error) {
+	var result *chart.Template
+	chrt, err := chartutil.Load(i.chartpath)
+	if err != nil {
+		return nil, err
+	}
+	for _, e := range chrt.Templates {
+		if e.Name == "templates/deployment.yaml" {
+			result = e
+			break
+		}
+	}
+
+	return result, nil
 }
 
 func (i *inspectCmd) run() (*chart.Config, error) {
