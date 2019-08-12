@@ -27,10 +27,11 @@ check-git-status:
 
 #Build the binary
 build: pre-build
+	@echo "Building tenkai-api"
 	GOOS_VAL=$(shell go env GOOS) GOARCH_VAL=$(shell go env GOARCH) go build -a -installsuffix cgo -o ./build/tenkai-api cmd/tenkai/*.go
 
 #Build the image
-container-image: pre-build 
+container-image: build 
 	@echo "Building docker image"
 	@docker build --build-arg GOOS_VAL=$(shell go env GOOS) --build-arg GOARCH_VAL=$(shell go env GOARCH) -t $(IMAGE_REPO) -f Dockerfile --no-cache .
 	@echo "Docker image build successfully"
