@@ -9,3 +9,4 @@ config/*
 .idea/*
 .vscode/*
 
+vendor/k8s.io/helm/pkg/getter/httpgetter.go
