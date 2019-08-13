@@ -13,6 +13,11 @@ branches:
 services:
   - docker
 
+before_script:
+  - srccheck/verify-gofmt.sh
+  - srccheck/verify-govet.sh
+  - srccheck/verify-golint.sh
+
 script:
   - make build
   - make test
