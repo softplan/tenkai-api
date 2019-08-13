@@ -1,5 +1,5 @@
 IMAGE_REPO=softplan/tenkai-api
-TAG=$(shell cut -d'=' -f2- .release)
+TAG=$(TRAVIS_BRANCH)
 
 .DEFAULT_GOAL := build
 .PHONY: release git-tag check-git-status build container-image pre-build tag-image publish
@@ -31,7 +31,7 @@ build: pre-build
 	GOOS_VAL=$(shell go env GOOS) GOARCH_VAL=$(shell go env GOARCH) go build -a -installsuffix cgo -o ./build/tenkai-api cmd/tenkai/*.go
 
 #Build the image
-container-image: build 
+container-image:
 	@echo "Building docker image"
 	@docker build --build-arg GOOS_VAL=$(shell go env GOOS) --build-arg GOARCH_VAL=$(shell go env GOARCH) -t $(IMAGE_REPO) -f Dockerfile --no-cache .
 	@echo "Docker image build successfully"
