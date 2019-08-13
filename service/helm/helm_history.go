@@ -35,7 +35,7 @@ type historyCmd struct {
 	outputFormat string
 }
 
-//IsThereAnyPodWithThisVersion
+//IsThereAnyPodWithThisVersion - Verify if is there a pod with a specific version deployed
 func IsThereAnyPodWithThisVersion(kubeconfig string, namespace string, releaseName string, tag string) (bool, error) {
 
 	_, client, err := getKubeClient(settings.KubeContext, kubeconfig)
@@ -46,18 +46,19 @@ func IsThereAnyPodWithThisVersion(kubeconfig string, namespace string, releaseNa
 	deployment, error := client.AppsV1().Deployments(namespace).Get(releaseName, metav1.GetOptions{})
 	if error != nil {
 		return false, error
-	} else {
-		image := deployment.Spec.Template.Spec.Containers[0].Image
-		containerTag := image[strings.Index(image, ":")+1:]
-		if containerTag != tag {
-			return false, nil
-		}
 	}
+
+	image := deployment.Spec.Template.Spec.Containers[0].Image
+	containerTag := image[strings.Index(image, ":")+1:]
+	if containerTag != tag {
+		return false, nil
+	}
+
 	return true, nil
 
 }
 
-//GetReleaseHistory
+//GetReleaseHistory - Retrieve Release History
 func GetReleaseHistory(kubeconfig string, releaseName string) (bool, error) {
 	settings.KubeConfig = kubeconfig
 	settings.Home = global.HELM_DIR

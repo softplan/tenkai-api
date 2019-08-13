@@ -161,10 +161,10 @@ func (appContext *appContext) install(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (appContext *appContext) simpleInstall(envId int, chart string, name string, out *bytes.Buffer) error {
+func (appContext *appContext) simpleInstall(envID int, chart string, name string, out *bytes.Buffer) error {
 
 	//Locate Environment
-	environment, err := appContext.database.GetByID(envId)
+	environment, err := appContext.database.GetByID(envID)
 
 	//TODO - VERIFY IF CONFIG FILE EXISTS !!! This is the cause of  u.client.ReleaseHistory fail sometimes.
 
@@ -172,7 +172,7 @@ func (appContext *appContext) simpleInstall(envId int, chart string, name string
 	if strings.Index(name, "configmap") > -1 {
 		searchTerm = name
 	}
-	variables, err := appContext.database.GetAllVariablesByEnvironmentAndScope(envId, searchTerm)
+	variables, err := appContext.database.GetAllVariablesByEnvironmentAndScope(envID, searchTerm)
 	globalVariables := appContext.getGlobalVariables(int(environment.ID))
 
 	var args []string
@@ -185,9 +185,8 @@ func (appContext *appContext) simpleInstall(envId int, chart string, name string
 	if len(environment.Gateway) > 0 {
 		args = append(args, "istio.virtualservices.gateways[0]="+environment.Gateway)
 	}
-	if err != nil {
-		return err
-	} else {
+
+	if err == nil {
 		name := name + "-" + environment.Namespace
 		kubeConfig := global.KUBECONFIG_BASE_PATH + environment.Group + "_" + environment.Name
 		err := helmapi.Upgrade(kubeConfig, name, chart, environment.Namespace, args, out)
@@ -195,6 +194,7 @@ func (appContext *appContext) simpleInstall(envId int, chart string, name string
 			return err
 		}
 	}
+
 	return nil
 }
 

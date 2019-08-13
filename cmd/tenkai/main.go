@@ -40,10 +40,10 @@ func main() {
 
 	appContext := &appContext{configuration: config}
 
-	dbmsUri := config.App.Dbms.Uri
+	dbmsURI := config.App.Dbms.Uri
 
 	//Conecta no postgres
-	appContext.database.Connect(dbmsUri)
+	appContext.database.Connect(dbmsURI)
 	defer appContext.database.Db.Close()
 
 	global.Logger.Info(logFields, "iniciando o servidor http")

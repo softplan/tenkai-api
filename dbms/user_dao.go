@@ -5,6 +5,7 @@ import (
 	"github.com/softplan/tenkai-api/dbms/model"
 )
 
+//CreateUser - Creates a new user
 func (database *Database) CreateUser(user model.User) error {
 	if err := database.Db.Create(&user).Error; err != nil {
 		return err
@@ -12,6 +13,7 @@ func (database *Database) CreateUser(user model.User) error {
 	return nil
 }
 
+//DeleteUser - Delete user
 func (database *Database) DeleteUser(id int) error {
 
 	var user model.User
@@ -32,11 +34,12 @@ func (database *Database) DeleteUser(id int) error {
 	return nil
 }
 
-func (database *Database) AssociateEnvironmentUser(userId int, environmentId int) error {
+//AssociateEnvironmentUser - Associate an environment with a user
+func (database *Database) AssociateEnvironmentUser(userID int, environmentId int) error {
 	var user model.User
 	var environment model.Environment
 
-	if err := database.Db.First(&user, userId).Error; err != nil {
+	if err := database.Db.First(&user, userID).Error; err != nil {
 		return err
 	}
 
@@ -50,6 +53,7 @@ func (database *Database) AssociateEnvironmentUser(userId int, environmentId int
 	return nil
 }
 
+//ListAllUsers - List all users
 func (database *Database) ListAllUsers() ([]model.User, error) {
 	users := make([]model.User, 0)
 	if err := database.Db.Preload("Environments").Find(&users).Error; err != nil {
@@ -58,6 +62,7 @@ func (database *Database) ListAllUsers() ([]model.User, error) {
 	return users, nil
 }
 
+//CreateOrUpdateUser - Create or update a user
 func (database *Database) CreateOrUpdateUser(user model.User) error {
 
 	var loadUser model.User

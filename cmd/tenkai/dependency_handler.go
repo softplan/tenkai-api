@@ -53,13 +53,13 @@ func (appContext *appContext) listDependencies(w http.ResponseWriter, r *http.Re
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
-	releaseId, ok := r.URL.Query()["releaseId"]
+	releaseID, ok := r.URL.Query()["releaseId"]
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	id, _ := strconv.Atoi(releaseId[0])
+	id, _ := strconv.Atoi(releaseID[0])
 	dependencyResult := &model.DependencyResult{}
 	var err error
 

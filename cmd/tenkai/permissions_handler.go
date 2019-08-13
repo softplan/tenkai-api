@@ -18,20 +18,20 @@ func (appContext *appContext) newEnvironmentPermission(w http.ResponseWriter, r 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
 	vars := mux.Vars(r)
-	userId, err := strconv.Atoi(vars["userId"])
+	userID, err := strconv.Atoi(vars["userID"])
 
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
 	}
 
-	environmentId, err := strconv.Atoi(vars["environmentId"])
+	environmentID, err := strconv.Atoi(vars["environmentId"])
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
 	}
 
-	if err := appContext.database.AssociateEnvironmentUser(userId, environmentId); err != nil {
+	if err := appContext.database.AssociateEnvironmentUser(userID, environmentID); err != nil {
 		http.Error(w, err.Error(), 501)
 		return
 	}
