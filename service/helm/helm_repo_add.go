@@ -42,7 +42,7 @@ func AddRepository(repo model.Repository) error {
 func (a *repoAddCmd) run() error {
 
 	if a.username != "" && a.password == "" {
-		return fmt.Errorf("Password must be te for user: $q\n", a.username)
+		return fmt.Errorf("Password must be te for user: %q\n", a.username)
 	}
 
 	if err := addRepository(a.name, a.url, a.username, a.password, a.home, a.certFile, a.keyFile, a.caFile, a.noupdate); err != nil {
