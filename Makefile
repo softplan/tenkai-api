@@ -2,28 +2,7 @@ IMAGE_REPO=softplan/tenkai-api
 TAG=$(TRAVIS_BRANCH)
 
 .DEFAULT_GOAL := build
-.PHONY: release git-tag check-git-status build container-image pre-build tag-image publish
-
-#Docker Tasks
-#Make a release
-release: check-git-status container-image tag-image publish git-tag 
-	@echo "Successfully released version $(TAG)"
-
-#Create a git tag
-git-tag:
-	@echo "Creating a git tag"
-	@git add .release
-	@git commit -m "Release $(TAG)" ;
-	@git tag $(TAG) ;
-	@git push --tags origin develop;
-	@echo 'Git tag pushed successfully' ;
-
-#Check git status
-check-git-status:
-	@echo "Checking git status"
-	@if [ -n "$(shell git tag | grep $(TAG))" ] ; then echo 'ERROR: Tag already exists' && exit 1 ; fi
-	@if [ -z "$(shell git remote -v)" ] ; then echo 'ERROR: No remote to push tags to' && exit 1 ; fi
-	@if [ -z "$(shell git config user.email)" ] ; then echo 'ERROR: Unable to detect git credentials' && exit 1 ; fi
+.PHONY: build container-image pre-build tag-image publish
 
 #Build the binary
 build: pre-build
@@ -49,7 +28,7 @@ pre-build:
 
 #Tag images
 tag-image: 
-	@echo 'Tagging image'
+	@echo 'Tagging docker image'
 	@docker tag $(IMAGE_REPO) $(IMAGE_REPO):$(TAG)
 
 #Docker push image
