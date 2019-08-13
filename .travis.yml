@@ -3,7 +3,6 @@ language: go
 go:
   - "1.12"
 
-# safelist - Build only for dev, master and tags
 branches:
   only:
   - dev
@@ -12,6 +11,9 @@ branches:
 
 services:
   - docker
+
+install:
+  - go get -u golang.org/x/lint/golint
 
 before_script:
   - srccheck/verify-gofmt.sh
