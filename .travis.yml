@@ -17,10 +17,7 @@ before_script:
   - go mod verify
 
 script:
+  - make build
   - make container-image
-
-after_success:
-  - if [[ "$TRAVIS_PULL_REQUEST" == "false" ]]; then
-      docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
-      docker push softplan/tenkai-api:$TRAVIS_BRANCH;
-    fi
+  - make tag-image
+  - make publish
