@@ -1,10 +1,21 @@
 language: go
 
-go:
-  - "1.12.6"
-
+# Force-enable Go modules. Also force go to use the code in vendor/
+# These will both be unnecessary when Go 1.13 lands.
 env:
+  - GO111MODULE=on
   - GOFLAGS='-mod vendor'
+
+go:
+  - "1.12.x"
+
+# Only clone the most recent commit.
+git:
+  depth: 1
+
+# Skip the install step. Don't `go get` dependencies. Only build with the code
+# in vendor/
+install: true
 
 services:
   - docker
