@@ -62,7 +62,7 @@ func (appContext *appContext) hasConfigMap(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	result, err := helmapi.GetTemplate(appContext.mutex, payload.ChartName, payload.ChartVersion, "deployment")
+	result, err := helmapi.GetTemplate(&appContext.mutex, payload.ChartName, payload.ChartVersion, "deployment")
 
 	w.WriteHeader(http.StatusOK)
 	if err != nil {
@@ -88,7 +88,7 @@ func (appContext *appContext) getChartVariables(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	result, err := helmapi.GetTemplate(appContext.mutex, payload.ChartName, payload.ChartVersion, "values")
+	result, err := helmapi.GetTemplate(&appContext.mutex, payload.ChartName, payload.ChartVersion, "values")
 
 	if err != nil {
 		http.Error(w, err.Error(), 501)
