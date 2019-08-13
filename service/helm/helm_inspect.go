@@ -33,7 +33,7 @@ type inspectCmd struct {
 	caFile   string
 }
 
-func GetTemplate(mutex sync.Mutex, chartName string, version string, kind string) ([]byte, error) {
+func GetTemplate(mutex *sync.Mutex, chartName string, version string, kind string) ([]byte, error) {
 
 	var result []byte
 	var err error
