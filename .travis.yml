@@ -4,7 +4,6 @@ go:
   - "1.12.6"
 
 env:
-  - GO111MODULE=on
   - GOFLAGS='-mod vendor'
 
 services:
