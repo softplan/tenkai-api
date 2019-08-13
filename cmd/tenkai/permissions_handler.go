@@ -12,9 +12,8 @@ func (appContext *appContext) newEnvironmentPermission(w http.ResponseWriter, r 
 
 	principal := util.GetPrincipal(r)
 	if !contains(principal.Roles, TenkaiAdmin) {
-		http.Error(w,  errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
+		http.Error(w, errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
 	}
-
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 

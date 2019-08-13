@@ -17,9 +17,6 @@ import (
 	"sync"
 )
 
-
-
-
 type inspectCmd struct {
 	chartpath string
 	verify    bool
@@ -36,7 +33,6 @@ type inspectCmd struct {
 	caFile   string
 }
 
-
 func GetTemplate(mutex sync.Mutex, chartName string, version string, kind string) ([]byte, error) {
 
 	var result []byte
@@ -44,7 +40,7 @@ func GetTemplate(mutex sync.Mutex, chartName string, version string, kind string
 	mutex.Lock()
 	if kind == "values" {
 		result, err = GetValues(chartName, version)
-	}  else {
+	} else {
 		if kind == "deployment" {
 			result, err = GetDeployment(chartName, version)
 		}
@@ -78,15 +74,13 @@ func GetDeployment(chartName string, version string) ([]byte, error) {
 		global.Logger.Error(logFields, err.Error())
 		return nil, err
 	}
-	var result [] byte
+	var result []byte
 	if values != nil {
 		result = values.Data
 	}
 	return result, nil
 
 }
-
-
 
 //GetValues Method
 func GetValues(chartName string, version string) ([]byte, error) {

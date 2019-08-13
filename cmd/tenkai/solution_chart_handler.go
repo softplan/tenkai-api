@@ -69,4 +69,3 @@ func (appContext *appContext) listSolutionCharts(w http.ResponseWriter, r *http.
 	w.Write(data)
 
 }
-

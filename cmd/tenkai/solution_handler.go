@@ -46,7 +46,6 @@ func (appContext *appContext) editSolution(w http.ResponseWriter, r *http.Reques
 	w.WriteHeader(http.StatusOK)
 }
 
-
 func (appContext *appContext) deleteSolution(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
@@ -76,4 +75,3 @@ func (appContext *appContext) listSolution(w http.ResponseWriter, r *http.Reques
 	w.Write(data)
 
 }
-

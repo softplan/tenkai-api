@@ -31,7 +31,6 @@ func (database *Database) CreateOrUpdateConfig(item model.ConfigMap) (int, error
 
 }
 
-
 func (database *Database) GetConfigByName(name string) (model.ConfigMap, error) {
 	var result model.ConfigMap
 	if err := database.Db.Where(&model.ConfigMap{Name: name}).Find(&result).Error; err != nil {
@@ -40,5 +39,5 @@ func (database *Database) GetConfigByName(name string) (model.ConfigMap, error) 
 		}
 		return result, nil
 	}
-	return result ,nil
+	return result, nil
 }

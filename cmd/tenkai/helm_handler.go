@@ -16,8 +16,6 @@ import (
 	"github.com/softplan/tenkai-api/service/helm"
 )
 
-
-
 func (appContext *appContext) listCharts(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -53,7 +51,6 @@ func (appContext *appContext) listHelmDeployments(w http.ResponseWriter, r *http
 
 }
 
-
 func (appContext *appContext) hasConfigMap(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -64,7 +61,6 @@ func (appContext *appContext) hasConfigMap(w http.ResponseWriter, r *http.Reques
 		http.Error(w, err.Error(), 501)
 		return
 	}
-
 
 	result, err := helmapi.GetTemplate(appContext.mutex, payload.ChartName, payload.ChartVersion, "deployment")
 
@@ -80,8 +76,6 @@ func (appContext *appContext) hasConfigMap(w http.ResponseWriter, r *http.Reques
 		}
 	}
 
-
-
 }
 
 func (appContext *appContext) getChartVariables(w http.ResponseWriter, r *http.Request) {
@@ -93,7 +87,6 @@ func (appContext *appContext) getChartVariables(w http.ResponseWriter, r *http.R
 		http.Error(w, err.Error(), 501)
 		return
 	}
-
 
 	result, err := helmapi.GetTemplate(appContext.mutex, payload.ChartName, payload.ChartVersion, "values")
 
@@ -109,10 +102,9 @@ func (appContext *appContext) getChartVariables(w http.ResponseWriter, r *http.R
 
 func (appContext *appContext) multipleInstall(w http.ResponseWriter, r *http.Request) {
 
-
 	principal := util.GetPrincipal(r)
 	if !contains(principal.Roles, TenkaiHelmUpgrade) {
-		http.Error(w,  errors.New("Access Denied").Error(), http.StatusUnauthorized)
+		http.Error(w, errors.New("Access Denied").Error(), http.StatusUnauthorized)
 		return
 	}
 
@@ -141,13 +133,11 @@ func (appContext *appContext) multipleInstall(w http.ResponseWriter, r *http.Req
 
 func (appContext *appContext) install(w http.ResponseWriter, r *http.Request) {
 
-
 	principal := util.GetPrincipal(r)
 	if !contains(principal.Roles, TenkaiHelmUpgrade) {
-		http.Error(w,  errors.New("Access Denied").Error(), http.StatusUnauthorized)
+		http.Error(w, errors.New("Access Denied").Error(), http.StatusUnauthorized)
 		return
 	}
-
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	var payload model.InstallPayload
@@ -166,7 +156,6 @@ func (appContext *appContext) install(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), 501)
 		return
 	}
-
 
 	w.WriteHeader(http.StatusOK)
 
@@ -224,7 +213,7 @@ func replace(value string, environment model.Environment, variables []model.Vari
 }
 
 func normalizeVariableName(value string) string {
-	if strings.Index(value, "istio.") > -1 || (strings.Index(value, "image.")) > -1 || (strings.Index(value, "service.")) > -1  {
+	if strings.Index(value, "istio.") > -1 || (strings.Index(value, "image.")) > -1 || (strings.Index(value, "service.")) > -1 {
 		return value
 	}
 	return "app." + value

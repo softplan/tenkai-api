@@ -46,8 +46,6 @@ func main() {
 	appContext.database.Connect(dbmsUri)
 	defer appContext.database.Db.Close()
 
-
-
 	global.Logger.Info(logFields, "iniciando o servidor http")
 	startHTTPServer(appContext)
 }
@@ -82,7 +80,6 @@ func startHTTPServer(appContext *appContext) {
 	r.HandleFunc("/environments/all", appContext.getAllEnvironments).Methods("GET")
 	r.HandleFunc("/environments/export/{id}", appContext.export).Methods("GET")
 	r.HandleFunc("/hasConfigMap", appContext.hasConfigMap).Methods("POST")
-
 
 	r.HandleFunc("/environments/duplicate/{id}", appContext.duplicateEnvironments).Methods("GET")
 
@@ -119,7 +116,6 @@ func startHTTPServer(appContext *appContext) {
 	r.HandleFunc("/users", appContext.newUser).Methods("POST")
 	r.HandleFunc("/users", appContext.listUsers).Methods("GET")
 	r.HandleFunc("/users/{id}", appContext.deleteUser).Methods("DELETE")
-
 
 	r.HandleFunc("/permissions/users/{userId}/environments/{environmentId}", appContext.newEnvironmentPermission).Methods("GET")
 
