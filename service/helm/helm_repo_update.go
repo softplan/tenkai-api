@@ -22,6 +22,7 @@ type repoUpdateCmd struct {
 	strict bool
 }
 
+//RepoUpdate - Update a repository
 func RepoUpdate() error {
 
 	settings.Home = global.HELM_DIR

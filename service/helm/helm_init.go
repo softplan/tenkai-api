@@ -25,7 +25,7 @@ const (
 	LocalRepositoryIndexFile = "index.yaml"
 )
 
-//InitializeHelm
+//InitializeHelm - Initialize a Helm repository
 func InitializeHelm() {
 	settings.TillerNamespace = "kube-system"
 	settings.TLSEnable = false

@@ -132,8 +132,8 @@ func (appContext *appContext) duplicateEnvironments(w http.ResponseWriter, r *ht
 	createEnvironmentFile(env.Name, env.Token, env.Group+"_"+env.Name,
 		env.CACertificate, env.ClusterURI, env.Namespace)
 
-	var envId int
-	if envId, err = appContext.database.CreateEnvironment(env); err != nil {
+	var envID int
+	if envID, err = appContext.database.CreateEnvironment(env); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -142,7 +142,7 @@ func (appContext *appContext) duplicateEnvironments(w http.ResponseWriter, r *ht
 	for _, variable := range variables {
 		newVariable = &model.Variable{}
 		newVariable.Name = variable.Name
-		newVariable.EnvironmentID = envId
+		newVariable.EnvironmentID = envID
 		newVariable.Value = variable.Value
 		newVariable.Description = variable.Description
 		newVariable.Scope = variable.Scope

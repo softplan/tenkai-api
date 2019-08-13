@@ -9,8 +9,8 @@ import (
 	"net/http"
 )
 
-//GetHttpBody - Returns body
-func GetHttpBody(r *http.Request) ([]byte, error) {
+//GetHTTPBody - Returns body
+func GetHTTPBody(r *http.Request) ([]byte, error) {
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
 		log.Fatalln("Error on body", err)
@@ -22,9 +22,9 @@ func GetHttpBody(r *http.Request) ([]byte, error) {
 	return body, nil
 }
 
-//UnmarshalPayload
+//UnmarshalPayload - Transform a raw post request into a struct
 func UnmarshalPayload(r *http.Request, payload interface{}) error {
-	body, error := GetHttpBody(r)
+	body, error := GetHTTPBody(r)
 	if error != nil {
 		return error
 	}

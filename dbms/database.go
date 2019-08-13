@@ -13,11 +13,11 @@ type Database struct {
 	Db *gorm.DB
 }
 
-//Connect to a database
-func (database *Database) Connect(dbmsUri string) {
+//Connect - Connect to a database
+func (database *Database) Connect(dbmsURI string) {
 	var err error
 	//database.Db, err = gorm.Open("sqlite3", "/tmp/tekai.db")
-	database.Db, err = gorm.Open("postgres", dbmsUri)
+	database.Db, err = gorm.Open("postgres", dbmsURI)
 
 	if err != nil {
 		panic("failed to connect database")
@@ -35,6 +35,7 @@ func (database *Database) Connect(dbmsUri string) {
 }
 
 
+//MockConnect - Mock a database connection
 func (database *Database) MockConnect() {
 	mocket.Catcher.Register() // Safe register. Allowed multiple calls to save
 	mocket.Catcher.Logging = true

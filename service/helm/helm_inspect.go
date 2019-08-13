@@ -33,6 +33,7 @@ type inspectCmd struct {
 	caFile   string
 }
 
+//GetTemplate - Retrieve a chart template called deployment.yaml
 func GetTemplate(mutex *sync.Mutex, chartName string, version string, kind string) ([]byte, error) {
 
 	var result []byte
@@ -49,6 +50,7 @@ func GetTemplate(mutex *sync.Mutex, chartName string, version string, kind strin
 	return result, err
 }
 
+//GetDeployment - Retrieve a deployment chart template
 func GetDeployment(chartName string, version string) ([]byte, error) {
 
 	logFields := global.AppFields{global.FUNCTION: "GetValues"}

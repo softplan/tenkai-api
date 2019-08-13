@@ -2,7 +2,7 @@ package model
 
 import "github.com/jinzhu/gorm"
 
-//Environment Model
+//Environment - Environment Model
 type Environment struct {
 	gorm.Model
 	Group         string `json:"group"`
@@ -14,6 +14,7 @@ type Environment struct {
 	Gateway       string `json:"gateway"`
 }
 
+//User struct
 type User struct {
 	gorm.Model
 	Email                string        `json:"email"`
@@ -21,6 +22,7 @@ type User struct {
 	Environments         []Environment `gorm:"many2many:user_environment;"`
 }
 
+//UserResult struct
 type UserResult struct {
 	Users []User `json:"users"`
 }
@@ -79,17 +81,19 @@ type InstallArguments struct {
 	Value string `json:"value"`
 }
 
-//SimpleInstallPayload Struct
+//InstallPayload Struct
 type InstallPayload struct {
 	EnvironmentID int    `json:"environmentId"`
 	Chart         string `json:"chart"`
 	Name          string `json:"name"`
 }
 
+//MultipleInstallPayload struct
 type MultipleInstallPayload struct {
 	Deployables []InstallPayload `json:"deployables"`
 }
 
+//GetChartRequest struct
 type GetChartRequest struct {
 	ChartName    string `json:"chartName"`
 	ChartVersion string `json:"chartVersion"`

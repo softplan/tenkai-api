@@ -29,7 +29,7 @@ func GetRepositories() ([]model.Repository, error) {
 	}
 
 	for _, re := range f.Repositories {
-		rep := &model.Repository{Name: re.Name, Url: re.URL, Username: re.Username, Password: re.Password}
+		rep := &model.Repository{Name: re.Name, URL: re.URL, Username: re.Username, Password: re.Password}
 		repositories = append(repositories, *rep)
 	}
 

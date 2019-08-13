@@ -19,19 +19,18 @@ type repoAddCmd struct {
 	password string
 	home     helmpath.Home
 	noupdate bool
-
 	certFile string
 	keyFile  string
 	caFile   string
-
 	out io.Writer
 }
 
+//AddRepository - Add new repository
 func AddRepository(repo model.Repository) error {
 	settings.Home = global.HELM_DIR
 	add := &repoAddCmd{out: os.Stdout}
 	add.name = repo.Name
-	add.url = repo.Url
+	add.url = repo.URL
 	add.username = repo.Username
 	add.password = repo.Password
 	add.home = settings.Home

@@ -15,6 +15,7 @@ type repoRemoveCmd struct {
 	home helmpath.Home
 }
 
+//RemoveRepository - Remove a repository
 func RemoveRepository(name string) error {
 	remove := &repoRemoveCmd{out: os.Stdout}
 	remove.home = settings.Home
