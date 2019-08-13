@@ -4,6 +4,7 @@ import (
 	"github.com/jinzhu/gorm"
 	//_ "github.com/jinzhu/gorm/dialects/sqlite"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+	mocket "github.com/selvatico/go-mocket"
 	"github.com/softplan/tenkai-api/dbms/model"
 )
 
@@ -31,4 +32,13 @@ func (database *Database) Connect(dbmsUri string) {
 	database.Db.AutoMigrate(&model.User{})
 	database.Db.AutoMigrate(&model.ConfigMap{})
 
+}
+
+
+func (database *Database) MockConnect() {
+	mocket.Catcher.Register() // Safe register. Allowed multiple calls to save
+	mocket.Catcher.Logging = true
+	// GORM
+	db, _ := gorm.Open(mocket.DriverName, "connection_string") // Can be any connection string
+	database.Db = db
 }

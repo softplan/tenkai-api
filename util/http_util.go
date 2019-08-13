@@ -9,6 +9,7 @@ import (
 	"net/http"
 )
 
+//GetHttpBody - Returns body
 func GetHttpBody(r *http.Request) ([]byte, error) {
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
@@ -33,6 +34,7 @@ func UnmarshalPayload(r *http.Request, payload interface{}) error {
 	return nil
 }
 
+//GetPrincipal - Returns principal from request
 func GetPrincipal(r *http.Request) model.Principal {
 	var principal model.Principal
 	principalString := r.Header.Get("principal")

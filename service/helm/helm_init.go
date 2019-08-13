@@ -25,6 +25,7 @@ const (
 	LocalRepositoryIndexFile = "index.yaml"
 )
 
+//InitializeHelm
 func InitializeHelm() {
 	settings.TillerNamespace = "kube-system"
 	settings.TLSEnable = false
@@ -34,7 +35,6 @@ func InitializeHelm() {
 }
 
 // Initialize initializes local config
-//
 // Returns an error if the command failed.
 func Initialize(home helmpath.Home, out io.Writer, skipRefresh bool, settings helm_env.EnvSettings) error {
 	if err := ensureDirectories(home, out); err != nil {
