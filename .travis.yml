@@ -1,24 +1,13 @@
 language: go
 
-# Force-enable Go modules. Also force go to use the code in vendor/
-# These will both be unnecessary when Go 1.13 lands.
-env:
-  - GO111MODULE=on
-  - GOFLAGS='-mod vendor'
-
 go:
-  - "1.12.x"
-
-# Only clone the most recent commit.
-git:
-  depth: 1
-
-# Skip the install step. Don't `go get` dependencies. Only build with the code
-# in vendor/
-install: true
+  - "1.12"
 
 services:
   - docker
+
+before_script:
+  - go mod verify
 
 script:
   - make container-image
@@ -26,5 +15,5 @@ script:
 after_success:
   - if [[ "$TRAVIS_BRANCH" == "develop" ]] && [[ "$TRAVIS_PULL_REQUEST" == "false" ]]; then
       docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
-      docker push infracloud/botkube:latest;
+      docker push softplan/tenkai-api:latest;
     fi
