@@ -26,7 +26,8 @@ jobs:
     - stage: test
       script:
       - make test
-      stage: publish
+    - stage: publish
+      script:
       - make container-image
       - make tag-image
       - make publish
