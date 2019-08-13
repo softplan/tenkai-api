@@ -49,6 +49,5 @@ tag-image:
 #Docker push image
 publish:
 	@echo "Pushing docker image to repository"
-	@docker login
+	@docker login -u $(DOCKER_USERNAME) -p $(DOCKER_PASSWORD)
 	@docker push $(IMAGE_REPO):$(TAG)
-	@docker push $(IMAGE_REPO):latest	
