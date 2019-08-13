@@ -7,11 +7,9 @@ import (
 	"io"
 	"os"
 
-	"golang.org/x/crypto/ssh/terminal"
 	"k8s.io/helm/pkg/getter"
 	"k8s.io/helm/pkg/helm/helmpath"
 	"k8s.io/helm/pkg/repo"
-	"syscall"
 )
 
 type repoAddCmd struct {
@@ -54,14 +52,6 @@ func (a *repoAddCmd) run() error {
 	return nil
 }
 
-func readPassword() (string, error) {
-	password, err := terminal.ReadPassword(int(syscall.Stdin))
-	if err != nil {
-		return "", err
-	}
-	return string(password), nil
-}
-
 func addRepository(name, url, username, password string, home helmpath.Home, certFile, keyFile, caFile string, noUpdate bool) error {
 	f, err := repo.LoadRepositoriesFile(home.RepositoryFile())
 	if err != nil {
@@ -89,16 +79,7 @@ func addRepository(name, url, username, password string, home helmpath.Home, cer
 		return err
 	}
 
-	/*
-		tr := &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify : true},
-			DisableCompression: true,
-			Proxy:              http.ProxyFromEnvironment,
-		}
-		r.Client.Client.Transport = tr
-	*/
-
-	if err := r.DownloadIndexFile(""); err != nil {
+		if err := r.DownloadIndexFile(""); err != nil {
 		return fmt.Errorf("Looks like %q is not a valid chart repository or cannot be reached: %s", url, err.Error())
 	}
 

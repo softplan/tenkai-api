@@ -47,10 +47,6 @@ func innerAnalyse(database dbms.Database, parent string, chartName string, tag s
 
 }
 
-func getParentName(dependency model.Dependency) string {
-	return getNodeName(dependency.ChartName, dependency.Version)
-}
-
 func getNodeName(chartName string, version string) string {
 	return chartName + ":" + version
 }

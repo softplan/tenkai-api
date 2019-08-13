@@ -153,7 +153,7 @@ func (u *upgradeCmd) run() error {
 		return prettyError(err)
 	}
 
-	resp, err := u.client.UpdateReleaseFromChart(
+	_, err = u.client.UpdateReleaseFromChart(
 		u.release,
 		ch,
 		helm.UpdateValueOverrides(rawVals),
@@ -192,22 +192,6 @@ func (u *upgradeCmd) run() error {
 		}
 		return fmt.Errorf("UPGRADE FAILED: %v", prettyError(err))
 	}
-
-	fmt.Print(resp.Release.Name)
-	//if settings.Debug {
-	//printRelease(u.out, resp.Release)
-	//}
-
 	fmt.Fprintf(u.out, "Release %q has been upgraded.\n", u.release)
-
-	// Print the status like status command does
-	/*
-		status, err := u.client.ReleaseStatus(u.release)
-		if err != nil {
-			return prettyError(err)
-		}
-		PrintStatus(u.out, status)
-	*/
-
 	return nil
 }
