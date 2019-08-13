@@ -1,7 +1,7 @@
 .helm
 .helm/*
-build
-build/*
+/build
+/build/*
 /config
 /config/*
 .idea
