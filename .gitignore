@@ -2,8 +2,8 @@
 .helm/*
 build
 build/*
-config
-config/*
+/config
+/config/*
 .idea
 .vscode
 .idea/*

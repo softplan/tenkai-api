@@ -3,19 +3,22 @@ package helmapi
 import (
 	"errors"
 	"fmt"
+	"github.com/helm/helm/pkg/downloader"
 	"github.com/softplan/tenkai-api/global"
 	"io"
-	"os"
-	"path/filepath"
-	"strings"
-
-	"github.com/helm/helm/pkg/downloader"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/getter"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 	"k8s.io/helm/pkg/repo"
+	"os"
+	"path/filepath"
 	"sigs.k8s.io/yaml"
+	"strings"
+	"sync"
 )
+
+
+
 
 type inspectCmd struct {
 	chartpath string
@@ -33,6 +36,22 @@ type inspectCmd struct {
 	caFile   string
 }
 
+
+func GetTemplate(mutex sync.Mutex, chartName string, version string, kind string) ([]byte, error) {
+
+	var result []byte
+	var err error
+	mutex.Lock()
+	if kind == "values" {
+		result, err = GetValues(chartName, version)
+	}  else {
+		if kind == "deployment" {
+			result, err = GetDeployment(chartName, version)
+		}
+	}
+	mutex.Unlock()
+	return result, err
+}
 
 func GetDeployment(chartName string, version string) ([]byte, error) {
 
@@ -59,8 +78,11 @@ func GetDeployment(chartName string, version string) ([]byte, error) {
 		global.Logger.Error(logFields, err.Error())
 		return nil, err
 	}
-
-	return values.Data, nil
+	var result [] byte
+	if values != nil {
+		result = values.Data
+	}
+	return result, nil
 
 }
 
@@ -105,6 +127,7 @@ func GetValues(chartName string, version string) ([]byte, error) {
 }
 
 func (i *inspectCmd) prepare(chart string) error {
+
 	if i.version == "" && i.devel {
 		i.version = ">0.0.0-0"
 	}
@@ -115,12 +138,15 @@ func (i *inspectCmd) prepare(chart string) error {
 		return err
 	}
 	i.chartpath = cp
+
 	return nil
 }
 
 func (i *inspectCmd) runGetDeployment() (*chart.Template, error) {
 	var result *chart.Template
+
 	chrt, err := chartutil.Load(i.chartpath)
+
 	if err != nil {
 		return nil, err
 	}
