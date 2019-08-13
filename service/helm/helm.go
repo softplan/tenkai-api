@@ -2,13 +2,9 @@ package helmapi
 
 import (
 	"fmt"
-	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 
-	"github.com/spf13/cobra"
-	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/status"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -27,16 +23,6 @@ var (
 	tillerTunnel *kube.Tunnel
 	settings     helm_env.EnvSettings
 )
-
-func init() {
-	// Tell gRPC not to log to console.
-	grpclog.SetLogger(log.New(ioutil.Discard, "", log.LstdFlags))
-}
-
-func markDeprecated(cmd *cobra.Command, notice string) *cobra.Command {
-	cmd.Deprecated = notice
-	return cmd
-}
 
 func setupConnection() error {
 	if settings.TillerHost == "" {
