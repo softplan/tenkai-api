@@ -10,8 +10,6 @@ import (
 	"net/http"
 )
 
-
-
 func (appContext *appContext) repoUpdate(w http.ResponseWriter, r *http.Request) {
 
 	helmapi.RepoUpdate()
@@ -37,12 +35,10 @@ func (appContext *appContext) listRepositories(w http.ResponseWriter, r *http.Re
 
 func (appContext *appContext) newRepository(w http.ResponseWriter, r *http.Request) {
 
-
 	principal := util.GetPrincipal(r)
 	if !contains(principal.Roles, TenkaiAdmin) {
-		http.Error(w,  errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
+		http.Error(w, errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
 	}
-
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
@@ -65,7 +61,6 @@ func (appContext *appContext) setDefaultRepo(w http.ResponseWriter, r *http.Requ
 
 	principal := util.GetPrincipal(r)
 
-
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
 	var payload model.DefaultRepoRequest
@@ -75,9 +70,9 @@ func (appContext *appContext) setDefaultRepo(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	configMap := model.ConfigMap{Name:"DEFAULT_REPO_" + principal.Email, Value: payload.Reponame}
+	configMap := model.ConfigMap{Name: "DEFAULT_REPO_" + principal.Email, Value: payload.Reponame}
 
-	if _,err := appContext.database.CreateOrUpdateConfig(configMap); err != nil {
+	if _, err := appContext.database.CreateOrUpdateConfig(configMap); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -100,14 +95,12 @@ func (appContext *appContext) getDefaultRepo(w http.ResponseWriter, r *http.Requ
 
 }
 
-
 func (appContext *appContext) deleteRepository(w http.ResponseWriter, r *http.Request) {
 
 	principal := util.GetPrincipal(r)
 	if !contains(principal.Roles, TenkaiAdmin) {
-		http.Error(w,  errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
+		http.Error(w, errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
 	}
-
 
 	vars := mux.Vars(r)
 	name := vars["name"]

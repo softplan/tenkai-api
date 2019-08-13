@@ -21,7 +21,7 @@ func (database *Database) DeleteSolutionChart(id int) error {
 
 func (database *Database) ListSolutionChart(id int) ([]model.SolutionChart, error) {
 	list := make([]model.SolutionChart, 0)
-	if err := database.Db.Where(&model.SolutionChart{SolutionID : id}).Find(&list).Error; err != nil {
+	if err := database.Db.Where(&model.SolutionChart{SolutionID: id}).Find(&list).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return make([]model.SolutionChart, 0), nil
 		} else {

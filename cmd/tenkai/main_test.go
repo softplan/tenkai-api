@@ -15,11 +15,11 @@ func checkTestingFatalError(t *testing.T, err error) {
 
 func getAppContext() *appContext {
 	config := configs.Configuration{
-		Server: configs.Server {
+		Server: configs.Server{
 			Port: "1010",
 		},
-		App: configs.App {
-			Dbms: configs.Dbms {
+		App: configs.App{
+			Dbms: configs.Dbms{
 				Uri: "",
 			},
 		},
@@ -34,7 +34,7 @@ func TestRoot(t *testing.T) {
 	checkTestingFatalError(t, err)
 	appContext := getAppContext()
 	handler := http.HandlerFunc(appContext.rootHandler)
-	handler .ServeHTTP(rr, req)
+	handler.ServeHTTP(rr, req)
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("Handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}

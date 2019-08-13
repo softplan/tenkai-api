@@ -1,8 +1,7 @@
 package model
 
 type Principal struct {
-	Name string
+	Name  string
 	Email string
 	Roles []string
 }
-

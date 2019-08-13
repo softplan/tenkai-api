@@ -29,7 +29,3 @@ func getVariableValue(value string, start int, end int) string {
 	}
 	return ""
 }
-
-
-
-

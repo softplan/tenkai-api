@@ -15,9 +15,8 @@ func (appContext *appContext) newUser(w http.ResponseWriter, r *http.Request) {
 
 	principal := util.GetPrincipal(r)
 	if !contains(principal.Roles, TenkaiAdmin) {
-		http.Error(w,  errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
+		http.Error(w, errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
 	}
-
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
@@ -36,7 +35,6 @@ func (appContext *appContext) newUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 
 }
-
 
 func (appContext *appContext) createOrUpdateUser(w http.ResponseWriter, r *http.Request) {
 
@@ -58,7 +56,6 @@ func (appContext *appContext) createOrUpdateUser(w http.ResponseWriter, r *http.
 
 }
 
-
 func (appContext *appContext) listUsers(w http.ResponseWriter, r *http.Request) {
 
 	result := &model.UserResult{}
@@ -75,12 +72,11 @@ func (appContext *appContext) listUsers(w http.ResponseWriter, r *http.Request) 
 
 }
 
-
 func (appContext *appContext) deleteUser(w http.ResponseWriter, r *http.Request) {
 
 	principal := util.GetPrincipal(r)
 	if !contains(principal.Roles, TenkaiAdmin) {
-		http.Error(w,  errors.New("Acccess Denied").Error(), http.StatusUnauthorized)
+		http.Error(w, errors.New("Acccess Denied").Error(), http.StatusUnauthorized)
 	}
 
 	vars := mux.Vars(r)

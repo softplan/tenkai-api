@@ -58,14 +58,8 @@ func commonHandler(next http.Handler) http.Handler {
 				fmt.Println(errx)
 			}
 
-
 		}
-
 
 		next.ServeHTTP(w, r)
 	})
 }
-
-
-
-

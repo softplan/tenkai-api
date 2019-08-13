@@ -88,7 +88,6 @@ func (database *Database) CreateOrUpdateUser(user model.User) error {
 			}
 		}
 
-
 	} else {
 		//Create User
 		envsToAssociate := user.Environments
@@ -114,5 +113,3 @@ func (database *Database) CreateOrUpdateUser(user model.User) error {
 
 	return nil
 }
-
-

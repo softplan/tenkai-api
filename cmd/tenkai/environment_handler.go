@@ -16,13 +16,11 @@ import (
 	"strings"
 )
 
-
-
 func (appContext *appContext) deleteEnvironment(w http.ResponseWriter, r *http.Request) {
 
 	principal := util.GetPrincipal(r)
 	if !contains(principal.Roles, TenkaiAdmin) {
-		http.Error(w,  errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
+		http.Error(w, errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
 	}
 
 	vars := mux.Vars(r)
@@ -59,12 +57,10 @@ func (appContext *appContext) deleteEnvironment(w http.ResponseWriter, r *http.R
 
 func (appContext *appContext) editEnvironment(w http.ResponseWriter, r *http.Request) {
 
-
 	principal := util.GetPrincipal(r)
 	if !contains(principal.Roles, TenkaiAdmin) {
-		http.Error(w,  errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
+		http.Error(w, errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
 	}
-
 
 	var payload model.DataElement
 
@@ -95,14 +91,12 @@ func (appContext *appContext) editEnvironment(w http.ResponseWriter, r *http.Req
 	w.WriteHeader(http.StatusOK)
 }
 
-
 func (appContext *appContext) duplicateEnvironments(w http.ResponseWriter, r *http.Request) {
 
 	principal := util.GetPrincipal(r)
 	if !contains(principal.Roles, TenkaiAdmin) {
-		http.Error(w,  errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
+		http.Error(w, errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
 	}
-
 
 	vars := mux.Vars(r)
 	log.Println("Duplicating environment: ", vars["id"])
@@ -145,7 +139,7 @@ func (appContext *appContext) duplicateEnvironments(w http.ResponseWriter, r *ht
 	}
 
 	var newVariable *model.Variable
-	for _, variable:= range variables {
+	for _, variable := range variables {
 		newVariable = &model.Variable{}
 		newVariable.Name = variable.Name
 		newVariable.EnvironmentID = envId
@@ -163,14 +157,12 @@ func (appContext *appContext) duplicateEnvironments(w http.ResponseWriter, r *ht
 
 }
 
-
 func (appContext *appContext) addEnvironments(w http.ResponseWriter, r *http.Request) {
 
 	principal := util.GetPrincipal(r)
 	if !contains(principal.Roles, TenkaiAdmin) {
-		http.Error(w,  errors.New("Acccess Denied").Error(), http.StatusUnauthorized)
+		http.Error(w, errors.New("Acccess Denied").Error(), http.StatusUnauthorized)
 	}
-
 
 	var payload model.DataElement
 
@@ -228,7 +220,6 @@ func contains(slice []string, item string) bool {
 	return ok
 }
 
-
 func (appContext *appContext) export(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/plain; charset=UTF-8")
@@ -261,7 +252,6 @@ func (appContext *appContext) export(w http.ResponseWriter, r *http.Request) {
 
 }
 
-
 func (appContext *appContext) getAllEnvironments(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -269,7 +259,7 @@ func (appContext *appContext) getAllEnvironments(w http.ResponseWriter, r *http.
 	principal := util.GetPrincipal(r)
 
 	if !contains(principal.Roles, TenkaiAdmin) {
-		http.Error(w,  errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
+		http.Error(w, errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
 	}
 
 	envResult := &model.EnvResult{}
@@ -283,8 +273,6 @@ func (appContext *appContext) getAllEnvironments(w http.ResponseWriter, r *http.
 	w.WriteHeader(http.StatusOK)
 	data, _ := json.Marshal(envResult)
 	w.Write(data)
-
-
 
 }
 

@@ -19,7 +19,6 @@ type deleteCmd struct {
 	client helm.Interface
 }
 
-
 func (d *deleteCmd) run() error {
 	opts := []helm.DeleteOption{
 		helm.DeleteDryRun(d.dryRun),
