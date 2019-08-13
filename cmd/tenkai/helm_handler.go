@@ -65,21 +65,21 @@ func (appContext *appContext) hasConfigMap(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	appContext.mutex.Lock()
-	result, _ := helmapi.GetDeployment(payload.ChartName, payload.ChartVersion)
-	appContext.mutex.Unlock()
 
-	deployment := string(result)
-
-	if strings.Index(deployment, "global-configmap") > 0 {
-		w.Write([]byte("{\"result\":\"true\"}"))
-	} else {
-		w.Write([]byte("{\"result\":\"false\"}"))
-
-	}
-
+	result, err := helmapi.GetTemplate(appContext.mutex, payload.ChartName, payload.ChartVersion, "deployment")
 
 	w.WriteHeader(http.StatusOK)
+	if err != nil {
+		w.Write([]byte("{\"result\":\"false\"}"))
+	} else {
+		deployment := string(result)
+		if strings.Index(deployment, "global-configmap") > 0 {
+			w.Write([]byte("{\"result\":\"true\"}"))
+		} else {
+			w.Write([]byte("{\"result\":\"false\"}"))
+		}
+	}
+
 
 
 }
@@ -94,9 +94,13 @@ func (appContext *appContext) getChartVariables(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	appContext.mutex.Lock()
-	result, _ := helmapi.GetValues(payload.ChartName, payload.ChartVersion)
-	appContext.mutex.Unlock()
+
+	result, err := helmapi.GetTemplate(appContext.mutex, payload.ChartName, payload.ChartVersion, "values")
+
+	if err != nil {
+		http.Error(w, err.Error(), 501)
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(result)
