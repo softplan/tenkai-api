@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+//Analyse - Analyse dependencies
 func Analyse(database dbms.Database, payload model.DepAnalyseRequest, analyse *model.DepAnalyse) error {
 	innerAnalyse(database, "", payload.ChartName, payload.Tag, analyse)
 	err := analyseIfDeployed(database, payload, analyse)

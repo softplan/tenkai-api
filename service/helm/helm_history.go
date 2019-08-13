@@ -35,6 +35,7 @@ type historyCmd struct {
 	outputFormat string
 }
 
+//IsThereAnyPodWithThisVersion
 func IsThereAnyPodWithThisVersion(kubeconfig string, namespace string, releaseName string, tag string) (bool, error) {
 
 	_, client, err := getKubeClient(settings.KubeContext, kubeconfig)
@@ -56,6 +57,7 @@ func IsThereAnyPodWithThisVersion(kubeconfig string, namespace string, releaseNa
 
 }
 
+//GetReleaseHistory
 func GetReleaseHistory(kubeconfig string, releaseName string) (bool, error) {
 	settings.KubeConfig = kubeconfig
 	settings.Home = global.HELM_DIR

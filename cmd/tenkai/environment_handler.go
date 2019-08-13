@@ -189,12 +189,10 @@ func (appContext *appContext) getEnvironments(w http.ResponseWriter, r *http.Req
 
 	principal := util.GetPrincipal(r)
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-
 	envResult := &model.EnvResult{}
 
 	if len(principal.Email) <= 0 {
-		http.Error(w, errors.New("Acccess Denied").Error(), http.StatusInternalServerError)
+		http.Error(w, errors.New("Acccess Denied").Error(), http.StatusMethodNotAllowed)
 		return
 	}
 

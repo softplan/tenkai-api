@@ -13,7 +13,7 @@ func checkTestingFatalError(t *testing.T, err error) {
 	}
 }
 
-func getAppContext() *appContext {
+func GetAppContext() *appContext {
 	config := configs.Configuration{
 		Server: configs.Server{
 			Port: "1010",
@@ -32,7 +32,7 @@ func TestRoot(t *testing.T) {
 	rr := httptest.NewRecorder()
 	req, err := http.NewRequest("GET", "/", nil)
 	checkTestingFatalError(t, err)
-	appContext := getAppContext()
+	appContext := GetAppContext()
 	handler := http.HandlerFunc(appContext.rootHandler)
 	handler.ServeHTTP(rr, req)
 	if status := rr.Code; status != http.StatusOK {
