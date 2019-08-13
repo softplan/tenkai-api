@@ -13,21 +13,9 @@ branches:
 services:
   - docker
 
-stages:
-  - build
-  - test
-  - publish
-
-jobs:
-  include:
-    - stage: build
-      script:
-      - make build
-    - stage: test
-      script:
-      - make test
-    - stage: publish
-      script:
-      - make container-image
-      - make tag-image
-      - make publish
+script:
+  - make build
+  - make test
+  - make container-image
+  - make tag-image
+  - make publish
