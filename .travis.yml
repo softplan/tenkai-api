@@ -3,6 +3,13 @@ language: go
 go:
   - "1.12"
 
+# safelist - Build only for dev, master and tags
+branches:
+  only:
+  - dev
+  - master
+  - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
+
 services:
   - docker
 
@@ -13,7 +20,7 @@ script:
   - make container-image
 
 after_success:
-  - if [[ "$TRAVIS_BRANCH" == "develop" ]] && [[ "$TRAVIS_PULL_REQUEST" == "false" ]]; then
+  - if [[ "$TRAVIS_PULL_REQUEST" == "false" ]]; then
       docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
-      docker push softplan/tenkai-api:latest;
+      docker push softplan/tenkai-api:$TRAVIS_BRANCH;
     fi
