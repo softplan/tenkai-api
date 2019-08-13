@@ -30,6 +30,12 @@ build: pre-build
 	@echo "Building tenkai-api"
 	GOOS_VAL=$(shell go env GOOS) GOARCH_VAL=$(shell go env GOARCH) go build -a -installsuffix cgo -o ./build/tenkai-api cmd/tenkai/*.go
 
+test:
+	@echo "Testing tenkai-api"
+	cp app.yaml ~/
+	go test -v -covermode=count -coverprofile=coverage.out $(shell go list ./... | grep -v /vendor/)
+	go tool cover -html=coverage.out -o coverage.html
+
 #Build the image
 container-image:
 	@echo "Building docker image"
