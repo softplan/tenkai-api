@@ -62,7 +62,9 @@ func (appContext *appContext) hasConfigMap(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	result, err := helmapi.GetTemplate(&appContext.mutex, payload.ChartName, payload.ChartVersion, "deployment")
+	mutex := appContext.mutex
+
+	result, err := helmapi.GetTemplate(&mutex, payload.ChartName, payload.ChartVersion, "deployment")
 
 	w.WriteHeader(http.StatusOK)
 	if err != nil {
