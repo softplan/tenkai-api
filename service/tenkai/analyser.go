@@ -19,6 +19,17 @@ func Analyse(database dbms.Database, payload model.DepAnalyseRequest, analyse *m
 	return nil
 }
 
+func containsByID(nodes []model.Node, ID string) bool {
+	result := false
+	for _, node := range nodes {
+		if node.ID == ID {
+			result = true
+			break
+		}
+	}
+	return result
+}
+
 func innerAnalyse(database dbms.Database, parent string, chartName string, tag string, analyse *model.DepAnalyse) {
 
 	if analyse.Nodes == nil {
@@ -42,7 +53,10 @@ func innerAnalyse(database dbms.Database, parent string, chartName string, tag s
 	for _, element := range dependencies {
 		matchedDependencies := getMatchedVersions(element.ChartName, element.Version)
 		for _, matched := range matchedDependencies {
-			innerAnalyse(database, getNodeName(chartName, tag), matched.ChartName, matched.Tag, analyse)
+
+			if !containsByID(analyse.Nodes, getNodeName(element.ChartName, element.Version)) {
+				innerAnalyse(database, getNodeName(chartName, tag), matched.ChartName, matched.Tag, analyse)
+			}
 		}
 	}
 
