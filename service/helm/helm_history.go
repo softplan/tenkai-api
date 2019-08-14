@@ -61,7 +61,7 @@ func IsThereAnyPodWithThisVersion(kubeconfig string, namespace string, releaseNa
 //GetReleaseHistory - Retrieve Release History
 func GetReleaseHistory(kubeconfig string, releaseName string) (bool, error) {
 	settings.KubeConfig = kubeconfig
-	settings.Home = global.HELM_DIR
+	settings.Home = global.HelmDir
 	settings.TillerNamespace = "kube-system"
 	settings.TLSEnable = false
 	settings.TLSVerify = false

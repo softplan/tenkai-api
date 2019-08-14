@@ -25,7 +25,7 @@ func TestGetEnvironmentsNotFound(t *testing.T) {
 	rr := httptest.NewRecorder()
 	req, err := http.NewRequest("GET", "/environments", nil)
 
-	data, _ := json.Marshal(&model.Principal{Email:"test@beta.com.br"})
+	data, _ := json.Marshal(&model.Principal{Email: "test@beta.com.br"})
 	req.Header.Set("principal", string(data))
 
 	checkTestingFatalError(t, err)

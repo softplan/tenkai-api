@@ -5,7 +5,6 @@ import (
 	"github.com/softplan/tenkai-api/dbms/model"
 )
 
-
 //GetDependencies - Retrieve dependencies
 func (database *Database) GetDependencies(chartName string, tag string) ([]model.Dependency, error) {
 	var release model.Release

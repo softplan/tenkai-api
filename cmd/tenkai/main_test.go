@@ -20,7 +20,7 @@ func GetAppContext() *appContext {
 		},
 		App: configs.App{
 			Dbms: configs.Dbms{
-				Uri: "",
+				URI: "",
 			},
 		},
 	}

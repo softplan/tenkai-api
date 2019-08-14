@@ -5,7 +5,6 @@ import (
 	"testing"
 )
 
-
 func TestGetDependencies(t *testing.T) {
 	database := Database{}
 	database.MockConnect()

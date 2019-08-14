@@ -1,7 +1,6 @@
 package dbms
 
 import (
-	"github.com/jinzhu/gorm"
 	"github.com/softplan/tenkai-api/dbms/model"
 )
 
@@ -42,21 +41,21 @@ func (database *Database) CreateVariable(variable model.Variable) error {
 
 //GetAllVariablesByEnvironment - Retrieve all variables
 func (database *Database) GetAllVariablesByEnvironment(envID int) ([]model.Variable, error) {
+
 	variables := make([]model.Variable, 0)
 	var env model.Environment
+	var err error
 
-	if err := database.Db.First(&env, envID).Error; err == nil {
-		if err := database.Db.Model(&env).Order("scope").Related(&variables).Error; err != nil {
-			if gorm.IsRecordNotFoundError(err) {
-				return nil, err
-			} else {
-				return nil, err
-			}
-		}
-	} else {
+	if err = database.Db.First(&env, envID).Error; err != nil {
 		return nil, err
 	}
-	return variables, nil
+
+	if err = database.Db.Model(&env).Order("scope").Related(&variables).Error; err != nil {
+		return variables, nil
+	}
+
+	return nil, err
+
 }
 
 //GetAllVariablesByEnvironmentAndScope - Retrieve all variables

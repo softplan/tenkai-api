@@ -10,9 +10,9 @@ import (
 //GetRepositories - Returns a repository list
 func GetRepositories() ([]model.Repository, error) {
 
-	settings.Home = global.HELM_DIR
+	settings.Home = global.HelmDir
 
-	logFields := global.AppFields{global.FUNCTION: "GetRepositories"}
+	logFields := global.AppFields{global.Function: "GetRepositories"}
 
 	global.Logger.Info(logFields, "Starting GetRepositories: "+settings.Home.RepositoryFile())
 

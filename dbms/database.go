@@ -34,7 +34,6 @@ func (database *Database) Connect(dbmsURI string) {
 
 }
 
-
 //MockConnect - Mock a database connection
 func (database *Database) MockConnect() {
 	mocket.Catcher.Register() // Safe register. Allowed multiple calls to save

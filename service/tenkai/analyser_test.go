@@ -1,4 +1,4 @@
-package service_tenkai
+package analyser
 
 import (
 	"testing"

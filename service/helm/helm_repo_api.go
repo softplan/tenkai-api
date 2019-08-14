@@ -29,13 +29,13 @@ type searchCmd struct {
 //SearchCharts Methotd
 func SearchCharts(searchTerms []string, allVersions bool) *[]model.SearchResult {
 
-	logFields := global.AppFields{global.FUNCTION: "SearchCharts"}
+	logFields := global.AppFields{global.Function: "SearchCharts"}
 
 	global.Logger.Info(logFields, "Starting searchCharts")
 
 	sc := &searchCmd{}
 
-	var z helmpath.Home = global.HELM_DIR
+	var z helmpath.Home = global.HelmDir
 	sc.helmhome = z
 	sc.versions = allVersions
 

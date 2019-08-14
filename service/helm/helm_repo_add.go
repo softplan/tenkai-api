@@ -22,12 +22,12 @@ type repoAddCmd struct {
 	certFile string
 	keyFile  string
 	caFile   string
-	out io.Writer
+	out      io.Writer
 }
 
 //AddRepository - Add new repository
 func AddRepository(repo model.Repository) error {
-	settings.Home = global.HELM_DIR
+	settings.Home = global.HelmDir
 	add := &repoAddCmd{out: os.Stdout}
 	add.name = repo.Name
 	add.url = repo.URL
@@ -41,7 +41,7 @@ func AddRepository(repo model.Repository) error {
 func (a *repoAddCmd) run() error {
 
 	if a.username != "" && a.password == "" {
-		return fmt.Errorf("Password must be te for user: %q\n", a.username)
+		return fmt.Errorf("password must be te for user %q", a.username)
 	}
 
 	if err := addRepository(a.name, a.url, a.username, a.password, a.home, a.certFile, a.keyFile, a.caFile, a.noupdate); err != nil {

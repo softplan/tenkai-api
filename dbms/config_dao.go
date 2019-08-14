@@ -5,6 +5,7 @@ import (
 	"github.com/softplan/tenkai-api/dbms/model"
 )
 
+//CreateOrUpdateConfig - Create or update a new config
 func (database *Database) CreateOrUpdateConfig(item model.ConfigMap) (int, error) {
 	var result model.ConfigMap
 
@@ -22,15 +23,16 @@ func (database *Database) CreateOrUpdateConfig(item model.ConfigMap) (int, error
 			return -1, err
 		}
 		return int(result.ID), nil
-	} else {
-		if err := database.Db.Create(&item).Error; err != nil {
-			return -1, err
-		}
-		return int(item.ID), nil
 	}
+
+	if err := database.Db.Create(&item).Error; err != nil {
+		return -1, err
+	}
+	return int(item.ID), nil
 
 }
 
+//GetConfigByName - Retrieves a config by name
 func (database *Database) GetConfigByName(name string) (model.ConfigMap, error) {
 	var result model.ConfigMap
 	if err := database.Db.Where(&model.ConfigMap{Name: name}).Find(&result).Error; err != nil {
