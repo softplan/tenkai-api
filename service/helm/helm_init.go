@@ -31,7 +31,7 @@ func InitializeHelm() {
 	settings.TLSEnable = false
 	settings.TLSVerify = false
 	settings.TillerConnectionTimeout = 1200
-	Initialize(global.HELM_DIR, os.Stdout, true, settings)
+	Initialize(global.HelmDir, os.Stdout, true, settings)
 }
 
 // Initialize initializes local config

@@ -1,4 +1,4 @@
-package service_tenkai
+package analyser
 
 import (
 	"fmt"
@@ -75,7 +75,7 @@ func analyseIfDeployed(database dbms.Database, payload model.DepAnalyseRequest, 
 	for index, element := range analyse.Nodes {
 		releaseName := removeTag(removeRepo(element.ID)) + "-" + environment.Namespace
 
-		kubeConfig := global.KUBECONFIG_BASE_PATH + environment.Group + "_" + environment.Name
+		kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
 		err := identifyDeployedReleased(kubeConfig, analyse, environment.Namespace, releaseName, onlyTag(removeRepo(element.ID)), index)
 		if err != nil {
 			return err

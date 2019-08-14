@@ -25,7 +25,7 @@ type repoUpdateCmd struct {
 //RepoUpdate - Update a repository
 func RepoUpdate() error {
 
-	settings.Home = global.HELM_DIR
+	settings.Home = global.HelmDir
 
 	u := &repoUpdateCmd{
 		out:    os.Stdout,

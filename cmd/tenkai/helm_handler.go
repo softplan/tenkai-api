@@ -188,7 +188,7 @@ func (appContext *appContext) simpleInstall(envID int, chart string, name string
 
 	if err == nil {
 		name := name + "-" + environment.Namespace
-		kubeConfig := global.KUBECONFIG_BASE_PATH + environment.Group + "_" + environment.Name
+		kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
 		err := helmapi.Upgrade(kubeConfig, name, chart, environment.Namespace, args, out)
 		if err != nil {
 			return err

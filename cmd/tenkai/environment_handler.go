@@ -290,7 +290,7 @@ func removeEnvironmentFile(fileName string) error {
 func createEnvironmentFile(clusterName string, clusterUserToken string,
 	fileName string, ca string, server string, namespace string) {
 
-	file, err := os.Create(global.KUBECONFIG_BASE_PATH + fileName)
+	file, err := os.Create(global.KubeConfigBasePath + fileName)
 	if err != nil {
 		panic(err)
 	}

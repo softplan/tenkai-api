@@ -18,10 +18,12 @@ type Configuration struct {
 	App    App
 }
 
+//Dbms struct
 type Dbms struct {
-	Uri string
+	URI string
 }
 
+//App struct
 type App struct {
 	Dbms Dbms
 }

@@ -35,7 +35,7 @@ func (database *Database) DeleteUser(id int) error {
 }
 
 //AssociateEnvironmentUser - Associate an environment with a user
-func (database *Database) AssociateEnvironmentUser(userID int, environmentId int) error {
+func (database *Database) AssociateEnvironmentUser(userID int, environmentID int) error {
 	var user model.User
 	var environment model.Environment
 
@@ -43,7 +43,7 @@ func (database *Database) AssociateEnvironmentUser(userID int, environmentId int
 		return err
 	}
 
-	if err := database.Db.First(&environment, environmentId).Error; err != nil {
+	if err := database.Db.First(&environment, environmentID).Error; err != nil {
 		return err
 	}
 	if err := database.Db.Model(&user).Association("Environments").Append(&environment).Error; err == nil {
@@ -66,7 +66,7 @@ func (database *Database) ListAllUsers() ([]model.User, error) {
 func (database *Database) CreateOrUpdateUser(user model.User) error {
 
 	var loadUser model.User
-	var edit bool = true
+	edit := true
 
 	if err := database.Db.Where(model.User{Email: user.Email}).First(&loadUser).Error; err != nil {
 		edit = false

@@ -25,11 +25,11 @@ type appContext struct {
 }
 
 func main() {
-	logFields := global.AppFields{global.FUNCTION: "main"}
+	logFields := global.AppFields{global.Function: "main"}
 
-	_ = os.Mkdir(global.KUBECONFIG_BASE_PATH, 0777)
+	_ = os.Mkdir(global.KubeConfigBasePath, 0777)
 
-	if _, err := os.Stat(global.HELM_DIR + "/repository/repositories.yaml"); os.IsNotExist(err) {
+	if _, err := os.Stat(global.HelmDir + "/repository/repositories.yaml"); os.IsNotExist(err) {
 		helmapi.InitializeHelm()
 	}
 
@@ -40,7 +40,7 @@ func main() {
 
 	appContext := &appContext{configuration: config}
 
-	dbmsURI := config.App.Dbms.Uri
+	dbmsURI := config.App.Dbms.URI
 
 	//Conecta no postgres
 	appContext.database.Connect(dbmsURI)
@@ -55,7 +55,7 @@ func startHTTPServer(appContext *appContext) {
 	//===
 
 	port := appContext.configuration.Server.Port
-	global.Logger.Info(global.AppFields{global.FUNCTION: "startHTTPServer", "port": port}, "online - listen and server")
+	global.Logger.Info(global.AppFields{global.Function: "startHTTPServer", "port": port}, "online - listen and server")
 
 	r := mux.NewRouter()
 
