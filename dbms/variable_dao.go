@@ -50,7 +50,7 @@ func (database *Database) GetAllVariablesByEnvironment(envID int) ([]model.Varia
 		return nil, err
 	}
 
-	if err = database.Db.Model(&env).Order("scope").Related(&variables).Error; err != nil {
+	if err = database.Db.Model(&env).Order("scope").Order("name").Related(&variables).Error; err != nil {
 		return nil, err
 	}
 
