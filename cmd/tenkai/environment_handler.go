@@ -254,11 +254,11 @@ func (appContext *appContext) getAllEnvironments(w http.ResponseWriter, r *http.
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
-	principal := util.GetPrincipal(r)
+	//principal := util.GetPrincipal(r)
 
-	if !contains(principal.Roles, TenkaiAdmin) {
-		http.Error(w, errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
-	}
+	//if !contains(principal.Roles, TenkaiAdmin) {
+	//	http.Error(w, errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
+	//}
 
 	envResult := &model.EnvResult{}
 
