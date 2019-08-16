@@ -106,6 +106,8 @@ func startHTTPServer(appContext *appContext) {
 
 	r.HandleFunc("/analyse", appContext.analyse).Methods("POST")
 
+	r.HandleFunc("/deployTrafficRule", appContext.deployTrafficRule).Methods("POST")
+
 	r.HandleFunc("/repoUpdate", appContext.repoUpdate).Methods("GET")
 
 	r.HandleFunc("/repo/default", appContext.setDefaultRepo).Methods("POST")
