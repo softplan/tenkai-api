@@ -37,7 +37,7 @@ func (appContext *appContext) deployTrafficRule(w http.ResponseWriter, r *http.R
 	variables = append(variables, "istio.virtualservices.hosts[0]="+payload.Domain)
 	variables = append(variables, "istio.virtualservices.apiPath="+payload.ContextPath)
 
-	appName := payload.ServiceName[:strings.Index(payload.ServiceName,"-")]
+	appName := payload.ServiceName[:strings.Index(payload.ServiceName, "-")]
 
 	variables = append(variables, "app.serviceName="+payload.ServiceName)
 	variables = append(variables, "app.name="+appName)
@@ -54,7 +54,7 @@ func (appContext *appContext) deployTrafficRule(w http.ResponseWriter, r *http.R
 		variables = append(variables, "app.weightEnabled=true")
 		for i, e := range payload.Releases {
 			variables = append(variables, "app.releases["+strconv.Itoa(i)+"].name="+e.Name)
-			variables = append(variables, "app.releases["+strconv.Itoa(i)+"].value="+ strconv.Itoa(e.Weight))
+			variables = append(variables, "app.releases["+strconv.Itoa(i)+"].value="+strconv.Itoa(e.Weight))
 		}
 	}
 
