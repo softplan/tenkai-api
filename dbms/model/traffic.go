@@ -4,7 +4,7 @@ package model
 type TrafficRequest struct {
 	EnvironmentID      int                     `json:"environmentId"`
 	Domain             string                  `json:"domain"`
-	ServiceName string `json:"serviceName"`
+	ServiceName        string                  `json:"serviceName"`
 	ContextPath        string                  `json:"contextPath"`
 	HeaderName         string                  `json:"headerName"`
 	HeaderValue        string                  `json:"headerValue"`
@@ -16,5 +16,5 @@ type TrafficRequest struct {
 //TrafficReleaseRequest Structure
 type TrafficReleaseRequest struct {
 	Name   string `json:"name"`
-	Weight int `json:"weight"`
+	Weight int    `json:"weight"`
 }
