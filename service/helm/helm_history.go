@@ -79,6 +79,39 @@ func GetReleaseHistory(kubeconfig string, releaseName string) (bool, error) {
 	return deployed, err
 }
 
+//GetHelmReleaseHistory - Get helm release history
+func GetHelmReleaseHistory(kubeconfig string, releaseName string) (releaseHistory, error) {
+
+	var result releaseHistory
+
+	settings.KubeConfig = kubeconfig
+	settings.Home = global.HelmDir
+	settings.TillerNamespace = "kube-system"
+	settings.TLSEnable = false
+	settings.TLSVerify = false
+	settings.TillerConnectionTimeout = 1200
+	err := setupConnection()
+	if err == nil {
+		his := &historyCmd{out: os.Stdout, helmc: newClient()}
+		his.rls = releaseName
+
+		r, err := his.helmc.ReleaseHistory(his.rls, helm.WithMaxHistory(256))
+		if err != nil {
+			return nil, prettyError(err)
+		}
+
+		if len(r.Releases) == 0 {
+			return nil, nil
+		}
+
+		result = getReleaseHistory(r.Releases)
+
+		teardown()
+		settings.TillerHost = ""
+	}
+	return result, err
+}
+
 func (cmd *historyCmd) verifyItDeployed() (bool, error) {
 
 	r, err := cmd.helmc.ReleaseHistory(cmd.rls, helm.WithMaxHistory(cmd.max))

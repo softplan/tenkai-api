@@ -52,6 +52,32 @@ func (appContext *appContext) listHelmDeployments(w http.ResponseWriter, r *http
 
 }
 
+func (appContext *appContext) listReleaseHistory(w http.ResponseWriter, r *http.Request) {
+
+	var payload model.HistoryRequest
+
+	if err := util.UnmarshalPayload(r, &payload); err != nil {
+		http.Error(w, err.Error(), 501)
+		return
+	}
+
+	//Locate Environment
+	environment, err := appContext.database.GetByID(payload.EnvironmentID)
+	if err != nil {
+		http.Error(w, err.Error(), 501)
+		return
+	}
+
+	kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
+
+	history, err := helmapi.GetHelmReleaseHistory(kubeConfig, payload.ReleaseName)
+
+	data, _ := json.Marshal(history)
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+
+}
+
 func (appContext *appContext) listHelmDeploymentsByEnvironment(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
