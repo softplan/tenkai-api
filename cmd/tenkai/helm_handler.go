@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/softplan/tenkai-api/util"
 	"net/http"
+	"strconv"
 
 	"strings"
 
@@ -44,12 +45,40 @@ func (appContext *appContext) listHelmDeployments(w http.ResponseWriter, r *http
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
-	result := helmapi.ListHelmDeployments()
+	result := helmapi.ListHelmDeployments("")
 	data, _ := json.Marshal(result)
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 
 }
+
+
+func (appContext *appContext) listHelmDeploymentsByEnvironment(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, err.Error(), 501)
+		return
+	}
+
+	//Locate Environment
+	environment, err := appContext.database.GetByID(id)
+	if err != nil {
+		http.Error(w, err.Error(), 501)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+
+	result := helmapi.ListHelmDeployments(environment.Namespace)
+	data, _ := json.Marshal(result)
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+
+}
+
+
 
 func (appContext *appContext) hasConfigMap(w http.ResponseWriter, r *http.Request) {
 

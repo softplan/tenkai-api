@@ -55,7 +55,7 @@ type listRelease struct {
 }
 
 //ListHelmDeployments method
-func ListHelmDeployments() *HelmListResult {
+func ListHelmDeployments(namespace string) *HelmListResult {
 
 	settings.TillerNamespace = "kube-system"
 	settings.TLSEnable = false
@@ -65,6 +65,10 @@ func ListHelmDeployments() *HelmListResult {
 	list := &listCmd{out: os.Stdout}
 	setupConnection()
 	list.client = newClient()
+	if len(namespace) > 0 {
+		list.namespace = namespace
+	}
+
 	resultListResult, _ := list.run()
 
 	teardown()
