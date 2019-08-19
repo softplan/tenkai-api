@@ -24,7 +24,8 @@ type releaseInfo struct {
 	Description string `json:"description"`
 }
 
-type releaseHistory []releaseInfo
+//ReleaseHistory Structure
+type ReleaseHistory []releaseInfo
 
 type historyCmd struct {
 	max          int32
@@ -80,9 +81,9 @@ func GetReleaseHistory(kubeconfig string, releaseName string) (bool, error) {
 }
 
 //GetHelmReleaseHistory - Get helm release history
-func GetHelmReleaseHistory(kubeconfig string, releaseName string) (releaseHistory, error) {
+func GetHelmReleaseHistory(kubeconfig string, releaseName string) (ReleaseHistory, error) {
 
-	var result releaseHistory
+	var result ReleaseHistory
 
 	settings.KubeConfig = kubeconfig
 	settings.Home = global.HelmDir
@@ -124,10 +125,10 @@ func (cmd *historyCmd) verifyItDeployed() (bool, error) {
 		return false, nil
 	}
 
-	releaseHistory := getReleaseHistory(r.Releases)
+	releaseList := getReleaseHistory(r.Releases)
 
-	for i := 0; i <= len(releaseHistory)-1; i++ {
-		r := releaseHistory[i]
+	for i := 0; i <= len(releaseList)-1; i++ {
+		r := releaseList[i]
 		if r.Status != "DEPLOYED" {
 			return false, nil
 		}
@@ -172,7 +173,7 @@ func (cmd *historyCmd) run() error {
 	return nil
 }
 
-func getReleaseHistory(rls []*release.Release) (history releaseHistory) {
+func getReleaseHistory(rls []*release.Release) (history ReleaseHistory) {
 	for i := len(rls) - 1; i >= 0; i-- {
 		r := rls[i]
 		c := formatChartname(r.Chart)
@@ -194,7 +195,7 @@ func getReleaseHistory(rls []*release.Release) (history releaseHistory) {
 	return history
 }
 
-func formatAsTable(releases releaseHistory, colWidth uint) []byte {
+func formatAsTable(releases ReleaseHistory, colWidth uint) []byte {
 	tbl := uitable.New()
 
 	tbl.MaxColWidth = colWidth
