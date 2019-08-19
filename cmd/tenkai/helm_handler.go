@@ -52,7 +52,6 @@ func (appContext *appContext) listHelmDeployments(w http.ResponseWriter, r *http
 
 }
 
-
 func (appContext *appContext) listHelmDeploymentsByEnvironment(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
@@ -77,8 +76,6 @@ func (appContext *appContext) listHelmDeploymentsByEnvironment(w http.ResponseWr
 	w.Write(data)
 
 }
-
-
 
 func (appContext *appContext) hasConfigMap(w http.ResponseWriter, r *http.Request) {
 
