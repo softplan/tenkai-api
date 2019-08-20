@@ -2,7 +2,9 @@ package helmapi
 
 import (
 	"fmt"
+	"github.com/softplan/tenkai-api/global"
 	"io"
+	"os"
 
 	"k8s.io/helm/pkg/helm"
 )
@@ -17,6 +19,44 @@ type deleteCmd struct {
 
 	out    io.Writer
 	client helm.Interface
+}
+
+//DeleteHelmRelease - Delete a Release
+func DeleteHelmRelease(kubeconfig string, releaseName string, purge bool) error {
+
+	logFields := global.AppFields{global.Function: "ListHelmDeployments", releaseName: releaseName}
+
+	settings.KubeConfig = kubeconfig
+	settings.Home = global.HelmDir
+	settings.TillerNamespace = "kube-system"
+	settings.TLSEnable = false
+	settings.TLSVerify = false
+	settings.TillerConnectionTimeout = 1200
+
+	cmd := &deleteCmd{out: os.Stdout}
+
+	global.Logger.Info(logFields, "setupConnection")
+	err := setupConnection()
+	if err != nil {
+		return err
+	}
+
+	cmd.client = newClient()
+	cmd.purge = purge
+	cmd.name = releaseName
+
+	global.Logger.Info(logFields, "cmd.run()")
+	err = cmd.run()
+	if err != nil {
+		return err
+	}
+
+	global.Logger.Info(logFields, "teardown()")
+	teardown()
+	settings.TillerHost = ""
+
+	return nil
+
 }
 
 func (d *deleteCmd) run() error {
