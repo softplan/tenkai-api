@@ -45,8 +45,18 @@ func (appContext *appContext) listHelmDeployments(w http.ResponseWriter, r *http
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
-	result := helmapi.ListHelmDeployments("")
-	data, _ := json.Marshal(result)
+	result, err := helmapi.ListHelmDeployments("")
+	if err != nil {
+		http.Error(w, err.Error(), 501)
+		return
+	}
+
+	data, err := json.Marshal(result)
+	if err != nil {
+		http.Error(w, err.Error(), 501)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 
@@ -96,7 +106,12 @@ func (appContext *appContext) listHelmDeploymentsByEnvironment(w http.ResponseWr
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
-	result := helmapi.ListHelmDeployments(environment.Namespace)
+	result, err := helmapi.ListHelmDeployments(environment.Namespace)
+	if err != nil {
+		http.Error(w, err.Error(), 501)
+		return
+	}
+
 	data, _ := json.Marshal(result)
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)

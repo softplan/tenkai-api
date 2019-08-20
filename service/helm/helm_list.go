@@ -3,6 +3,7 @@ package helmapi
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/softplan/tenkai-api/global"
 	"io"
 	"os"
 	"strings"
@@ -55,7 +56,9 @@ type listRelease struct {
 }
 
 //ListHelmDeployments method
-func ListHelmDeployments(namespace string) *HelmListResult {
+func ListHelmDeployments(namespace string) (*HelmListResult, error) {
+
+	logFields := global.AppFields{global.Function: "ListHelmDeployments", namespace: namespace}
 
 	settings.TillerNamespace = "kube-system"
 	settings.TLSEnable = false
@@ -63,18 +66,30 @@ func ListHelmDeployments(namespace string) *HelmListResult {
 	settings.TillerConnectionTimeout = 1200
 
 	list := &listCmd{out: os.Stdout}
-	setupConnection()
+
+	global.Logger.Info(logFields, "setupConnection")
+	err := setupConnection()
+	if err != nil {
+		return nil, err
+	}
+
 	list.client = newClient()
+
 	if len(namespace) > 0 {
 		list.namespace = namespace
 	}
 
-	resultListResult, _ := list.run()
+	global.Logger.Info(logFields, "list.run()")
+	resultListResult, err := list.run()
+	if err != nil {
+		return nil, err
+	}
 
+	global.Logger.Info(logFields, "teardown()")
 	teardown()
 	settings.TillerHost = ""
 
-	return resultListResult
+	return resultListResult, nil
 }
 
 func (l *listCmd) run() (*HelmListResult, error) {
