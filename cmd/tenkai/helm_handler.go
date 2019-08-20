@@ -41,27 +41,6 @@ func (appContext *appContext) listCharts(w http.ResponseWriter, r *http.Request)
 
 }
 
-func (appContext *appContext) listHelmDeployments(w http.ResponseWriter, r *http.Request) {
-
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-
-	result, err := helmapi.ListHelmDeployments("")
-	if err != nil {
-		http.Error(w, err.Error(), 501)
-		return
-	}
-
-	data, err := json.Marshal(result)
-	if err != nil {
-		http.Error(w, err.Error(), 501)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(data)
-
-}
-
 func (appContext *appContext) listReleaseHistory(w http.ResponseWriter, r *http.Request) {
 
 	var payload model.HistoryRequest
@@ -106,7 +85,9 @@ func (appContext *appContext) listHelmDeploymentsByEnvironment(w http.ResponseWr
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
-	result, err := helmapi.ListHelmDeployments(environment.Namespace)
+	kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
+
+	result, err := helmapi.ListHelmDeployments(kubeConfig, environment.Namespace)
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return

@@ -56,10 +56,12 @@ type listRelease struct {
 }
 
 //ListHelmDeployments method
-func ListHelmDeployments(namespace string) (*HelmListResult, error) {
+func ListHelmDeployments(kubeconfig string, namespace string) (*HelmListResult, error) {
 
 	logFields := global.AppFields{global.Function: "ListHelmDeployments", namespace: namespace}
 
+	settings.KubeConfig = kubeconfig
+	settings.Home = global.HelmDir
 	settings.TillerNamespace = "kube-system"
 	settings.TLSEnable = false
 	settings.TLSVerify = false
