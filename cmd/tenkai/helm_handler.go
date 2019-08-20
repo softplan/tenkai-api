@@ -41,7 +41,59 @@ func (appContext *appContext) listCharts(w http.ResponseWriter, r *http.Request)
 
 }
 
+func (appContext *appContext) deleteHelmRelease(w http.ResponseWriter, r *http.Request) {
+
+	principal := util.GetPrincipal(r)
+
+	environmentIDs, ok := r.URL.Query()["environmentID"]
+	if !ok || len(environmentIDs[0]) < 1 {
+		http.Error(w, errors.New("param environmentID is required").Error(), 501)
+		return
+	}
+
+	releasesName, ok := r.URL.Query()["releaseName"]
+	if !ok || len(releasesName[0]) < 1 {
+		http.Error(w, errors.New("param releasesName is required").Error(), 501)
+		return
+	}
+
+	purges, ok := r.URL.Query()["purge"]
+	if !ok || len(purges[0]) < 1 {
+		http.Error(w, errors.New("param purges, is required").Error(), 501)
+		return
+	}
+
+	//Locate Environment
+	envID, _ := strconv.Atoi(environmentIDs[0])
+
+	has, err := appContext.hasAccess(principal.Email, envID)
+	if err != nil || !has {
+		http.Error(w, errors.New("Access Denied in this environment").Error(), http.StatusUnauthorized)
+		return
+	}
+
+	environment, err := appContext.database.GetByID(int(envID))
+	if err != nil {
+		http.Error(w, err.Error(), 501)
+		return
+	}
+
+	kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
+
+	purge, _ := strconv.ParseBool(purges[0])
+	err = helmapi.DeleteHelmRelease(kubeConfig, releasesName[0], purge)
+	if err != nil {
+		http.Error(w, err.Error(), 501)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+}
+
 func (appContext *appContext) listReleaseHistory(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
 	var payload model.HistoryRequest
 

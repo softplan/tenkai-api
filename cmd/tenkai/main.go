@@ -89,6 +89,8 @@ func startHTTPServer(appContext *appContext) {
 	r.HandleFunc("/repositories", appContext.newRepository).Methods("POST")
 	r.HandleFunc("/repositories/{name}", appContext.deleteRepository).Methods("DELETE")
 
+	r.HandleFunc("/deleteHelmRelease", appContext.deleteHelmRelease).Methods("DELETE")
+
 	r.HandleFunc("/releases", appContext.listReleases).Methods("GET")
 	r.HandleFunc("/releases", appContext.newRelease).Methods("POST")
 	r.HandleFunc("/releases/{id}", appContext.deleteRelease).Methods("DELETE")
