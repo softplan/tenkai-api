@@ -1,6 +1,7 @@
 package dbms
 
 import (
+	"github.com/jinzhu/gorm"
 	"github.com/softplan/tenkai-api/dbms/model"
 )
 
@@ -37,14 +38,23 @@ func (database *Database) GetAllEnvironments(principal string) ([]model.Environm
 		var user model.User
 
 		if err := database.Db.Where(model.User{Email: principal}).First(&user).Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return envs, nil
+			}
 			return nil, err
 		}
 
 		if err := database.Db.Model(&user).Related(&envs, "Environments").Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return envs, nil
+			}
 			return nil, err
 		}
 	} else {
 		if err := database.Db.Find(&envs).Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return envs, nil
+			}
 			return nil, err
 		}
 	}

@@ -91,6 +91,34 @@ func (appContext *appContext) deleteHelmRelease(w http.ResponseWriter, r *http.R
 
 }
 
+func (appContext *appContext) revision(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+
+	var payload model.GetRevisionRequest
+
+	if err := util.UnmarshalPayload(r, &payload); err != nil {
+		http.Error(w, err.Error(), 501)
+		return
+	}
+
+	//Locate Environment
+	environment, err := appContext.database.GetByID(payload.EnvironmentID)
+	if err != nil {
+		http.Error(w, err.Error(), 501)
+		return
+	}
+
+	kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
+
+	yaml, err := helmapi.Get(kubeConfig, payload.ReleaseName, payload.Revision)
+
+	data, _ := json.Marshal(yaml)
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+
+}
+
 func (appContext *appContext) listReleaseHistory(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
