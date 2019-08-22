@@ -33,7 +33,7 @@ func TestGetEnvironmentsNotFound(t *testing.T) {
 	appContext.database.MockConnect()
 	handler := http.HandlerFunc(appContext.getEnvironments)
 	handler.ServeHTTP(rr, req)
-	if status := rr.Code; status != http.StatusInternalServerError {
+	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("Handler returned wrong status code: got %v want %v", status, http.StatusInternalServerError)
 	}
 }
