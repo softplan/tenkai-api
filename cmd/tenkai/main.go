@@ -83,6 +83,8 @@ func startHTTPServer(appContext *appContext) {
 	r.HandleFunc("/environments/export/{id}", appContext.export).Methods("GET")
 	r.HandleFunc("/hasConfigMap", appContext.hasConfigMap).Methods("POST")
 
+	r.HandleFunc("/revision", appContext.revision).Methods("POST")
+
 	r.HandleFunc("/environments/duplicate/{id}", appContext.duplicateEnvironments).Methods("GET")
 
 	r.HandleFunc("/repositories", appContext.listRepositories).Methods("GET")
