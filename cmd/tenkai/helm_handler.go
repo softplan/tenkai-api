@@ -91,6 +91,36 @@ func (appContext *appContext) deleteHelmRelease(w http.ResponseWriter, r *http.R
 
 }
 
+func (appContext *appContext) rollback(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+
+	var payload model.GetRevisionRequest
+
+	if err := util.UnmarshalPayload(r, &payload); err != nil {
+		http.Error(w, err.Error(), 501)
+		return
+	}
+
+	//Locate Environment
+	environment, err := appContext.database.GetByID(payload.EnvironmentID)
+	if err != nil {
+		http.Error(w, err.Error(), 501)
+		return
+	}
+
+	kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
+
+	err = helmapi.RollbackRelease(kubeConfig, payload.ReleaseName, payload.Revision)
+	if err != nil {
+		http.Error(w, err.Error(), 501)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+}
+
 func (appContext *appContext) revision(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -190,9 +220,7 @@ func (appContext *appContext) hasConfigMap(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	mutex := appContext.mutex
-
-	result, err := helmapi.GetTemplate(&mutex, payload.ChartName, payload.ChartVersion, "deployment")
+	result, err := helmapi.GetTemplate(&appContext.mutex, payload.ChartName, payload.ChartVersion, "deployment")
 
 	w.WriteHeader(http.StatusOK)
 	if err != nil {

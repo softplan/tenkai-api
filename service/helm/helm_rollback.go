@@ -2,8 +2,10 @@ package helmapi
 
 import (
 	"fmt"
+	"github.com/softplan/tenkai-api/global"
 	"io"
 	"k8s.io/helm/pkg/helm"
+	"os"
 )
 
 type rollbackCmd struct {
@@ -19,6 +21,32 @@ type rollbackCmd struct {
 	wait          bool
 	description   string
 	cleanupOnFail bool
+}
+
+//RollbackRelease - Rollback a release
+func RollbackRelease(kubeconfig string, releaseName string, revision int) error {
+
+	settings.KubeConfig = kubeconfig
+	settings.Home = global.HelmDir
+	settings.TillerNamespace = "kube-system"
+	settings.TLSEnable = false
+	settings.TLSVerify = false
+	settings.TillerConnectionTimeout = 1200
+	err := setupConnection()
+
+	if err != nil {
+		return err
+	}
+
+	cmd := &rollbackCmd{out: os.Stdout}
+	cmd.client = newClient()
+	cmd.name = releaseName
+	cmd.revision = int32(revision)
+
+	err = cmd.run()
+
+	return err
+
 }
 
 func (r *rollbackCmd) run() error {
