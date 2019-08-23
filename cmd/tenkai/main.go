@@ -70,6 +70,7 @@ func startHTTPServer(appContext *appContext) {
 	r.HandleFunc("/rollback", appContext.rollback).Methods("POST")
 
 	r.HandleFunc("/charts/{repo}", appContext.listCharts).Methods("GET")
+	r.HandleFunc("/listPods/{id}", appContext.pods).Methods("GET")
 
 	r.HandleFunc("/variables", appContext.addVariables).Methods("POST")
 	r.HandleFunc("/variables/{envId}", appContext.getVariables).Methods("GET")

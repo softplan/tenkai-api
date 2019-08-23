@@ -57,6 +57,8 @@ func Get(kubeconfig string, releaseName string, revision int) (string, error) {
 		return "", err
 	}
 
+	teardown()
+
 	return result, nil
 
 }
