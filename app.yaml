@@ -1,9 +1,15 @@
 server:
   port: 8080
 
+
 app:
   dbms:
-   uri: "host=172.21.25.22 port=5432 user=postgres dbname=tenkai sslmode=disable password=docker"
+   uri: ""
+
+
+#app:
+#  dbms:
+#   uri: "host=172.21.25.22 port=5432 user=postgres dbname=tenkai sslmode=disable password=docker"
 
 #app:
 #  dbms:

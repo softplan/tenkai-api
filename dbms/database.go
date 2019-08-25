@@ -2,7 +2,7 @@ package dbms
 
 import (
 	"github.com/jinzhu/gorm"
-	//_ "github.com/jinzhu/gorm/dialects/sqlite"
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	mocket "github.com/selvatico/go-mocket"
 	"github.com/softplan/tenkai-api/dbms/model"
@@ -14,10 +14,14 @@ type Database struct {
 }
 
 //Connect - Connect to a database
-func (database *Database) Connect(dbmsURI string) {
+func (database *Database) Connect(dbmsURI string, local bool) {
 	var err error
-	//database.Db, err = gorm.Open("sqlite3", "/tmp/tekai.db")
-	database.Db, err = gorm.Open("postgres", dbmsURI)
+
+	if local {
+		database.Db, err = gorm.Open("sqlite3", "/tmp/tekai.db")
+	} else {
+		database.Db, err = gorm.Open("postgres", dbmsURI)
+	}
 
 	if err != nil {
 		panic("failed to connect database")

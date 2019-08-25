@@ -43,7 +43,7 @@ func main() {
 	dbmsURI := config.App.Dbms.URI
 
 	//Conecta no postgres
-	appContext.database.Connect(dbmsURI)
+	appContext.database.Connect(dbmsURI, dbmsURI == "")
 	defer appContext.database.Db.Close()
 
 	global.Logger.Info(logFields, "iniciando o servidor http")
