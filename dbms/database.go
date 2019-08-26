@@ -2,8 +2,10 @@ package dbms
 
 import (
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	//postgres
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+	//sqllite
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	mocket "github.com/selvatico/go-mocket"
 	"github.com/softplan/tenkai-api/dbms/model"
 )

@@ -390,7 +390,8 @@
   name = "github.com/jinzhu/gorm"
   packages = [
     ".",
-    "dialects/postgres"
+    "dialects/postgres",
+    "dialects/sqlite"
   ]
   revision = "b7156195f7f3415f97c20abbd6aff894b847fee8"
   version = "v1.9.8"
@@ -472,6 +473,12 @@
   packages = ["."]
   revision = "3ee7d812e62a0804a7d0a324e0249ca2db3476d3"
   version = "v0.0.4"
+
+[[projects]]
+  name = "github.com/mattn/go-sqlite3"
+  packages = ["."]
+  revision = "b612a2feea6aa87c6d052d9086572551df06497e"
+  version = "v1.11.0"
 
 [[projects]]
   name = "github.com/mitchellh/go-wordwrap"
@@ -1286,6 +1293,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "823094a161984558d091bca4d53e161b3964e066c2e27a9e5cf9fcd0b40e0299"
+  inputs-digest = "2aad0500917e3d1279eaea6fd17d536b78c572e074ba03e24b48e105d4798260"
   solver-name = "gps-cdcl"
   solver-version = 1
