@@ -75,6 +75,8 @@ func startHTTPServer(appContext *appContext) {
 	r.HandleFunc("/variables", appContext.addVariables).Methods("POST")
 	r.HandleFunc("/variables/{envId}", appContext.getVariables).Methods("GET")
 	r.HandleFunc("/variables/delete/{id}", appContext.deleteVariable).Methods("DELETE")
+	r.HandleFunc("/deletePod", appContext.deletePod).Methods("DELETE")
+
 	r.HandleFunc("/variables/edit", appContext.editVariable).Methods("POST")
 
 	r.HandleFunc("/environments/delete/{id}", appContext.deleteEnvironment).Methods("DELETE")

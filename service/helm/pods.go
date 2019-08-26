@@ -10,6 +10,17 @@ import (
 	"time"
 )
 
+//DeletePod - Delete a Pod
+func DeletePod(kubeconfig string, podName string, namespace string) error {
+	_, client, err := getKubeClient(settings.KubeContext, kubeconfig)
+	if err != nil {
+		return err
+	}
+	opts := &metav1.DeleteOptions{}
+	err = client.CoreV1().Pods(namespace).Delete(podName, opts)
+	return err
+}
+
 //GetPods Method
 func GetPods(kubeconfig string, namespace string) ([]model.Pod, error) {
 	pods := make([]model.Pod, 0)

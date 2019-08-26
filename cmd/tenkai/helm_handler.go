@@ -41,6 +41,49 @@ func (appContext *appContext) listCharts(w http.ResponseWriter, r *http.Request)
 
 }
 
+func (appContext *appContext) deletePod(w http.ResponseWriter, r *http.Request) {
+
+	principal := util.GetPrincipal(r)
+
+	environmentIDs, ok := r.URL.Query()["environmentID"]
+	if !ok || len(environmentIDs[0]) < 1 {
+		http.Error(w, errors.New("param environmentID is required").Error(), 501)
+		return
+	}
+
+	podName, ok := r.URL.Query()["podName"]
+	if !ok || len(podName[0]) < 1 {
+		http.Error(w, errors.New("param podName is required").Error(), 501)
+		return
+	}
+
+	//Locate Environment
+	envID, _ := strconv.Atoi(environmentIDs[0])
+
+	has, err := appContext.hasAccess(principal.Email, envID)
+	if err != nil || !has {
+		http.Error(w, errors.New("Access Denied in this environment").Error(), http.StatusUnauthorized)
+		return
+	}
+
+	environment, err := appContext.database.GetByID(int(envID))
+	if err != nil {
+		http.Error(w, err.Error(), 501)
+		return
+	}
+
+	kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
+
+	err = helmapi.DeletePod(kubeConfig, podName[0], environment.Namespace)
+	if err != nil {
+		http.Error(w, err.Error(), 501)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+}
+
 func (appContext *appContext) deleteHelmRelease(w http.ResponseWriter, r *http.Request) {
 
 	principal := util.GetPrincipal(r)
