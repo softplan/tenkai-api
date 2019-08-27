@@ -25,7 +25,8 @@ type Dbms struct {
 
 //App struct
 type App struct {
-	Dbms Dbms
+	Passkey string
+	Dbms    Dbms
 }
 
 //ReadConfig inicia as configurações
