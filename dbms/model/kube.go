@@ -9,7 +9,22 @@ type Pod struct {
 	Age      string `json:"age"`
 }
 
+//Service structure
+type Service struct {
+	Name       string `json:"name"`
+	Type       string `json:"type"`
+	ClusterIP  string `json:"clusterIP"`
+	ExternalIP string `json:"externalIP"`
+	Ports      string `json:"ports"`
+	Age        string `json:"age"`
+}
+
 //PodResult structure
 type PodResult struct {
 	Pods []Pod `json:"pods"`
+}
+
+//ServiceResult structure
+type ServiceResult struct {
+	Services []Service `json:"services"`
 }
