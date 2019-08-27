@@ -1,12 +1,12 @@
 package main
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"github.com/softplan/tenkai-api/dbms/model"
 	"github.com/softplan/tenkai-api/util"
 	"net/http"
-
-	"github.com/softplan/tenkai-api/dbms/model"
 )
 
 func (appContext *appContext) saveVariableValues(w http.ResponseWriter, r *http.Request) {
@@ -35,6 +35,8 @@ func (appContext *appContext) saveVariableValues(w http.ResponseWriter, r *http.
 
 func (appContext *appContext) getVariablesByEnvironmentAndScope(w http.ResponseWriter, r *http.Request) {
 
+	principal := util.GetPrincipal(r)
+
 	type Payload struct {
 		EnvironmentID int    `json:"environmentId"`
 		Scope         string `json:"scope"`
@@ -47,6 +49,12 @@ func (appContext *appContext) getVariablesByEnvironmentAndScope(w http.ResponseW
 		return
 	}
 
+	has, failed := appContext.hasAccess(principal.Email, payload.EnvironmentID)
+	if failed != nil || !has {
+		http.Error(w, errors.New("Access Denied in this environment").Error(), http.StatusUnauthorized)
+		return
+	}
+
 	variableResult := &model.VariablesResult{}
 
 	var err error
@@ -54,6 +62,16 @@ func (appContext *appContext) getVariablesByEnvironmentAndScope(w http.ResponseW
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	for i, e := range variableResult.Variables {
+		if e.Secret {
+			byteValues, _ := hex.DecodeString(e.Value)
+			value := util.Decrypt(byteValues, appContext.configuration.App.Passkey)
+			variableResult.Variables[i].Value = string(value)
+
+		}
+	}
+
 	data, _ := json.Marshal(variableResult)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)

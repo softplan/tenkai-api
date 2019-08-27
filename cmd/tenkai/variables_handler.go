@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"github.com/softplan/tenkai-api/util"
@@ -45,6 +46,11 @@ func (appContext *appContext) editVariable(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	if payload.Data.Secret {
+		secret := util.Encrypt([]byte(payload.Data.Value), appContext.configuration.App.Passkey)
+		payload.Data.Value = hex.EncodeToString(secret)
+	}
+
 	if err := appContext.database.EditVariable(payload.Data); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -68,6 +74,11 @@ func (appContext *appContext) addVariables(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	if payload.Data.Secret {
+		secret := util.Encrypt([]byte(payload.Data.Value), appContext.configuration.App.Passkey)
+		payload.Data.Value = hex.EncodeToString(secret)
+	}
+
 	if err := appContext.database.EditVariable(payload.Data); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -79,15 +90,32 @@ func (appContext *appContext) addVariables(w http.ResponseWriter, r *http.Reques
 
 func (appContext *appContext) getVariables(w http.ResponseWriter, r *http.Request) {
 
+	principal := util.GetPrincipal(r)
+
 	vars := mux.Vars(r)
 	sl := vars["envId"]
 	id, _ := strconv.Atoi(sl)
 	variableResult := &model.VariablesResult{}
 
+	has, failed := appContext.hasAccess(principal.Email, id)
+	if failed != nil || !has {
+		http.Error(w, errors.New("Access Denied in this environment").Error(), http.StatusUnauthorized)
+		return
+	}
+
 	var err error
 	if variableResult.Variables, err = appContext.database.GetAllVariablesByEnvironment(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	for i, e := range variableResult.Variables {
+		if e.Secret {
+			byteValues, _ := hex.DecodeString(e.Value)
+			value := util.Decrypt(byteValues, appContext.configuration.App.Passkey)
+			variableResult.Variables[i].Value = string(value)
+
+		}
 	}
 
 	data, _ := json.Marshal(variableResult)

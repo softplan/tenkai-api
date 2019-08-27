@@ -66,6 +66,7 @@ type Variable struct {
 	Scope         string `json:"scope" gorm:"index:var_scope"`
 	Name          string `json:"name" gorm:"index:var_name"`
 	Value         string `json:"value"`
+	Secret        bool   `json:"secret"`
 	Description   string `json:"description"`
 	EnvironmentID int    `json:"environmentId"`
 }

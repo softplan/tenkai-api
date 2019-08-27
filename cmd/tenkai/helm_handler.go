@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -334,7 +335,14 @@ func (appContext *appContext) simpleInstall(envID int, chart string, name string
 	globalVariables := appContext.getGlobalVariables(int(environment.ID))
 
 	var args []string
-	for _, item := range variables {
+	for i, item := range variables {
+
+		if item.Secret {
+			byteValues, _ := hex.DecodeString(item.Value)
+			value := util.Decrypt(byteValues, appContext.configuration.App.Passkey)
+			variables[i].Value = string(value)
+		}
+
 		if len(item.Name) > 0 && len(item.Value) > 0 {
 			args = append(args, normalizeVariableName(item.Name)+"="+replace(item.Value, *environment, globalVariables))
 		}
@@ -379,5 +387,15 @@ func normalizeVariableName(value string) string {
 
 func (appContext *appContext) getGlobalVariables(id int) []model.Variable {
 	variables, _ := appContext.database.GetAllVariablesByEnvironmentAndScope(id, "global")
+
+	for i, e := range variables {
+		if e.Secret {
+			byteValues, _ := hex.DecodeString(e.Value)
+			value := util.Decrypt(byteValues, appContext.configuration.App.Passkey)
+			variables[i].Value = string(value)
+
+		}
+	}
+
 	return variables
 }
