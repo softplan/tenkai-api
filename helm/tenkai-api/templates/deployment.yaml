@@ -40,6 +40,8 @@ spec:
           env:
             - name: APP_DBMS_URI
               value: {{ .Values.app.appDbmsUri }}
+            - name: APP_PASSKEY
+              value: {{ .Values.app.passkey}}
           ports:
             - name: http
               containerPort: 8080
