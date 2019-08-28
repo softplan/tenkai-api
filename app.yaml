@@ -1,20 +1,18 @@
 server:
   port: 8080
 
-
-#app:
-#  passkey: "UmaFras3Qua#lqu3rQu3uR3pr#esentaAChav3D#3CriptografiaDosAr#quivos#"
-#  dbms:
-#   uri: ""
-
-
-#app:
-#  passkey: "UmaFras3Qua#lqu3rQu3uR3pr#esentaAChav3D#3CriptografiaDosAr#quivos#"
-#  dbms:
-#   uri: "host=172.21.25.22 port=5432 user=postgres dbname=tenkai sslmode=disable password=docker"
-
 app:
-  passkey: "UmaFras3Qua#lqu3rQu3uR3pr#esentaAChav3D#3CriptografiaDosAr#quivos#"
+  passkey: ""
   dbms:
-    uri: "host=172.21.25.22 port=5432 user=postgres dbname=tenkai-dev sslmode=disable password=docker"
+    uri: ""
+
+#app:
+#  passkey: "UmaFras3Qua#lqu3rQu3uR3pr#esentaAChav3D#3CriptografiaDosAr#quivos#"
+#  dbms:
+#    uri: "host=172.21.25.22 port=5432 user=postgres dbname=tenkai sslmode=disable password=docker"
+
+#app:
+#  passkey: "UmaFras3Qua#lqu3rQu3uR3pr#esentaAChav3D#3CriptografiaDosAr#quivos#"
+#  dbms:
+#    uri: "host=172.21.25.22 port=5432 user=postgres dbname=tenkai-dev sslmode=disable password=docker"
 

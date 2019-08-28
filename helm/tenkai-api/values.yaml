@@ -18,6 +18,7 @@ service:
 app:
   pullSecret: unjregistry
   appDbmsUri: "host=127.0.0.1 port=5432 user=postgres dbname=tenkai sslmode=disable password=xxxx"
+  passkey: "mysecret"
 
 istio:
   enabled: true
