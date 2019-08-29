@@ -23,7 +23,7 @@ func (database *Database) EditEnvironment(env model.Environment) error {
 
 // DeleteEnvironment - Deletes an environment
 func (database *Database) DeleteEnvironment(env model.Environment) error {
-	if err := database.Db.Delete(&env).Error; err != nil {
+	if err := database.Db.Unscoped().Delete(&env).Error; err != nil {
 		return err
 	}
 	return nil

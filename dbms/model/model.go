@@ -14,6 +14,12 @@ type Environment struct {
 	Gateway       string `json:"gateway"`
 }
 
+//EnvResult Model
+type EnvResult struct {
+	Envs []Environment
+}
+
+
 //User struct
 type User struct {
 	gorm.Model
@@ -27,10 +33,6 @@ type UserResult struct {
 	Users []User `json:"users"`
 }
 
-//EnvResult Model
-type EnvResult struct {
-	Envs []Environment
-}
 
 //DataElement dataElement
 type DataElement struct {
