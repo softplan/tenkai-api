@@ -342,8 +342,11 @@ func (appContext *appContext) simpleInstall(envID int, chart string, name string
 
 		if item.Secret {
 			byteValues, _ := hex.DecodeString(item.Value)
-			value := util.Decrypt(byteValues, appContext.configuration.App.Passkey)
-			variables[i].Value = string(value)
+			value, err := util.Decrypt(byteValues, appContext.configuration.App.Passkey)
+			if err == nil {
+				variables[i].Value = string(value)
+			}
+
 		}
 
 		if len(item.Name) > 0 && len(item.Value) > 0 {
@@ -394,9 +397,10 @@ func (appContext *appContext) getGlobalVariables(id int) []model.Variable {
 	for i, e := range variables {
 		if e.Secret {
 			byteValues, _ := hex.DecodeString(e.Value)
-			value := util.Decrypt(byteValues, appContext.configuration.App.Passkey)
-			variables[i].Value = string(value)
-
+			value, err := util.Decrypt(byteValues, appContext.configuration.App.Passkey)
+			if err == nil {
+				variables[i].Value = string(value)
+			}
 		}
 	}
 

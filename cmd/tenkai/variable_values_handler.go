@@ -66,9 +66,10 @@ func (appContext *appContext) getVariablesByEnvironmentAndScope(w http.ResponseW
 	for i, e := range variableResult.Variables {
 		if e.Secret {
 			byteValues, _ := hex.DecodeString(e.Value)
-			value := util.Decrypt(byteValues, appContext.configuration.App.Passkey)
-			variableResult.Variables[i].Value = string(value)
-
+			value, err := util.Decrypt(byteValues, appContext.configuration.App.Passkey)
+			if err == nil {
+				variableResult.Variables[i].Value = string(value)
+			}
 		}
 	}
 
