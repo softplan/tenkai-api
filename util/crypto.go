@@ -6,6 +6,7 @@ import (
 	"crypto/md5"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"io"
 )
 
@@ -31,21 +32,28 @@ func Encrypt(data []byte, passphrase string) []byte {
 }
 
 //Decrypt something
-func Decrypt(data []byte, passphrase string) []byte {
+func Decrypt(data []byte, passphrase string) ([]byte, error) {
+	fakeResult := make([]byte, 0)
 	key := []byte(createHash(passphrase))
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		panic(err.Error())
+		return fakeResult, err
 	}
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		panic(err.Error())
+		return fakeResult, err
 	}
+
 	nonceSize := gcm.NonceSize()
+
+	if len(data) < nonceSize {
+		return fakeResult, errors.New("Error decrypting")
+	}
 	nonce, ciphertext := data[:nonceSize], data[nonceSize:]
+
 	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
-		panic(err.Error())
+		return fakeResult, err
 	}
-	return plaintext
+	return plaintext, nil
 }
