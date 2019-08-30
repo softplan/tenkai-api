@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"sync"
 )
 
 type releaseToDeploy struct {
@@ -26,8 +25,6 @@ func (appContext *appContext) promote(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, errors.New("Acccess Denied").Error(), http.StatusUnauthorized)
 		return
 	}
-
-	out := &bytes.Buffer{}
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
@@ -84,29 +81,44 @@ func (appContext *appContext) promote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	toDeploy, err := retrieveReleasesToDeploy(&appContext.mutex, kubeConfig, srcEnvironment.Namespace)
+	toPurge, err := retrieveReleasesToPurge(kubeConfig, targetEnvironment.Namespace)
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
 	}
 
-	toPurge, err := retrieveReleasesToPurge(&appContext.mutex, kubeConfig, targetEnvironment.Namespace)
+	toDeploy, err := retrieveReleasesToDeploy(kubeConfig, srcEnvironment.Namespace)
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
 	}
 
-	err = appContext.purgeAll(kubeConfig, toPurge)
+	go appContext.doIt(kubeConfig, targetEnvironment, toPurge, toDeploy)
+
+	w.WriteHeader(http.StatusOK)
+
+}
+
+func (appContext *appContext) doIt(kubeConfig string, targetEnvironment *model.Environment, toPurge []releaseToDeploy, toDeploy []releaseToDeploy) {
+
+	out := &bytes.Buffer{}
+
+	logFields := global.AppFields{global.Function: "doIt - promoting", "target": targetEnvironment.Name}
+
+	err := appContext.purgeAll(kubeConfig, toPurge)
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		global.Logger.Error(logFields, "error: "+err.Error())
 		return
 	}
 
 	for _, e := range toDeploy {
-		appContext.simpleInstall(int(targetEnvironment.ID), e.Chart, e.Name, out)
+		global.Logger.Info(logFields, "deploying: "+e.Name+" - "+e.Chart)
+		err := appContext.simpleInstall(int(targetEnvironment.ID), e.Chart, e.Name, out)
+		if err != nil {
+			global.Logger.Error(logFields, "error: "+err.Error())
+			return
+		}
 	}
-
-	w.WriteHeader(http.StatusOK)
 
 }
 
@@ -150,11 +162,9 @@ func (appContext *appContext) copyEnvironmentVariablesFromSrcToTarget(srcEnvID u
 
 }
 
-func retrieveReleasesToDeploy(mutex *sync.Mutex, kubeConfig string, srcNamespace string) ([]releaseToDeploy, error) {
+func retrieveReleasesToDeploy(kubeConfig string, srcNamespace string) ([]releaseToDeploy, error) {
 	result := make([]releaseToDeploy, 0)
-	mutex.Lock()
 	list, err := helmapi.ListHelmDeployments(kubeConfig, srcNamespace)
-	mutex.Unlock()
 	if err != nil {
 		return result, err
 	}
@@ -169,14 +179,19 @@ func retrieveReleasesToDeploy(mutex *sync.Mutex, kubeConfig string, srcNamespace
 	return result, nil
 }
 
-func retrieveReleasesToPurge(mutex *sync.Mutex, kubeConfig string, namespace string) ([]releaseToDeploy, error) {
+func retrieveReleasesToPurge(kubeConfig string, namespace string) ([]releaseToDeploy, error) {
+
 	result := make([]releaseToDeploy, 0)
-	mutex.Lock()
 	list, err := helmapi.ListHelmDeployments(kubeConfig, namespace)
-	mutex.Unlock()
+
 	if err != nil {
 		return result, err
 	}
+
+	if list == nil {
+		return result, nil
+	}
+
 	for _, e := range list.Releases {
 
 		lastHifen := strings.LastIndex(e.Chart, "-")
