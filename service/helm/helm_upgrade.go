@@ -66,6 +66,8 @@ func Upgrade(kubeconfig string, release string, chart string, namespace string, 
 	upgrade := &upgradeCmd{out: out}
 
 	err := setupConnection()
+	defer teardown()
+
 	if err == nil {
 		upgrade.client = newClient()
 		upgrade.version = ">0.0.0-0"
@@ -79,10 +81,9 @@ func Upgrade(kubeconfig string, release string, chart string, namespace string, 
 		upgrade.wait = upgrade.wait || upgrade.atomic
 		upgrade.namespace = namespace
 		err = upgrade.run()
-		teardown()
-		settings.TillerHost = ""
 		settings.KubeConfig = ""
 	}
+	settings.TillerHost = ""
 	return err
 }
 

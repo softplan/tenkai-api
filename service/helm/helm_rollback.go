@@ -33,8 +33,10 @@ func RollbackRelease(kubeconfig string, releaseName string, revision int) error 
 	settings.TLSVerify = false
 	settings.TillerConnectionTimeout = 1200
 	err := setupConnection()
+	defer teardown()
 
 	if err != nil {
+		settings.TillerHost = ""
 		return err
 	}
 
@@ -45,6 +47,7 @@ func RollbackRelease(kubeconfig string, releaseName string, revision int) error 
 
 	err = cmd.run()
 
+	settings.TillerHost = ""
 	return err
 
 }

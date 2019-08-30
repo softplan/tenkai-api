@@ -68,15 +68,15 @@ func GetReleaseHistory(kubeconfig string, releaseName string) (bool, error) {
 	settings.TLSVerify = false
 	settings.TillerConnectionTimeout = 1200
 	err := setupConnection()
+	defer teardown()
 	deployed := false
 	if err == nil {
 		his := &historyCmd{out: os.Stdout, helmc: newClient()}
 		his.rls = releaseName
 		his.max = 1
 		deployed, err = his.verifyItDeployed()
-		teardown()
-		settings.TillerHost = ""
 	}
+	settings.TillerHost = ""
 	return deployed, err
 }
 
@@ -84,7 +84,6 @@ func GetReleaseHistory(kubeconfig string, releaseName string) (bool, error) {
 func GetHelmReleaseHistory(kubeconfig string, releaseName string) (ReleaseHistory, error) {
 
 	var result ReleaseHistory
-
 	settings.KubeConfig = kubeconfig
 	settings.Home = global.HelmDir
 	settings.TillerNamespace = "kube-system"
@@ -92,24 +91,21 @@ func GetHelmReleaseHistory(kubeconfig string, releaseName string) (ReleaseHistor
 	settings.TLSVerify = false
 	settings.TillerConnectionTimeout = 1200
 	err := setupConnection()
+	defer teardown()
+
 	if err == nil {
 		his := &historyCmd{out: os.Stdout, helmc: newClient()}
 		his.rls = releaseName
-
 		r, err := his.helmc.ReleaseHistory(his.rls, helm.WithMaxHistory(256))
 		if err != nil {
 			return nil, prettyError(err)
 		}
-
 		if len(r.Releases) == 0 {
 			return nil, nil
 		}
-
 		result = getReleaseHistory(r.Releases)
-
-		teardown()
-		settings.TillerHost = ""
 	}
+	settings.TillerHost = ""
 	return result, err
 }
 

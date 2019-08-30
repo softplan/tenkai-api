@@ -58,7 +58,7 @@ type listRelease struct {
 //ListHelmDeployments method
 func ListHelmDeployments(kubeconfig string, namespace string) (*HelmListResult, error) {
 
-	logFields := global.AppFields{global.Function: "ListHelmDeployments", namespace: namespace}
+	logFields := global.AppFields{global.Function: "ListHelmDeployments", "namespace": namespace}
 
 	settings.KubeConfig = kubeconfig
 	settings.Home = global.HelmDir
@@ -70,8 +70,12 @@ func ListHelmDeployments(kubeconfig string, namespace string) (*HelmListResult, 
 	list := &listCmd{out: os.Stdout}
 
 	global.Logger.Info(logFields, "setupConnection")
+
 	err := setupConnection()
+	defer teardown()
+
 	if err != nil {
+		settings.TillerHost = ""
 		return nil, err
 	}
 
@@ -84,13 +88,13 @@ func ListHelmDeployments(kubeconfig string, namespace string) (*HelmListResult, 
 	global.Logger.Info(logFields, "list.run()")
 	resultListResult, err := list.run()
 	if err != nil {
+		settings.TillerHost = ""
 		return nil, err
 	}
 
-	global.Logger.Info(logFields, "teardown()")
-	teardown()
 	settings.TillerHost = ""
 
+	global.Logger.Info(logFields, "returning successfull")
 	return resultListResult, nil
 }
 
