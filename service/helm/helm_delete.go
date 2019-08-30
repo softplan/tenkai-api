@@ -37,7 +37,10 @@ func DeleteHelmRelease(kubeconfig string, releaseName string, purge bool) error 
 
 	global.Logger.Info(logFields, "setupConnection")
 	err := setupConnection()
+	defer teardown()
+
 	if err != nil {
+		settings.TillerHost = ""
 		return err
 	}
 
@@ -48,13 +51,12 @@ func DeleteHelmRelease(kubeconfig string, releaseName string, purge bool) error 
 	global.Logger.Info(logFields, "cmd.run()")
 	err = cmd.run()
 	if err != nil {
+		settings.TillerHost = ""
 		return err
 	}
 
 	global.Logger.Info(logFields, "teardown()")
-	teardown()
 	settings.TillerHost = ""
-
 	return nil
 
 }

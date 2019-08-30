@@ -49,7 +49,7 @@ func commonHandler(next http.Handler) http.Handler {
 					data, _ := json.Marshal(principal)
 					r.Header.Set("principal", string(data))
 
-					fmt.Printf("%v %v", claims["email"], claims["preferred_username"])
+					//fmt.Printf("%v %v", claims["email"], claims["preferred_username"])
 				} else {
 					fmt.Println(errx)
 				}

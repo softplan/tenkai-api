@@ -32,7 +32,10 @@ func Get(kubeconfig string, releaseName string, revision int) (string, error) {
 	settings.TLSVerify = false
 	settings.TillerConnectionTimeout = 1200
 	err := setupConnection()
+	defer teardown()
+
 	if err != nil {
+		settings.TillerHost = ""
 		return "", err
 	}
 
@@ -44,21 +47,23 @@ func Get(kubeconfig string, releaseName string, revision int) (string, error) {
 
 	res, err := cmd.client.ReleaseContent(cmd.release, helm.ContentReleaseVersion(cmd.version))
 	if err != nil {
+		settings.TillerHost = ""
 		return "", err
 	}
 
 	values, err := chartutil.ReadValues([]byte(res.Release.Config.Raw))
 	if err != nil {
+		settings.TillerHost = ""
 		return "", err
 	}
 
 	result, err := formatValues(cmd.output, values)
 	if err != nil {
+		settings.TillerHost = ""
 		return "", err
 	}
 
-	teardown()
-
+	settings.TillerHost = ""
 	return result, nil
 
 }

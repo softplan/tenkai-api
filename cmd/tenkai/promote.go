@@ -6,6 +6,7 @@ import (
 	"github.com/softplan/tenkai-api/dbms/model"
 	"github.com/softplan/tenkai-api/global"
 	helmapi "github.com/softplan/tenkai-api/service/helm"
+	"github.com/softplan/tenkai-api/util"
 	"net/http"
 	"strconv"
 	"strings"
@@ -18,6 +19,13 @@ type releaseToDeploy struct {
 }
 
 func (appContext *appContext) promote(w http.ResponseWriter, r *http.Request) {
+
+	principal := util.GetPrincipal(r)
+
+	if !contains(principal.Roles, TenkaiAdmin) {
+		http.Error(w, errors.New("Acccess Denied!").Error(), http.StatusUnauthorized)
+		return
+	}
 
 	out := &bytes.Buffer{}
 
@@ -51,7 +59,17 @@ func (appContext *appContext) promote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//TODO - Verify if user has access to both environments
+	has, err := appContext.hasAccess(principal.Email, int(srcEnvironment.ID))
+	if err != nil || !has {
+		http.Error(w, errors.New("Access Denied in environment" + srcEnvironment.Namespace).Error(), http.StatusUnauthorized)
+		return
+	}
+
+	has, err = appContext.hasAccess(principal.Email, int(targetEnvironment.ID))
+	if err != nil || !has {
+		http.Error(w, errors.New("Access Denied in environment" + targetEnvironment.Namespace).Error(), http.StatusUnauthorized)
+		return
+	}
 
 	kubeConfig := global.KubeConfigBasePath + srcEnvironment.Group + "_" + srcEnvironment.Name
 
