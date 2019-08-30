@@ -116,7 +116,6 @@ func (appContext *appContext) doIt(kubeConfig string, targetEnvironment *model.E
 		err := appContext.simpleInstall(int(targetEnvironment.ID), e.Chart, e.Name, out)
 		if err != nil {
 			global.Logger.Error(logFields, "error: "+err.Error())
-			return
 		}
 	}
 
