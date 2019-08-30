@@ -19,7 +19,6 @@ type EnvResult struct {
 	Envs []Environment
 }
 
-
 //User struct
 type User struct {
 	gorm.Model
@@ -32,7 +31,6 @@ type User struct {
 type UserResult struct {
 	Users []User `json:"users"`
 }
-
 
 //DataElement dataElement
 type DataElement struct {

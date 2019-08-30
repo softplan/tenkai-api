@@ -130,7 +130,6 @@ func startHTTPServer(appContext *appContext) {
 	r.HandleFunc("/users", appContext.listUsers).Methods("GET")
 	r.HandleFunc("/users/{id}", appContext.deleteUser).Methods("DELETE")
 
-
 	r.HandleFunc("/promote", appContext.promote).Methods("GET")
 
 	r.HandleFunc("/permissions/users/{userId}/environments/{environmentId}", appContext.newEnvironmentPermission).Methods("GET")

@@ -14,7 +14,7 @@ import (
 )
 
 type releaseToDeploy struct {
-	Name string
+	Name  string
 	Chart string
 }
 
@@ -23,7 +23,7 @@ func (appContext *appContext) promote(w http.ResponseWriter, r *http.Request) {
 	principal := util.GetPrincipal(r)
 
 	if !contains(principal.Roles, TenkaiAdmin) {
-		http.Error(w, errors.New("Acccess Denied!").Error(), http.StatusUnauthorized)
+		http.Error(w, errors.New("Acccess Denied").Error(), http.StatusUnauthorized)
 		return
 	}
 
@@ -46,7 +46,6 @@ func (appContext *appContext) promote(w http.ResponseWriter, r *http.Request) {
 	srcEnvIDi, _ := strconv.ParseInt(srcEnvID[0], 10, 64)
 	targetEnvIDi, _ := strconv.ParseInt(targetEnvID[0], 10, 64)
 
-
 	srcEnvironment, err := appContext.database.GetByID(int(srcEnvIDi))
 	if err != nil {
 		http.Error(w, err.Error(), 501)
@@ -61,13 +60,13 @@ func (appContext *appContext) promote(w http.ResponseWriter, r *http.Request) {
 
 	has, err := appContext.hasAccess(principal.Email, int(srcEnvironment.ID))
 	if err != nil || !has {
-		http.Error(w, errors.New("Access Denied in environment" + srcEnvironment.Namespace).Error(), http.StatusUnauthorized)
+		http.Error(w, errors.New("Access Denied in environment"+srcEnvironment.Namespace).Error(), http.StatusUnauthorized)
 		return
 	}
 
 	has, err = appContext.hasAccess(principal.Email, int(targetEnvironment.ID))
 	if err != nil || !has {
-		http.Error(w, errors.New("Access Denied in environment" + targetEnvironment.Namespace).Error(), http.StatusUnauthorized)
+		http.Error(w, errors.New("Access Denied in environment"+targetEnvironment.Namespace).Error(), http.StatusUnauthorized)
 		return
 	}
 
@@ -111,8 +110,7 @@ func (appContext *appContext) promote(w http.ResponseWriter, r *http.Request) {
 
 }
 
-
-func (appContext *appContext) purgeAll(kubeConfig string, envs []releaseToDeploy ) error {
+func (appContext *appContext) purgeAll(kubeConfig string, envs []releaseToDeploy) error {
 	for _, e := range envs {
 		err := helmapi.DeleteHelmRelease(kubeConfig, e.Name, true)
 		if err != nil {
@@ -152,7 +150,6 @@ func (appContext *appContext) copyEnvironmentVariablesFromSrcToTarget(srcEnvID u
 
 }
 
-
 func retrieveReleasesToDeploy(mutex *sync.Mutex, kubeConfig string, srcNamespace string) ([]releaseToDeploy, error) {
 	result := make([]releaseToDeploy, 0)
 	mutex.Lock()
@@ -162,12 +159,12 @@ func retrieveReleasesToDeploy(mutex *sync.Mutex, kubeConfig string, srcNamespace
 		return result, err
 	}
 	for _, e := range list.Releases {
-		name := strings.ReplaceAll(e.Name, "-" + srcNamespace, "")
+		name := strings.ReplaceAll(e.Name, "-"+srcNamespace, "")
 		lastHifen := strings.LastIndex(e.Chart, "-")
 
 		//TODO - FIND A WAY TO DEFINE THE RIGHT REPOSITORY
 		chart := "saj6/" + e.Chart[:lastHifen]
-		result = append(result, releaseToDeploy{Name: name,Chart:chart})
+		result = append(result, releaseToDeploy{Name: name, Chart: chart})
 	}
 	return result, nil
 }
@@ -186,7 +183,7 @@ func retrieveReleasesToPurge(mutex *sync.Mutex, kubeConfig string, namespace str
 
 		//TODO - FIND A WAY TO DEFINE THE RIGHT REPOSITORY
 		chart := "saj6/" + e.Chart[:lastHifen]
-		result = append(result, releaseToDeploy{Name: e.Name,Chart:chart})
+		result = append(result, releaseToDeploy{Name: e.Name, Chart: chart})
 	}
 	return result, nil
 }
