@@ -79,9 +79,9 @@ func (database *Database) DeleteVariable(id int) error {
 	return nil
 }
 
-//DeleteVariable - Delete environment
+//DeleteVariableByEnvironmentID - Delete environment
 func (database *Database) DeleteVariableByEnvironmentID(envID int) error {
-	if err := database.Db.Unscoped().Where(model.Variable{EnvironmentID:envID}).Delete(model.Variable{}).Error; err != nil {
+	if err := database.Db.Unscoped().Where(model.Variable{EnvironmentID: envID}).Delete(model.Variable{}).Error; err != nil {
 		return err
 	}
 	return nil
