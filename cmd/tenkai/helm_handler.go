@@ -198,9 +198,7 @@ func (appContext *appContext) listHelmDeploymentsByEnvironment(w http.ResponseWr
 
 	kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
 
-	appContext.mutex.Lock()
 	result, err := helmapi.ListHelmDeployments(kubeConfig, environment.Namespace)
-	appContext.mutex.Unlock()
 
 	if err != nil {
 		http.Error(w, err.Error(), 501)
