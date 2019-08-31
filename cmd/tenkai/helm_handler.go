@@ -229,7 +229,7 @@ func (appContext *appContext) hasConfigMap(w http.ResponseWriter, r *http.Reques
 		w.Write([]byte("{\"result\":\"false\"}"))
 	} else {
 		deployment := string(result)
-		if strings.Index(deployment, "global-configmap") > 0 {
+		if strings.Index(deployment, "gcm") > 0 {
 			w.Write([]byte("{\"result\":\"true\"}"))
 		} else {
 			w.Write([]byte("{\"result\":\"false\"}"))
