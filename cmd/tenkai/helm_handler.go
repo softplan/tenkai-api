@@ -329,7 +329,7 @@ func (appContext *appContext) simpleInstall(envID int, chart string, name string
 	//TODO - VERIFY IF CONFIG FILE EXISTS !!! This is the cause of  u.client.ReleaseHistory fail sometimes.
 
 	searchTerm := chart
-	if strings.Index(name, "configmap") > -1 {
+	if strings.Index(name, "gcm") > -1 {
 		searchTerm = name
 	}
 	variables, err := appContext.database.GetAllVariablesByEnvironmentAndScope(envID, searchTerm)
