@@ -21,7 +21,7 @@ func (appContext *appContext) promote(w http.ResponseWriter, r *http.Request) {
 
 	principal := util.GetPrincipal(r)
 
-	if !contains(principal.Roles, TenkaiAdmin) {
+	if !contains(principal.Roles, TenkaiPromote) {
 		http.Error(w, errors.New("Acccess Denied").Error(), http.StatusUnauthorized)
 		return
 	}
