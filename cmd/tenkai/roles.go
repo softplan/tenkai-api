@@ -1,5 +1,8 @@
 package main
 
+//TenkaiPromote - role
+const TenkaiPromote = "tenkai-promote"
+
 //TenkaiAdmin - role
 const TenkaiAdmin = "tenkai-admin"
 
