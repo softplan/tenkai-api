@@ -111,6 +111,10 @@ func startHTTPServer(appContext *appContext) {
 	r.HandleFunc("/solutions/edit", appContext.editSolution).Methods("POST")
 	r.HandleFunc("/solutions/{id}", appContext.deleteSolution).Methods("DELETE")
 
+	r.HandleFunc("/dockerRepo", appContext.listDockerRepositories).Methods("GET")
+	r.HandleFunc("/dockerRepo", appContext.newDockerRepository).Methods("POST")
+	r.HandleFunc("/dockerRepo/{id}", appContext.deleteDockerRepository).Methods("DELETE")
+
 	r.HandleFunc("/solutionCharts", appContext.listSolutionCharts).Methods("GET")
 	r.HandleFunc("/solutionCharts", appContext.newSolutionChart).Methods("POST")
 	r.HandleFunc("/solutionCharts/{id}", appContext.deleteSolutionChart).Methods("DELETE")
@@ -131,6 +135,8 @@ func startHTTPServer(appContext *appContext) {
 	r.HandleFunc("/users/{id}", appContext.deleteUser).Methods("DELETE")
 
 	r.HandleFunc("/promote", appContext.promote).Methods("GET")
+
+	r.HandleFunc("/listDockerTags", appContext.listDockerTags).Methods("POST")
 
 	r.HandleFunc("/permissions/users/{userId}/environments/{environmentId}", appContext.newEnvironmentPermission).Methods("GET")
 
