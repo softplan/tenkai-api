@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"github.com/softplan/tenkai-api/dbms"
@@ -19,6 +20,13 @@ func getImageWithoutRepo(image string) string {
 	return result
 }
 
+func getHttpClient() *http.Client {
+	tr := &http.Transport{}
+	tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	return &http.Client{Transport: tr}
+}
+
+
 func (appContext *appContext) listDockerTags(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -33,7 +41,10 @@ func (appContext *appContext) listDockerTags(w http.ResponseWriter, r *http.Requ
 	repo, err := getBaseDomainFromRepo(&appContext.database, payload.ImageName)
 	url := "https://" + repo.Host + "/v2/" + getImageWithoutRepo(payload.ImageName) + "/tags/list"
 
-	client := &http.Client{}
+	client := getHttpClient()
+
+
+
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		http.Error(w, err.Error(), 501)
@@ -87,7 +98,8 @@ func getDate(repo model.DockerRepo, imageName string, tag string) (*time.Time, e
 
 	url := "https://" + repo.Host + "/v2/" + imageName + "/manifests/" + tag
 
-	client := &http.Client{}
+	client := getHttpClient()
+
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
