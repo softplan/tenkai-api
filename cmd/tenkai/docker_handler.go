@@ -20,12 +20,11 @@ func getImageWithoutRepo(image string) string {
 	return result
 }
 
-func getHttpClient() *http.Client {
+func getHTTPClient() *http.Client {
 	tr := &http.Transport{}
 	tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	return &http.Client{Transport: tr}
 }
-
 
 func (appContext *appContext) listDockerTags(w http.ResponseWriter, r *http.Request) {
 
@@ -41,9 +40,7 @@ func (appContext *appContext) listDockerTags(w http.ResponseWriter, r *http.Requ
 	repo, err := getBaseDomainFromRepo(&appContext.database, payload.ImageName)
 	url := "https://" + repo.Host + "/v2/" + getImageWithoutRepo(payload.ImageName) + "/tags/list"
 
-	client := getHttpClient()
-
-
+	client := getHTTPClient()
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -98,7 +95,7 @@ func getDate(repo model.DockerRepo, imageName string, tag string) (*time.Time, e
 
 	url := "https://" + repo.Host + "/v2/" + imageName + "/manifests/" + tag
 
-	client := getHttpClient()
+	client := getHTTPClient()
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
