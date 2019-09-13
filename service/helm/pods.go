@@ -120,6 +120,10 @@ func fillPod(pod v1.Pod) *model.Pod {
 	result.Restarts = int(restarts)
 	result.Age = translateTimestampSince(pod.CreationTimestamp)
 
+	if len(pod.Spec.Containers) > 0 {
+		result.Image = pod.Spec.Containers[0].Image
+	}
+
 	return result
 
 }

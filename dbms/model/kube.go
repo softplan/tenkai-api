@@ -3,6 +3,7 @@ package model
 //Pod structure
 type Pod struct {
 	Name     string `json:"name"`
+	Image    string `json:"image"`
 	Ready    string `json:"ready"`
 	Status   string `json:"status"`
 	Restarts int    `json:"restarts"`
