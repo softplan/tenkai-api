@@ -72,18 +72,23 @@ func (appContext *appContext) listDockerTags(w http.ResponseWriter, r *http.Requ
 	result := &model.ListDockerTagsResult{}
 
 	for _, e := range tagResult.Tags {
-		date, err := getDate(*repo, getImageWithoutRepo(payload.ImageName), e)
-		if err != nil {
-			http.Error(w, err.Error(), 501)
-			return
-		}
-		result.TagResponse = append(result.TagResponse, model.TagResponse{Created: *date, Tag: e})
 
+		//TODO - VERY SLOW REMOVED BY NOW
+		/*
+			date, err := getDate(*repo, getImageWithoutRepo(payload.ImageName), e)
+			if err != nil {
+				http.Error(w, err.Error(), 501)
+				return
+			}
+		*/
+		result.TagResponse = append(result.TagResponse, model.TagResponse{Tag: e})
 	}
 
-	sort.Slice(result.TagResponse, func(i, j int) bool {
-		return result.TagResponse[i].Created.Before(result.TagResponse[j].Created)
-	})
+	/*
+		sort.Slice(result.TagResponse, func(i, j int) bool {
+			return result.TagResponse[i].Created.Before(result.TagResponse[j].Created)
+		})
+	*/
 
 	data, _ := json.Marshal(result)
 	w.WriteHeader(http.StatusOK)
