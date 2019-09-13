@@ -19,6 +19,8 @@ type releaseToDeploy struct {
 
 func (appContext *appContext) promote(w http.ResponseWriter, r *http.Request) {
 
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+
 	principal := util.GetPrincipal(r)
 
 	if !contains(principal.Roles, TenkaiPromote) {
@@ -26,16 +28,23 @@ func (appContext *appContext) promote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	modes, ok := r.URL.Query()["mode"]
+
+	if !ok || len(modes[0]) < 1 {
+		http.Error(w, errors.New("Url Param 'mode' is missing").Error(), http.StatusUnauthorized)
+		return
+	}
+
+	mode := modes[0]
 
 	srcEnvID, ok := r.URL.Query()["srcEnvID"]
-	if !ok || len(srcEnvID[0]) < 1 {
+	if !ok || len(srcEnvID[0]) < 1 || srcEnvID[0] == "undefined" {
 		http.Error(w, errors.New("param srcEnvID is required").Error(), 501)
 		return
 	}
 
 	targetEnvID, ok := r.URL.Query()["targetEnvID"]
-	if !ok || len(srcEnvID[0]) < 1 {
+	if !ok || len(targetEnvID[0]) < 1 || targetEnvID[0] == "undefined" {
 		http.Error(w, errors.New("param targetEnvID is required").Error(), 501)
 		return
 	}
@@ -69,16 +78,20 @@ func (appContext *appContext) promote(w http.ResponseWriter, r *http.Request) {
 
 	kubeConfig := global.KubeConfigBasePath + srcEnvironment.Group + "_" + srcEnvironment.Name
 
-	err = appContext.deleteEnvironmentVariables(targetEnvironment.ID)
-	if err != nil {
-		http.Error(w, err.Error(), 501)
-		return
-	}
+	if mode == "full" {
 
-	err = appContext.copyEnvironmentVariablesFromSrcToTarget(srcEnvironment.ID, targetEnvironment.ID)
-	if err != nil {
-		http.Error(w, err.Error(), 501)
-		return
+		err = appContext.deleteEnvironmentVariables(targetEnvironment.ID)
+		if err != nil {
+			http.Error(w, err.Error(), 501)
+			return
+		}
+
+		err = appContext.copyEnvironmentVariablesFromSrcToTarget(srcEnvironment.ID, targetEnvironment.ID)
+		if err != nil {
+			http.Error(w, err.Error(), 501)
+			return
+		}
+
 	}
 
 	toPurge, err := retrieveReleasesToPurge(kubeConfig, targetEnvironment.Namespace)
