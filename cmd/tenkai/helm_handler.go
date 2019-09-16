@@ -9,6 +9,7 @@ import (
 	"github.com/softplan/tenkai-api/util"
 	"net/http"
 	"strconv"
+	"time"
 
 	"strings"
 
@@ -355,6 +356,9 @@ func (appContext *appContext) simpleInstall(envID int, chart string, name string
 	if len(environment.Gateway) > 0 {
 		args = append(args, "istio.virtualservices.gateways[0]="+environment.Gateway)
 	}
+
+	dt := time.Now()
+	args = append(args, "app.dateHour="+dt.String())
 
 	if err == nil {
 		name := name + "-" + environment.Namespace
