@@ -72,7 +72,7 @@ func Upgrade(kubeconfig string, release string, chart string, namespace string, 
 		upgrade.client = newClient()
 		upgrade.version = ">0.0.0-0"
 		upgrade.install = true
-		upgrade.recreate = true
+		upgrade.recreate = false
 		upgrade.force = true
 		upgrade.release = release
 		upgrade.chart = chart
