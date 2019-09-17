@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/olivere/elastic"
+	"github.com/softplan/tenkai-api/audit"
 	"github.com/softplan/tenkai-api/dbms"
 	helmapi "github.com/softplan/tenkai-api/service/helm"
 	"log"
@@ -21,6 +23,7 @@ const (
 type appContext struct {
 	configuration *configs.Configuration
 	database      dbms.Database
+	elk           *elastic.Client
 	mutex         sync.Mutex
 }
 
@@ -42,9 +45,12 @@ func main() {
 
 	dbmsURI := config.App.Dbms.URI
 
-	//Conecta no postgres
+	//Dbms connection
 	appContext.database.Connect(dbmsURI, dbmsURI == "")
 	defer appContext.database.Db.Close()
+
+	//Elk setup
+	appContext.elk, _ = audit.ElkClient(config.App.Elastic.URL, config.App.Elastic.Username, config.App.Elastic.Password)
 
 	global.Logger.Info(logFields, "iniciando o servidor http")
 	startHTTPServer(appContext)

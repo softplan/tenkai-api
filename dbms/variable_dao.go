@@ -13,30 +13,44 @@ func (database *Database) EditVariable(data model.Variable) error {
 }
 
 //CreateVariable - Create a new environment
-func (database *Database) CreateVariable(variable model.Variable) error {
+func (database *Database) CreateVariable(variable model.Variable) (map[string]string, bool, error) {
+
+	auditValues := make(map[string]string)
+	updated := false
 
 	var variableEntity model.Variable
-
 	//Verify if update
-	if err := database.Db.Where(&model.Variable{EnvironmentID: variable.EnvironmentID,
-		Scope: variable.Scope,
-		Name:  variable.Name}).First(&variableEntity).Error; err == nil {
+	if err := database.Db.Where(&model.Variable{
+		EnvironmentID: variable.EnvironmentID,
+		Scope:         variable.Scope,
+		Name:          variable.Name}).First(&variableEntity).Error; err == nil {
 
-		variableEntity.Value = variable.Value
+		if variable.Value != variableEntity.Value {
 
-		if err := database.Db.Save(variableEntity).Error; err != nil {
-			return err
+			auditValues["variable_name"] = variableEntity.Name
+			auditValues["variable_old_value"] = variableEntity.Value
+			auditValues["variable_new_value"] = variable.Value
+			auditValues["scope"] = variable.Scope
+
+			variableEntity.Value = variable.Value
+			if err := database.Db.Save(variableEntity).Error; err != nil {
+				return auditValues, updated, err
+			}
+			updated = true
 		}
 
 	} else {
 
 		if err := database.Db.Create(&variable).Error; err != nil {
-			return err
+			return auditValues, updated, err
 		}
+		updated = true
 
+		auditValues["variable_name"] = variable.Name
+		auditValues["variable_value"] = variable.Value
 	}
 
-	return nil
+	return auditValues, updated, nil
 }
 
 //GetAllVariablesByEnvironment - Retrieve all variables

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/softplan/tenkai-api/audit"
 	"github.com/softplan/tenkai-api/util"
 	"net/http"
 	"strconv"
@@ -88,6 +89,13 @@ func (appContext *appContext) deleteHelmRelease(w http.ResponseWriter, r *http.R
 		http.Error(w, err.Error(), 501)
 		return
 	}
+
+	auditValues := make(map[string]string)
+	auditValues["environment"] = environment.Name
+	auditValues["purge"] = strconv.FormatBool(purge)
+	auditValues["name"] = releasesName[0]
+
+	audit.DoAudit(r.Context(), appContext.elk, principal.Email, "deleteHelmRelease", auditValues)
 
 	w.WriteHeader(http.StatusOK)
 
@@ -280,14 +288,31 @@ func (appContext *appContext) multipleInstall(w http.ResponseWriter, r *http.Req
 	out := &bytes.Buffer{}
 
 	for _, element := range payload.Deployables {
-		err := appContext.simpleInstall(element.EnvironmentID, element.Chart, element.Name, out)
+
+		//Locate Environment
+		environment, err := appContext.database.GetByID(element.EnvironmentID)
 		if err != nil {
 			http.Error(w, err.Error(), 501)
 			return
 		}
+
+		err = appContext.simpleInstall(environment, element.Chart, element.Name, out)
+		if err != nil {
+			http.Error(w, err.Error(), 501)
+			return
+		}
+
+		auditValues := make(map[string]string)
+		auditValues["environment"] = environment.Name
+		auditValues["chartName"] = element.Chart
+		auditValues["name"] = element.Name
+
+		audit.DoAudit(r.Context(), appContext.elk, principal.Email, "deploy", auditValues)
+
 	}
 
 	fmt.Println(out.String())
+
 	w.WriteHeader(http.StatusOK)
 
 }
@@ -310,8 +335,15 @@ func (appContext *appContext) install(w http.ResponseWriter, r *http.Request) {
 
 	out := &bytes.Buffer{}
 
+	//Locate Environment
+	environment, err := appContext.database.GetByID(payload.EnvironmentID)
+	if err != nil {
+		http.Error(w, err.Error(), 501)
+		return
+	}
+
 	//TODO Verify if chart exists
-	err := appContext.simpleInstall(payload.EnvironmentID, payload.Chart, payload.Name, out)
+	err = appContext.simpleInstall(environment, payload.Chart, payload.Name, out)
 	if err != nil {
 		fmt.Println(out.String())
 		http.Error(w, err.Error(), 501)
@@ -322,10 +354,7 @@ func (appContext *appContext) install(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (appContext *appContext) simpleInstall(envID int, chart string, name string, out *bytes.Buffer) error {
-
-	//Locate Environment
-	environment, err := appContext.database.GetByID(envID)
+func (appContext *appContext) simpleInstall(environment *model.Environment, chart string, name string, out *bytes.Buffer) error {
 
 	//TODO - VERIFY IF CONFIG FILE EXISTS !!! This is the cause of  u.client.ReleaseHistory fail sometimes.
 
@@ -333,7 +362,7 @@ func (appContext *appContext) simpleInstall(envID int, chart string, name string
 	if strings.Index(name, "gcm") > -1 {
 		searchTerm = name
 	}
-	variables, err := appContext.database.GetAllVariablesByEnvironmentAndScope(envID, searchTerm)
+	variables, err := appContext.database.GetAllVariablesByEnvironmentAndScope(int(environment.ID), searchTerm)
 	globalVariables := appContext.getGlobalVariables(int(environment.ID))
 
 	var args []string
@@ -345,13 +374,14 @@ func (appContext *appContext) simpleInstall(envID int, chart string, name string
 			if err == nil {
 				variables[i].Value = string(value)
 			}
-
 		}
 
 		if len(item.Name) > 0 && len(item.Value) > 0 {
 			args = append(args, normalizeVariableName(item.Name)+"="+replace(item.Value, *environment, globalVariables))
 		}
+
 	}
+
 	//Add Default Gateway
 	if len(environment.Gateway) > 0 {
 		args = append(args, "istio.virtualservices.gateways[0]="+environment.Gateway)
