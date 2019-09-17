@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"github.com/softplan/tenkai-api/audit"
 	"github.com/softplan/tenkai-api/dbms/model"
 	"github.com/softplan/tenkai-api/util"
 	"net/http"
@@ -25,10 +26,31 @@ func (appContext *appContext) saveVariableValues(w http.ResponseWriter, r *http.
 	}
 
 	for _, item := range payload.Data {
-		if err := appContext.database.CreateVariable(item); err != nil {
+
+		targetEnvironment, err := appContext.database.GetByID(int(item.EnvironmentID))
+		if err != nil {
+			http.Error(w, err.Error(), 501)
+			return
+		}
+
+		has, err := appContext.hasAccess(principal.Email, int(targetEnvironment.ID))
+		if err != nil || !has {
+			http.Error(w, errors.New("Access Denied in environment "+targetEnvironment.Namespace).Error(), http.StatusUnauthorized)
+			return
+		}
+
+		var auditValues map[string]string
+		var updated bool
+		if auditValues, updated, err = appContext.database.CreateVariable(item); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		if updated {
+			auditValues["environment"] = targetEnvironment.Name
+			audit.DoAudit(r.Context(), appContext.elk, principal.Email, "saveVariable", auditValues)
+		}
+
 	}
 	w.WriteHeader(http.StatusCreated)
 }

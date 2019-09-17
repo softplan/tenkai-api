@@ -42,6 +42,12 @@ spec:
               value: {{ .Values.app.appDbmsUri }}
             - name: APP_PASSKEY
               value: {{ .Values.app.passkey}}
+            - name: APP_ELASTIC_URL
+              value: {{ .Values.app.elasticUrl}}
+            - name: APP_ELASTIC_USERNAME
+              value: {{ .Values.app.elasticUsername}}
+            - name: APP_ELASTIC_PASSWORD
+              value: {{ .Values.app.elasticPassword}}
           ports:
             - name: http
               containerPort: 8080

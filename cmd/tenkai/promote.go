@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"errors"
+	"github.com/softplan/tenkai-api/audit"
 	"github.com/softplan/tenkai-api/dbms/model"
 	"github.com/softplan/tenkai-api/global"
 	helmapi "github.com/softplan/tenkai-api/service/helm"
@@ -66,13 +67,13 @@ func (appContext *appContext) promote(w http.ResponseWriter, r *http.Request) {
 
 	has, err := appContext.hasAccess(principal.Email, int(srcEnvironment.ID))
 	if err != nil || !has {
-		http.Error(w, errors.New("Access Denied in environment"+srcEnvironment.Namespace).Error(), http.StatusUnauthorized)
+		http.Error(w, errors.New("Access Denied in environment "+srcEnvironment.Namespace).Error(), http.StatusUnauthorized)
 		return
 	}
 
 	has, err = appContext.hasAccess(principal.Email, int(targetEnvironment.ID))
 	if err != nil || !has {
-		http.Error(w, errors.New("Access Denied in environment"+targetEnvironment.Namespace).Error(), http.StatusUnauthorized)
+		http.Error(w, errors.New("Access Denied in environment "+targetEnvironment.Namespace).Error(), http.StatusUnauthorized)
 		return
 	}
 
@@ -108,6 +109,13 @@ func (appContext *appContext) promote(w http.ResponseWriter, r *http.Request) {
 
 	go appContext.doIt(kubeConfig, targetEnvironment, toPurge, toDeploy)
 
+	auditValues := make(map[string]string)
+	auditValues["sourceEnvironment"] = srcEnvironment.Name
+	auditValues["targetEnvironment"] = targetEnvironment.Name
+	auditValues["mode"] = mode
+
+	audit.DoAudit(r.Context(), appContext.elk, principal.Email, "promote", auditValues)
+
 	w.WriteHeader(http.StatusOK)
 
 }
@@ -126,7 +134,7 @@ func (appContext *appContext) doIt(kubeConfig string, targetEnvironment *model.E
 
 	for _, e := range toDeploy {
 		global.Logger.Info(logFields, "deploying: "+e.Name+" - "+e.Chart)
-		err := appContext.simpleInstall(int(targetEnvironment.ID), e.Chart, e.Name, out)
+		err := appContext.simpleInstall(targetEnvironment, e.Chart, e.Name, out)
 		if err != nil {
 			global.Logger.Error(logFields, "error: "+err.Error())
 		}
@@ -165,7 +173,7 @@ func (appContext *appContext) copyEnvironmentVariablesFromSrcToTarget(srcEnvID u
 		newVariable.Description = variable.Description
 		newVariable.Scope = variable.Scope
 
-		if err := appContext.database.CreateVariable(*newVariable); err != nil {
+		if _, _, err := appContext.database.CreateVariable(*newVariable); err != nil {
 			return err
 		}
 	}

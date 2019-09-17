@@ -148,7 +148,7 @@ func (appContext *appContext) duplicateEnvironments(w http.ResponseWriter, r *ht
 		newVariable.Description = variable.Description
 		newVariable.Scope = variable.Scope
 
-		if err := appContext.database.CreateVariable(*newVariable); err != nil {
+		if _, _, err := appContext.database.CreateVariable(*newVariable); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

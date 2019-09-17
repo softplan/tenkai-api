@@ -27,6 +27,14 @@ type Dbms struct {
 type App struct {
 	Passkey string
 	Dbms    Dbms
+	Elastic Elastic
+}
+
+//Elastic Config Structure
+type Elastic struct {
+	URL      string
+	Username string
+	Password string
 }
 
 //ReadConfig inicia as configurações
