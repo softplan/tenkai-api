@@ -93,6 +93,14 @@ func (appContext *appContext) promote(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+	} else {
+
+		err = appContext.copyImageAndTagFromSrcToTarget(srcEnvironment.ID, targetEnvironment.ID)
+		if err != nil {
+			http.Error(w, err.Error(), 501)
+			return
+		}
+
 	}
 
 	toPurge, err := retrieveReleasesToPurge(kubeConfig, targetEnvironment.Namespace)
@@ -175,6 +183,36 @@ func (appContext *appContext) copyEnvironmentVariablesFromSrcToTarget(srcEnvID u
 
 		if _, _, err := appContext.database.CreateVariable(*newVariable); err != nil {
 			return err
+		}
+	}
+
+	return nil
+
+}
+
+func (appContext *appContext) copyImageAndTagFromSrcToTarget(srcEnvID uint, targetEnvID uint) error {
+
+	variables, err := appContext.database.GetAllVariablesByEnvironment(int(srcEnvID))
+	if err != nil {
+		return err
+	}
+
+	var newVariable *model.Variable
+	for _, variable := range variables {
+
+		if variable.Name == "image.tag" || variable.Name == "image.repository" {
+
+			newVariable = &model.Variable{}
+			newVariable.Name = variable.Name
+			newVariable.EnvironmentID = int(targetEnvID)
+			newVariable.Value = variable.Value
+			newVariable.Description = variable.Description
+			newVariable.Scope = variable.Scope
+
+			if _, _, err := appContext.database.CreateVariable(*newVariable); err != nil {
+				return err
+			}
+
 		}
 	}
 
