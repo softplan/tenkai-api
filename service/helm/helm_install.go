@@ -3,12 +3,14 @@ package helmapi
 import (
 	"bytes"
 	"fmt"
+	"github.com/helm/helm/pkg/timeconv"
 	"io"
 	"io/ioutil"
 	"net/url"
 	"os"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/Masterminds/sprig"
 	"github.com/ghodss/yaml"
@@ -280,16 +282,73 @@ func vals(valueFiles valueFiles, values []string, stringValues []string, fileVal
 
 // printRelease prints info about a release if the Debug is true.
 func (i *installCmd) printRelease(rel *release.Release) {
+
 	if rel == nil {
 		return
 	}
+
 	// TODO: Switch to text/template like everything else.
+
 	fmt.Fprintf(i.out, "NAME:   %s\n", rel.Name)
-	/*
-		if settings.Debug {
-			printRelease(i.out, rel)
-		}
-	*/
+
+	if settings.Debug {
+		printRelease(i.out, rel)
+	}
+
+}
+
+var printReleaseTemplate = `REVISION: {{.Release.Version}}
+RELEASED: {{.ReleaseDate}}
+CHART: {{.Release.Chart.Metadata.Name}}-{{.Release.Chart.Metadata.Version}}
+USER-SUPPLIED VALUES:
+{{.Release.Config.Raw}}
+COMPUTED VALUES:
+{{.ComputedValues}}
+HOOKS:
+{{- range .Release.Hooks }}
+---
+# {{.Name}}
+{{.Manifest}}
+{{- end }}
+MANIFEST:
+{{.Release.Manifest}}
+`
+
+func printRelease(out io.Writer, rel *release.Release) error {
+	if rel == nil {
+		return nil
+	}
+
+	cfg, err := chartutil.CoalesceValues(rel.Chart, rel.Config)
+	if err != nil {
+		return err
+	}
+	cfgStr, err := cfg.YAML()
+	if err != nil {
+		return err
+	}
+
+	data := map[string]interface{}{
+		"Release":        rel,
+		"ComputedValues": cfgStr,
+		"ReleaseDate":    timeconv.Format(rel.Info.LastDeployed, time.ANSIC),
+	}
+	return tpl(printReleaseTemplate, data, out)
+}
+
+func tpl(t string, vals interface{}, out io.Writer) error {
+	tt, err := template.New("_").Parse(t)
+	if err != nil {
+		return err
+	}
+	return tt.Execute(out, vals)
+}
+
+func debug(format string, args ...interface{}) {
+	if settings.Debug {
+		format = fmt.Sprintf("[debug] %s\n", format)
+		fmt.Printf(format, args...)
+	}
 }
 
 func generateName(nameTemplate string) (string, error) {
