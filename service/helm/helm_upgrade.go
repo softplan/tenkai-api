@@ -54,7 +54,7 @@ type upgradeCmd struct {
 }
 
 //Upgrade Method
-func Upgrade(kubeconfig string, release string, chart string, namespace string, variables []string, out *bytes.Buffer) error {
+func Upgrade(kubeconfig string, release string, chart string, namespace string, variables []string, out *bytes.Buffer, dryrun bool) error {
 
 	settings.KubeConfig = kubeconfig
 	settings.Home = global.HelmDir
@@ -62,6 +62,9 @@ func Upgrade(kubeconfig string, release string, chart string, namespace string, 
 	settings.TLSEnable = false
 	settings.TLSVerify = false
 	settings.TillerConnectionTimeout = 1200
+	if dryrun {
+		settings.Debug = true
+	}
 
 	upgrade := &upgradeCmd{out: out}
 
@@ -70,6 +73,11 @@ func Upgrade(kubeconfig string, release string, chart string, namespace string, 
 
 	if err == nil {
 		upgrade.client = newClient()
+
+		if dryrun {
+			upgrade.dryRun = true
+		}
+
 		upgrade.version = ">0.0.0-0"
 		upgrade.install = true
 		upgrade.recreate = false
@@ -84,6 +92,7 @@ func Upgrade(kubeconfig string, release string, chart string, namespace string, 
 		settings.KubeConfig = ""
 	}
 	settings.TillerHost = ""
+	settings.Debug = false
 	return err
 }
 
