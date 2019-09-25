@@ -147,6 +147,9 @@ func startHTTPServer(appContext *appContext) {
 
 	r.HandleFunc("/permissions/users/{userId}/environments/{environmentId}", appContext.newEnvironmentPermission).Methods("GET")
 
+	r.HandleFunc("/settings", appContext.addSettings).Methods("POST")
+	r.HandleFunc("/getSettingList", appContext.getSettingList).Methods("POST")
+
 	r.HandleFunc("/", appContext.rootHandler)
 
 	log.Fatal(http.ListenAndServe(":"+port, commonHandler(r)))
