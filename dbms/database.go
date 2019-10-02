@@ -38,6 +38,9 @@ func (database *Database) Connect(dbmsURI string, local bool) {
 	database.Db.AutoMigrate(&model.User{})
 	database.Db.AutoMigrate(&model.ConfigMap{})
 	database.Db.AutoMigrate(&model.DockerRepo{})
+	database.Db.AutoMigrate(&model.Product{})
+	database.Db.AutoMigrate(&model.ProductVersion{})
+	database.Db.AutoMigrate(&model.ProductVersionService{})
 
 }
 

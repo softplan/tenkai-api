@@ -118,6 +118,17 @@ func startHTTPServer(appContext *appContext) {
 	r.HandleFunc("/solutions/edit", appContext.editSolution).Methods("POST")
 	r.HandleFunc("/solutions/{id}", appContext.deleteSolution).Methods("DELETE")
 
+	r.HandleFunc("/products", appContext.listProducts).Methods("GET")
+	r.HandleFunc("/products", appContext.newProduct).Methods("POST")
+	r.HandleFunc("/products/edit", appContext.editProduct).Methods("POST")
+	r.HandleFunc("/products/{id}", appContext.deleteProduct).Methods("DELETE")
+
+	r.HandleFunc("/productVersions", appContext.listProductVersions).Methods("GET")
+	r.HandleFunc("/productVersions", appContext.newProductVersion).Methods("POST")
+
+	r.HandleFunc("/productVersionServices", appContext.listProductVersionServices).Methods("GET")
+	r.HandleFunc("/productVersionServices", appContext.newProductVersionService).Methods("POST")
+
 	r.HandleFunc("/dockerRepo", appContext.listDockerRepositories).Methods("GET")
 	r.HandleFunc("/dockerRepo", appContext.newDockerRepository).Methods("POST")
 	r.HandleFunc("/dockerRepo/{id}", appContext.deleteDockerRepository).Methods("DELETE")
