@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"github.com/softplan/tenkai-api/dbms"
 	"github.com/softplan/tenkai-api/dbms/model"
 	"github.com/softplan/tenkai-api/util"
@@ -72,28 +73,35 @@ func (appContext *appContext) listDockerTags(w http.ResponseWriter, r *http.Requ
 	result := &model.ListDockerTagsResult{}
 
 	for _, e := range tagResult.Tags {
+		img := payload.ImageName + ":" + e
 
-		//TODO - VERY SLOW REMOVED BY NOW
-		/*
+		if _, exists := appContext.dockerTagsCache[img]; exists {
+			fmt.Printf("Value %s already exists.\n", img)
+			result.TagResponse = append(result.TagResponse, model.TagResponse{Tag: e, Created: appContext.dockerTagsCache[img]})
+			continue
+		} else {
 			date, err := getDate(*repo, getImageWithoutRepo(payload.ImageName), e)
 			if err != nil {
 				http.Error(w, err.Error(), 501)
 				return
 			}
-		*/
-		result.TagResponse = append(result.TagResponse, model.TagResponse{Tag: e})
+			result.TagResponse = append(result.TagResponse, model.TagResponse{Tag: e, Created: *date})
+			appContext.dockerTagsCache[img] = *date
+			fmt.Printf("Value %s added.\n", img)
+		}
 	}
 
-	/*
-		sort.Slice(result.TagResponse, func(i, j int) bool {
-			return result.TagResponse[i].Created.Before(result.TagResponse[j].Created)
-		})
-	*/
+	sort.Slice(result.TagResponse, func(i, j int) bool {
+		return result.TagResponse[i].Created.Before(result.TagResponse[j].Created)
+	})
 
 	data, _ := json.Marshal(result)
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
+}
 
+func cacheDockerTags(appContext *appContext) {
+	fmt.Println("FUNCIONA")
 }
 
 func getDate(repo model.DockerRepo, imageName string, tag string) (*time.Time, error) {
