@@ -28,6 +28,7 @@ type appContext struct {
 	elk             *elastic.Client
 	mutex           sync.Mutex
 	dockerTagsCache map[string]time.Time
+	testMode        bool
 }
 
 func main() {
