@@ -1,14 +1,16 @@
 package main
 
 import (
-	"github.com/olivere/elastic"
-	"github.com/softplan/tenkai-api/audit"
-	"github.com/softplan/tenkai-api/dbms"
-	helmapi "github.com/softplan/tenkai-api/service/helm"
 	"log"
 	"net/http"
 	"os"
 	"sync"
+	"time"
+
+	"github.com/olivere/elastic"
+	"github.com/softplan/tenkai-api/audit"
+	"github.com/softplan/tenkai-api/dbms"
+	helmapi "github.com/softplan/tenkai-api/service/helm"
 
 	"github.com/softplan/tenkai-api/configs"
 	"github.com/softplan/tenkai-api/global"
@@ -21,10 +23,12 @@ const (
 )
 
 type appContext struct {
-	configuration *configs.Configuration
-	database      dbms.Database
-	elk           *elastic.Client
-	mutex         sync.Mutex
+	configuration   *configs.Configuration
+	database        dbms.Database
+	elk             *elastic.Client
+	mutex           sync.Mutex
+	dockerTagsCache map[string]time.Time
+	testMode        bool
 }
 
 func main() {
@@ -42,6 +46,7 @@ func main() {
 	checkFatalError(error)
 
 	appContext := &appContext{configuration: config}
+	appContext.dockerTagsCache = make(map[string]time.Time)
 
 	dbmsURI := config.App.Dbms.URI
 
