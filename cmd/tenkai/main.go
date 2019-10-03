@@ -68,6 +68,8 @@ func startHTTPServer(appContext *appContext) {
 	r.HandleFunc("/install", appContext.install).Methods("POST")
 	r.HandleFunc("/multipleInstall", appContext.multipleInstall).Methods("POST")
 
+	r.HandleFunc("/getVariablesNotUsed/{id}", appContext.getVariablesNotUsed).Methods("GET")
+
 	r.HandleFunc("/listVariables", appContext.getVariablesByEnvironmentAndScope).Methods("POST")
 	r.HandleFunc("/saveVariableValues", appContext.saveVariableValues).Methods("POST")
 	r.HandleFunc("/getChartVariables", appContext.getChartVariables).Methods("POST")

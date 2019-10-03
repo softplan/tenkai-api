@@ -4,10 +4,15 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/audit"
 	"github.com/softplan/tenkai-api/dbms/model"
+	"github.com/softplan/tenkai-api/global"
+	helmapi "github.com/softplan/tenkai-api/service/helm"
 	"github.com/softplan/tenkai-api/util"
 	"net/http"
+	"strconv"
+	"strings"
 )
 
 func (appContext *appContext) saveVariableValues(w http.ResponseWriter, r *http.Request) {
@@ -100,4 +105,79 @@ func (appContext *appContext) getVariablesByEnvironmentAndScope(w http.ResponseW
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 
+}
+
+func (appContext *appContext) getVariablesNotUsed(w http.ResponseWriter, r *http.Request) {
+
+	type responseResult struct {
+		ID    int    `json:"id"`
+		Scope string `json:"scope"`
+		Name  string `json:"name"`
+		Value string `json:"value"`
+	}
+
+	vars := mux.Vars(r)
+
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, err.Error(), 501)
+		return
+	}
+
+	//Retrieve all variables
+	variableResult := &model.VariablesResult{}
+	if variableResult.Variables, err = appContext.database.GetAllVariablesByEnvironment(id); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	//Retrieve all helm release in environment
+	//Locate Environment
+	environment, err := appContext.database.GetByID(id)
+	if err != nil {
+		http.Error(w, err.Error(), 501)
+		return
+	}
+	kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
+	helmReleases, err := helmapi.ListHelmDeployments(kubeConfig, environment.Namespace)
+
+	result := make([]responseResult, 0)
+	for _, e := range variableResult.Variables {
+		if e.Scope != "global" {
+			if !scopeRunning(helmReleases, e.Scope, environment.Namespace) {
+				result = append(result, responseResult{ID: int(e.ID), Scope: e.Scope, Name: e.Name, Value: e.Value})
+			}
+		}
+	}
+
+	data, _ := json.Marshal(result)
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+
+}
+
+func scopeRunning(helmList *helmapi.HelmListResult, scope string, namespace string) bool {
+
+	result := false
+
+	if strings.Contains(scope, "gcm") {
+		scope = scope + "-" + namespace
+	} else {
+		scope = strings.ReplaceAll(scope, "saj6/", "")
+	}
+
+	for _, e := range helmList.Releases {
+
+		searchable := e.Chart
+		if strings.Contains(scope, "gcm") {
+			searchable = e.Name
+		}
+
+		if strings.Contains(searchable, scope) {
+			result = true
+			break
+		}
+	}
+	return result
 }
