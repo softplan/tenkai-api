@@ -62,7 +62,7 @@ func (docker *DockerMockService) GetTags(repo *model.DockerRepo, imageName strin
 	return nil, nil
 }
 
-// GetDateCalledTimes returns a date using time.Now for test only
+// GetDateCalledTimes returns number of times the func was called.
 func (docker *DockerMockService) GetDateCalledTimes() int {
 	return docker.dateCalledTimes
 }
@@ -155,7 +155,7 @@ func (docker *DockerService) GetTags(repo *model.DockerRepo, imageName string) (
 
 }
 
-// GetDateCalledTimes returns a date using time.Now for test only
+// GetDateCalledTimes returns number of times the func was called.
 func (docker *DockerService) GetDateCalledTimes() int {
 	return 0
 }
