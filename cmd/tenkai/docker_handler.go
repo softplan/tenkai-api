@@ -1,30 +1,16 @@
 package main
 
 import (
-	"crypto/tls"
-	"encoding/base64"
 	"encoding/json"
 	"github.com/softplan/tenkai-api/dbms"
 	"github.com/softplan/tenkai-api/dbms/model"
+	dockerapi "github.com/softplan/tenkai-api/service/docker"
 	"github.com/softplan/tenkai-api/util"
+	"log"
 	"net/http"
 	"sort"
 	"strings"
-	"time"
 )
-
-func getImageWithoutRepo(image string) string {
-	result := ""
-	index := strings.Index(image, "/")
-	result = image[index+1:]
-	return result
-}
-
-func getHTTPClient() *http.Client {
-	tr := &http.Transport{}
-	tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	return &http.Client{Transport: tr}
-}
 
 func (appContext *appContext) listDockerTags(w http.ResponseWriter, r *http.Request) {
 
@@ -37,33 +23,11 @@ func (appContext *appContext) listDockerTags(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	ds := dockerapi.GetDockerService(appContext.testMode)
+
 	repo, err := getBaseDomainFromRepo(&appContext.database, payload.ImageName)
-	url := "https://" + repo.Host + "/v2/" + getImageWithoutRepo(payload.ImageName) + "/tags/list"
 
-	client := getHTTPClient()
-
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		http.Error(w, err.Error(), 501)
-		return
-	}
-
-	sEnc := base64.StdEncoding.EncodeToString([]byte(repo.Username + ":" + repo.Password))
-
-	req.Header.Add("Authorization", " Basic "+sEnc)
-
-	// Fetch Request
-	resp, err := client.Do(req)
-	if err != nil {
-		http.Error(w, err.Error(), 501)
-		return
-	}
-	defer resp.Body.Close()
-
-	d := json.NewDecoder(resp.Body)
-	var tagResult model.TagsResult
-
-	err = d.Decode(&tagResult)
+	tagResult, err := ds.GetTags(repo, payload.ImageName)
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
@@ -71,74 +35,42 @@ func (appContext *appContext) listDockerTags(w http.ResponseWriter, r *http.Requ
 
 	result := &model.ListDockerTagsResult{}
 
-	for _, e := range tagResult.Tags {
-
-		//TODO - VERY SLOW REMOVED BY NOW
-		/*
-			date, err := getDate(*repo, getImageWithoutRepo(payload.ImageName), e)
-			if err != nil {
-				http.Error(w, err.Error(), 501)
-				return
-			}
-		*/
-		result.TagResponse = append(result.TagResponse, model.TagResponse{Tag: e})
+	cacheErr := cacheDockerTags(tagResult.Tags, payload.ImageName, appContext, result, ds, repo)
+	if cacheErr != nil {
+		http.Error(w, cacheErr.Error(), 501)
 	}
 
-	/*
-		sort.Slice(result.TagResponse, func(i, j int) bool {
-			return result.TagResponse[i].Created.Before(result.TagResponse[j].Created)
-		})
-	*/
+	sort.Slice(result.TagResponse, func(i, j int) bool {
+		return result.TagResponse[i].Created.Before(result.TagResponse[j].Created)
+	})
 
 	data, _ := json.Marshal(result)
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
-
 }
 
-func getDate(repo model.DockerRepo, imageName string, tag string) (*time.Time, error) {
+func cacheDockerTags(tags []string, imageName string,
+	appContext *appContext, result *model.ListDockerTagsResult, ds dockerapi.DockerServiceInterface,
+	repo *model.DockerRepo) error {
 
-	url := "https://" + repo.Host + "/v2/" + imageName + "/manifests/" + tag
+	for _, tag := range tags {
+		img := imageName + ":" + tag
 
-	client := getHTTPClient()
-
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, err
+		if _, exists := appContext.dockerTagsCache[img]; exists {
+			log.Printf("Value %s already exists.", img)
+			result.TagResponse = append(result.TagResponse, model.TagResponse{Tag: tag, Created: appContext.dockerTagsCache[img]})
+			continue
+		} else {
+			date, err := ds.GetDate(*repo, imageName, tag)
+			if err != nil {
+				return err
+			}
+			result.TagResponse = append(result.TagResponse, model.TagResponse{Tag: tag, Created: *date})
+			appContext.dockerTagsCache[img] = *date
+			log.Printf("Value %s added.", img)
+		}
 	}
-
-	sEnc := base64.StdEncoding.EncodeToString([]byte(repo.Username + ":" + repo.Password))
-	req.Header.Add("Authorization", " Basic "+sEnc)
-
-	// Fetch Request
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	d := json.NewDecoder(resp.Body)
-	var manifestResult model.ManifestResult
-
-	err = d.Decode(&manifestResult)
-	if err != nil {
-		return nil, err
-	}
-
-	list := make([]model.V1Compatibility, 0)
-
-	for _, e := range manifestResult.History {
-		v1Compatibility := &model.V1Compatibility{}
-		json.Unmarshal([]byte(e.V1Compatibility), &v1Compatibility)
-		list = append(list, *v1Compatibility)
-	}
-
-	sort.Slice(list, func(i, j int) bool {
-		return list[i].Created.Before(list[j].Created)
-	})
-
-	return &list[len(list)-1].Created, nil
-
+	return nil
 }
 
 func getBaseDomainFromRepo(dbms *dbms.Database, imageName string) (*model.DockerRepo, error) {
