@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
+	"log"
 	"github.com/softplan/tenkai-api/dbms"
 	"github.com/softplan/tenkai-api/dbms/model"
 	dockerapi "github.com/softplan/tenkai-api/service/docker"
@@ -57,7 +57,7 @@ func cacheDockerTags(tags []string, imageName string,
 		img := imageName + ":" + tag
 
 		if _, exists := appContext.dockerTagsCache[img]; exists {
-			fmt.Printf("Value %s already exists.\n", img)
+			log.Printf("Value %s already exists.", img)
 			result.TagResponse = append(result.TagResponse, model.TagResponse{Tag: tag, Created: appContext.dockerTagsCache[img]})
 			continue
 		} else {
@@ -67,7 +67,7 @@ func cacheDockerTags(tags []string, imageName string,
 			}
 			result.TagResponse = append(result.TagResponse, model.TagResponse{Tag: tag, Created: *date})
 			appContext.dockerTagsCache[img] = *date
-			fmt.Printf("Value %s added.\n", img)
+			log.Printf("Value %s added.", img)
 		}
 	}
 	return nil
