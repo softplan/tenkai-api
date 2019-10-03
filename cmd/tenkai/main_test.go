@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 func checkTestingFatalError(t *testing.T, err error) {
@@ -24,7 +25,8 @@ func GetAppContext() *appContext {
 			},
 		},
 	}
-	appContext := &appContext{configuration: &config}
+	dockerTagsCache := make(map[string]time.Time)
+	appContext := &appContext{configuration: &config, dockerTagsCache: dockerTagsCache, testMode: true}
 	return appContext
 }
 
