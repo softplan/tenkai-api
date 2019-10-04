@@ -4,6 +4,7 @@ import (
 	"github.com/softplan/tenkai-api/dbms/model"
 	dockerapi "github.com/softplan/tenkai-api/service/docker"
 	"testing"
+	"time"
 )
 
 func TestCacheDockerTags(t *testing.T) {
@@ -14,7 +15,8 @@ func TestCacheDockerTags(t *testing.T) {
 	ds := dockerapi.GetDockerService(appContext.testMode)
 	repo, _ := getBaseDomainFromRepoMock()
 
-	error := cacheDockerTags(tags, imageName, appContext, result, ds, repo)
+	dateTime := time.Now()
+	error := cacheDockerTags(tags, imageName, appContext, result, ds, repo, false, dateTime)
 	if error != nil {
 		t.Fatal(error)
 	}
@@ -25,7 +27,7 @@ func TestCacheDockerTags(t *testing.T) {
 	}
 
 	// Call cacheDockerTags again to certify if cache works
-	error = cacheDockerTags(tags, imageName, appContext, result, ds, repo)
+	error = cacheDockerTags(tags, imageName, appContext, result, ds, repo, false, dateTime)
 	if error != nil {
 		t.Fatal(error)
 	}
