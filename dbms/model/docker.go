@@ -8,6 +8,7 @@ import (
 //ListDockerTagsRequest structure
 type ListDockerTagsRequest struct {
 	ImageName string `json:"imageName"`
+	From      string `json:"from"`
 }
 
 //ListDockerTagsResult structure
