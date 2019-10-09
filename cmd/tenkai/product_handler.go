@@ -179,8 +179,10 @@ func (appContext *appContext) listProductVersionServices(w http.ResponseWriter, 
 	}
 
 	for i, e := range result.List {
-		_ = appContext.verifyNewVersion(&e)
-		result.List[i].LatestVersion = e.LatestVersion
+		if e.ServiceName != "" && e.DockerImageTag != "" {
+			_ = appContext.verifyNewVersion(&e)
+			result.List[i].LatestVersion = e.LatestVersion
+		}
 	}
 
 	data, _ := json.Marshal(result)
@@ -192,7 +194,11 @@ func (appContext *appContext) listProductVersionServices(w http.ResponseWriter, 
 func (appContext *appContext) verifyNewVersion(pvs *model.ProductVersionService) error {
 
 	var payload model.ListDockerTagsRequest
-	payload.ImageName, _ = analyser.GetImageFromService(pvs.ServiceName)
+	var err error
+	payload.ImageName, err = analyser.GetImageFromService(pvs.ServiceName)
+	if err != nil {
+		return err
+	}
 
 	//Get version tags
 	result, err := dockerapi.GetDockerTagsWithDate(payload, appContext.testMode, appContext.database, appContext.dockerTagsCache)
@@ -237,9 +243,20 @@ func (appContext *appContext) verifyNewVersion(pvs *model.ProductVersionService)
 }
 
 func getNumberOfTag(tag string) int {
+
+	//Count amount of delimiters
+	n := strings.Count(tag, "#")
+	n = n + strings.Count(tag, ".")
+	n = n + strings.Count(tag, "-")
+
+	for i := 0; i < 10 - n; i++ {
+		tag = tag + ".00"
+	}
+
 	tag = strings.ReplaceAll(tag, "#", "")
 	tag = strings.ReplaceAll(tag, ".", "")
 	tag = strings.ReplaceAll(tag, "-", "")
 	result, _ := strconv.Atoi(tag)
+
 	return result
 }
