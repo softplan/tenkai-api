@@ -135,6 +135,7 @@ func startHTTPServer(appContext *appContext) {
 
 	r.HandleFunc("/productVersionServices", appContext.listProductVersionServices).Methods("GET")
 	r.HandleFunc("/productVersionServices", appContext.newProductVersionService).Methods("POST")
+	r.HandleFunc("/productVersionServices/edit", appContext.editProductVersionService).Methods("POST")
 
 	r.HandleFunc("/dockerRepo", appContext.listDockerRepositories).Methods("GET")
 	r.HandleFunc("/dockerRepo", appContext.newDockerRepository).Methods("POST")

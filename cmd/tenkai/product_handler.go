@@ -118,6 +118,22 @@ func (appContext *appContext) newProductVersionService(w http.ResponseWriter, r 
 
 }
 
+func (appContext *appContext) editProductVersionService(w http.ResponseWriter, r *http.Request) {
+	var payload model.ProductVersionService
+
+	if err := util.UnmarshalPayload(r, &payload); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := appContext.database.EditProductVersionService(payload); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
 func (appContext *appContext) listProductVersions(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
