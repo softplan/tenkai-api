@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"github.com/softplan/tenkai-api/dbms"
 	"github.com/softplan/tenkai-api/dbms/model"
 	"net/http"
@@ -27,6 +28,9 @@ func getHTTPClient() *http.Client {
 
 func getBaseDomainFromRepo(dbms *dbms.Database, imageName string) (*model.DockerRepo, error) {
 	firstBarIndex := strings.Index(imageName, "/")
+	if firstBarIndex <=0 {
+		return nil, errors.New("Repository expected")
+	}
 	host := imageName[0:firstBarIndex]
 	result, err := dbms.GetDockerRepositoryByHost(host)
 	return &result, err
@@ -80,6 +84,9 @@ func GetDockerTagsWithDate(payload model.ListDockerTagsRequest, testMode bool,
 	ds := GetDockerService(testMode)
 
 	repo, err := getBaseDomainFromRepo(&dbms, payload.ImageName)
+	if err != nil {
+		return nil, err
+	}
 
 	tagResult, err := ds.GetTags(repo, payload.ImageName)
 	if err != nil {
