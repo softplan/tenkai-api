@@ -5,6 +5,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/dbms/model"
 	dockerapi "github.com/softplan/tenkai-api/service/docker"
+	analyser "github.com/softplan/tenkai-api/service/tenkai"
 	"github.com/softplan/tenkai-api/util"
 	"net/http"
 	"strconv"
@@ -177,8 +178,9 @@ func (appContext *appContext) listProductVersionServices(w http.ResponseWriter, 
 		return
 	}
 
-	for _, e := range result.List {
-		appContext.verifyNewVersion(&e)
+	for i, e := range result.List {
+		_ = appContext.verifyNewVersion(&e)
+		result.List[i].LatestVersion = e.LatestVersion
 	}
 
 	data, _ := json.Marshal(result)
@@ -187,9 +189,10 @@ func (appContext *appContext) listProductVersionServices(w http.ResponseWriter, 
 
 }
 
-func  (appContext *appContext) verifyNewVersion(pvs *model.ProductVersionService) error {
+func (appContext *appContext) verifyNewVersion(pvs *model.ProductVersionService) error {
 
 	var payload model.ListDockerTagsRequest
+	payload.ImageName, _ = analyser.GetImageFromService(pvs.ServiceName)
 
 	//Get version tags
 	result, err := dockerapi.GetDockerTagsWithDate(payload, appContext.testMode, appContext.database, appContext.dockerTagsCache)
@@ -218,7 +221,7 @@ func  (appContext *appContext) verifyNewVersion(pvs *model.ProductVersionService
 	finalList := make([]model.TagResponse, 0)
 
 	//Filter based on version tag
-	for _,e := range majorList {
+	for _, e := range majorList {
 		if getNumberOfTag(e.Tag) > getNumberOfTag(pvs.DockerImageTag) {
 			finalList = append(finalList, e)
 		}
@@ -234,9 +237,9 @@ func  (appContext *appContext) verifyNewVersion(pvs *model.ProductVersionService
 }
 
 func getNumberOfTag(tag string) int {
-	tag = strings.ReplaceAll(tag,"#","")
-	tag = strings.ReplaceAll(tag,".","")
-	tag = strings.ReplaceAll(tag,"-","")
+	tag = strings.ReplaceAll(tag, "#", "")
+	tag = strings.ReplaceAll(tag, ".", "")
+	tag = strings.ReplaceAll(tag, "-", "")
 	result, _ := strconv.Atoi(tag)
 	return result
 }
