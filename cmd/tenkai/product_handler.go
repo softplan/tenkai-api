@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/dbms/model"
+	dockerapi "github.com/softplan/tenkai-api/service/docker"
 	"github.com/softplan/tenkai-api/util"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -158,8 +160,67 @@ func (appContext *appContext) listProductVersionServices(w http.ResponseWriter, 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	for _, e := range result.List {
+		appContext.verifyNewVersion(&e)
+	}
+
 	data, _ := json.Marshal(result)
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 
+}
+
+func  (appContext *appContext) verifyNewVersion(pvs *model.ProductVersionService) error {
+
+	var payload model.ListDockerTagsRequest
+
+	//Get version tags
+	result, err := dockerapi.GetDockerTagsWithDate(payload, appContext.testMode, appContext.database, appContext.dockerTagsCache)
+	if err != nil {
+		return err
+	}
+
+	var currentDate time.Time
+	majorList := make([]model.TagResponse, 0)
+
+	//Get create date of current tag
+	for _, e := range result.TagResponse {
+		if e.Tag == pvs.DockerImageTag {
+			currentDate = e.Created
+			break
+		}
+	}
+
+	//Get all tags created after current tag
+	for _, e := range result.TagResponse {
+		if e.Created.After(currentDate) {
+			majorList = append(majorList, e)
+		}
+	}
+
+	finalList := make([]model.TagResponse, 0)
+
+	//Filter based on version tag
+	for _,e := range majorList {
+		if getNumberOfTag(e.Tag) > getNumberOfTag(pvs.DockerImageTag) {
+			finalList = append(finalList, e)
+		}
+	}
+
+	if len(finalList) > 0 {
+		e := finalList[len(finalList)-1]
+		pvs.LatestVersion = e.Tag
+	}
+
+	return nil
+
+}
+
+func getNumberOfTag(tag string) int {
+	tag = strings.ReplaceAll(tag,"#","")
+	tag = strings.ReplaceAll(tag,".","")
+	tag = strings.ReplaceAll(tag,"-","")
+	result, _ := strconv.Atoi(tag)
+	return result
 }

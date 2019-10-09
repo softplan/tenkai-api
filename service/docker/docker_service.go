@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
+	"github.com/softplan/tenkai-api/dbms"
 	"github.com/softplan/tenkai-api/dbms/model"
 	"net/http"
 	"sort"
@@ -22,6 +23,82 @@ func getHTTPClient() *http.Client {
 	tr := &http.Transport{}
 	tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	return &http.Client{Transport: tr}
+}
+
+func getBaseDomainFromRepo(dbms *dbms.Database, imageName string) (*model.DockerRepo, error) {
+	firstBarIndex := strings.Index(imageName, "/")
+	host := imageName[0:firstBarIndex]
+	result, err := dbms.GetDockerRepositoryByHost(host)
+	return &result, err
+}
+
+func cacheDockerTags(tags []string, imageName string, result *model.ListDockerTagsResult, ds DockerServiceInterface,
+	repo *model.DockerRepo, matchFromDate bool, dateFrom time.Time, globalCache map[string]time.Time) error {
+
+	for _, tag := range tags {
+		img := imageName + ":" + tag
+
+		if _, exists := globalCache[img]; exists {
+			if matchFromDate {
+				if globalCache[img].After(dateFrom) {
+					result.TagResponse = append(result.TagResponse, model.TagResponse{Tag: tag, Created: globalCache[img]})
+				}
+			} else {
+				result.TagResponse = append(result.TagResponse, model.TagResponse{Tag: tag, Created: globalCache[img]})
+			}
+		} else {
+			date, err := ds.GetDate(*repo, imageName, tag)
+			if err != nil {
+				return err
+			}
+			if matchFromDate {
+				if date.After(dateFrom) {
+					result.TagResponse = append(result.TagResponse, model.TagResponse{Tag: tag, Created: *date})
+				}
+			} else {
+				result.TagResponse = append(result.TagResponse, model.TagResponse{Tag: tag, Created: *date})
+			}
+			globalCache[img] = *date
+		}
+	}
+	return nil
+}
+
+//GetDockerTagsWithDate Method
+func GetDockerTagsWithDate(payload model.ListDockerTagsRequest, testMode bool,
+	dbms dbms.Database, globalCache map[string]time.Time) (*model.ListDockerTagsResult, error) {
+
+	var dateFrom time.Time
+	matchFromDate := false
+	if payload.From != "" {
+		layout := "2006-01-02"
+		dateFrom, _ = time.Parse(layout, payload.From)
+		matchFromDate = true
+
+	}
+
+	ds := GetDockerService(testMode)
+
+	repo, err := getBaseDomainFromRepo(&dbms, payload.ImageName)
+
+	tagResult, err := ds.GetTags(repo, payload.ImageName)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &model.ListDockerTagsResult{}
+
+	cacheErr := cacheDockerTags(tagResult.Tags, payload.ImageName, result, ds, repo, matchFromDate, dateFrom, globalCache)
+	if cacheErr != nil {
+		return nil, cacheErr
+	}
+
+	sort.Slice(result.TagResponse, func(i, j int) bool {
+		return result.TagResponse[i].Created.Before(result.TagResponse[j].Created)
+	})
+
+	return result, nil
+
 }
 
 // GetDockerService is a builder to return DockerService or DockerMockService based on appContext.testMode value
