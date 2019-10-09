@@ -29,7 +29,3 @@ func (appContext *appContext) listDockerTags(w http.ResponseWriter, r *http.Requ
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 }
-
-
-
-
