@@ -4,8 +4,8 @@ import (
 	"github.com/softplan/tenkai-api/configs"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
-	"time"
 )
 
 func checkTestingFatalError(t *testing.T, err error) {
@@ -25,8 +25,9 @@ func GetAppContext() *appContext {
 			},
 		},
 	}
-	dockerTagsCache := make(map[string]time.Time)
-	appContext := &appContext{configuration: &config, dockerTagsCache: dockerTagsCache, testMode: true}
+
+	appContext := &appContext{configuration: &config, testMode: true}
+	appContext.dockerTagsCache = sync.Map{}
 	return appContext
 }
 
