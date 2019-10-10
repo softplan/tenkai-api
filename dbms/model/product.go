@@ -25,7 +25,7 @@ type ProductVersionService struct {
 	ProductVersionID int    `json:"productVersionId"`
 	ServiceName      string `json:"serviceName"`
 	DockerImageTag   string `json:"dockerImageTag"`
-	LatestVersion    string `json:"latestVersion"`
+	LatestVersion    string `gorm:"-" json:"latestVersion"`
 }
 
 //ProductRequestReponse struct

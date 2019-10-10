@@ -86,6 +86,7 @@ type InstallArguments struct {
 type InstallPayload struct {
 	EnvironmentID int    `json:"environmentId"`
 	Chart         string `json:"chart"`
+	ChartVersion         string `json:"chartVersion"`
 	Name          string `json:"name"`
 }
 
