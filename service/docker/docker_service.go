@@ -28,7 +28,7 @@ func getHTTPClient() *http.Client {
 
 func getBaseDomainFromRepo(dbms *dbms.Database, imageName string) (*model.DockerRepo, error) {
 	firstBarIndex := strings.Index(imageName, "/")
-	if firstBarIndex <=0 {
+	if firstBarIndex <= 0 {
 		return nil, errors.New("Repository expected")
 	}
 	host := imageName[0:firstBarIndex]
