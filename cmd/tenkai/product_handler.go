@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -178,13 +179,28 @@ func (appContext *appContext) listProductVersionServices(w http.ResponseWriter, 
 		return
 	}
 
+	wg := new(sync.WaitGroup)
+
 	for i, e := range result.List {
-		e.LatestVersion = ""
+
 		if e.ServiceName != "" && e.DockerImageTag != "" {
-			_ = appContext.verifyNewVersion(&e)
-			result.List[i].LatestVersion = e.LatestVersion
+
+			var serviceName = e.ServiceName
+			var tag = e.DockerImageTag
+			index := i
+
+			wg.Add(1)
+			go func(wg *sync.WaitGroup, serviceName string, tag string, index int) {
+				defer wg.Done()
+				version, _ := appContext.verifyNewVersion(serviceName, tag)
+				result.List[index ].LatestVersion = version
+
+			}(wg, serviceName, tag, index)
 		}
 	}
+
+	wg.Wait()
+
 
 	data, _ := json.Marshal(result)
 	w.WriteHeader(http.StatusOK)
@@ -192,30 +208,44 @@ func (appContext *appContext) listProductVersionServices(w http.ResponseWriter, 
 
 }
 
-func (appContext *appContext) verifyNewVersion(pvs *model.ProductVersionService) error {
+func (appContext *appContext) verifyNewVersion(serviceName string, dockerImageTag string) (string, error) {
 
-	currentTag := getNumberOfTag(pvs.DockerImageTag)
+	currentTag := getNumberOfTag(dockerImageTag)
 
 	var payload model.ListDockerTagsRequest
 
-	appContext.mutex.Lock()
-	if appContext.chartImageCache[pvs.ServiceName] == "" {
+	//imageCache := appContext.chartImageCache[pvs.ServiceName]
+	object, ok := appContext.chartImageCache.Load(serviceName)
+	var imageCache string
+	if ok {
+		imageCache = object.(string)
+	}
+
+	if !ok || imageCache == "" {
 		var err error
 
-		payload.ImageName, err = analyser.GetImageFromService(pvs.ServiceName)
+		payload.ImageName, err = analyser.GetImageFromService(serviceName)
 		if err != nil {
-			return err
+			return "", err
 		}
-		appContext.chartImageCache[pvs.ServiceName] = payload.ImageName
+
+		appContext.chartImageCache.Store(serviceName, payload.ImageName)
+
+		//appContext.chartImageCache[pvs.ServiceName] = payload.ImageName
+
+
 	} else {
-		payload.ImageName = appContext.chartImageCache[pvs.ServiceName]
+		//payload.ImageName = appContext.chartImageCache[pvs.ServiceName]
+		object, ok := appContext.chartImageCache.Load(serviceName)
+		if ok {
+			payload.ImageName = object.(string)
+		}
 	}
-	appContext.mutex.Unlock()
 
 	//Get version tags
 	result, err := dockerapi.GetDockerTagsWithDate(payload, appContext.testMode, appContext.database, appContext.dockerTagsCache)
 	if err != nil {
-		return err
+		return "",err
 	}
 
 	var currentDate time.Time
@@ -223,7 +253,7 @@ func (appContext *appContext) verifyNewVersion(pvs *model.ProductVersionService)
 
 	//Get create date of current tag
 	for _, e := range result.TagResponse {
-		if e.Tag == pvs.DockerImageTag {
+		if e.Tag == dockerImageTag {
 			currentDate = e.Created
 			break
 		}
@@ -247,12 +277,13 @@ func (appContext *appContext) verifyNewVersion(pvs *model.ProductVersionService)
 		}
 	}
 
+	var lastResult string
 	if len(finalList) > 0 {
 		e := finalList[len(finalList)-1]
-		pvs.LatestVersion = e.Tag
+		lastResult = e.Tag
 	}
 
-	return nil
+	return lastResult, nil
 
 }
 

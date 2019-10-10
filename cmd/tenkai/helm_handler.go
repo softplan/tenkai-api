@@ -296,7 +296,7 @@ func (appContext *appContext) multipleInstall(w http.ResponseWriter, r *http.Req
 			return
 		}
 
-		err = appContext.simpleInstall(environment, element.Chart, element.Name, out, false)
+		err = appContext.simpleInstall(environment, element.Chart, element.ChartVersion, element.Name, out, false)
 		if err != nil {
 			http.Error(w, err.Error(), 501)
 			return
@@ -343,7 +343,7 @@ func (appContext *appContext) install(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//TODO Verify if chart exists
-	err = appContext.simpleInstall(environment, payload.Chart, payload.Name, out, false)
+	err = appContext.simpleInstall(environment, payload.Chart, payload.ChartVersion, payload.Name, out, false)
 	if err != nil {
 		fmt.Println(out.String())
 		http.Error(w, err.Error(), 501)
@@ -374,7 +374,7 @@ func (appContext *appContext) helmDryRun(w http.ResponseWriter, r *http.Request)
 	}
 
 	//TODO Verify if chart exists
-	err = appContext.simpleInstall(environment, payload.Chart, payload.Name, out, true)
+	err = appContext.simpleInstall(environment, payload.Chart, payload.ChartVersion, payload.Name, out, true)
 
 	if err != nil {
 		http.Error(w, err.Error(), 501)
@@ -386,7 +386,7 @@ func (appContext *appContext) helmDryRun(w http.ResponseWriter, r *http.Request)
 
 }
 
-func (appContext *appContext) simpleInstall(environment *model.Environment, chart string, name string, out *bytes.Buffer, dryRun bool) error {
+func (appContext *appContext) simpleInstall(environment *model.Environment, chart string, chartVersion string, name string, out *bytes.Buffer, dryRun bool) error {
 
 	//TODO - VERIFY IF CONFIG FILE EXISTS !!! This is the cause of  u.client.ReleaseHistory fail sometimes.
 
@@ -426,7 +426,7 @@ func (appContext *appContext) simpleInstall(environment *model.Environment, char
 		name := name + "-" + environment.Namespace
 		kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
 
-		err := helmapi.Upgrade(kubeConfig, name, chart, environment.Namespace, args, out, dryRun)
+		err := helmapi.Upgrade(kubeConfig, name, chart, chartVersion, environment.Namespace, args, out, dryRun)
 
 		if err != nil {
 			return err

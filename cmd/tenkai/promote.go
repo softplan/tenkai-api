@@ -16,6 +16,7 @@ import (
 type releaseToDeploy struct {
 	Name  string
 	Chart string
+	ChartVersion string
 }
 
 func (appContext *appContext) promote(w http.ResponseWriter, r *http.Request) {
@@ -142,7 +143,7 @@ func (appContext *appContext) doIt(kubeConfig string, targetEnvironment *model.E
 
 	for _, e := range toDeploy {
 		global.Logger.Info(logFields, "deploying: "+e.Name+" - "+e.Chart)
-		err := appContext.simpleInstall(targetEnvironment, e.Chart, e.Name, out, false)
+		err := appContext.simpleInstall(targetEnvironment, e.Chart, e.ChartVersion, e.Name, out, false)
 		if err != nil {
 			global.Logger.Error(logFields, "error: "+err.Error())
 		}

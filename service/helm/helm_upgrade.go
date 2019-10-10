@@ -54,7 +54,7 @@ type upgradeCmd struct {
 }
 
 //Upgrade Method
-func Upgrade(kubeconfig string, release string, chart string, namespace string, variables []string, out *bytes.Buffer, dryrun bool) error {
+func Upgrade(kubeconfig string, release string, chart string, chartVersion string, namespace string, variables []string, out *bytes.Buffer, dryrun bool) error {
 
 	settings.KubeConfig = kubeconfig
 	settings.Home = global.HelmDir
@@ -78,7 +78,12 @@ func Upgrade(kubeconfig string, release string, chart string, namespace string, 
 			upgrade.dryRun = true
 		}
 
-		upgrade.version = ">0.0.0-0"
+		if chartVersion != "" {
+			upgrade.version = chartVersion
+		} else {
+			upgrade.version = ">0.0.0-0"
+		}
+
 		upgrade.install = true
 		upgrade.recreate = false
 		upgrade.force = true

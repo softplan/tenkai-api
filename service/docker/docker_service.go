@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -37,18 +38,26 @@ func getBaseDomainFromRepo(dbms *dbms.Database, imageName string) (*model.Docker
 }
 
 func cacheDockerTags(tags []string, imageName string, result *model.ListDockerTagsResult, ds DockerServiceInterface,
-	repo *model.DockerRepo, matchFromDate bool, dateFrom time.Time, globalCache map[string]time.Time) error {
+	repo *model.DockerRepo, matchFromDate bool, dateFrom time.Time, globalCache sync.Map) error {
 
 	for _, tag := range tags {
-		img := imageName + ":" + tag
 
-		if _, exists := globalCache[img]; exists {
+		img := imageName + ":" + tag
+		createDate, ok :=  globalCache.Load(img)
+
+		if ok {
+
 			if matchFromDate {
-				if globalCache[img].After(dateFrom) {
-					result.TagResponse = append(result.TagResponse, model.TagResponse{Tag: tag, Created: globalCache[img]})
+				var object interface{}
+				var dateTime time.Time
+				object, _ = globalCache.Load(img)
+				dateTime = object.(time.Time)
+				major := dateTime.After(dateFrom)
+				if major {
+					result.TagResponse = append(result.TagResponse, model.TagResponse{Tag: tag, Created: createDate.(time.Time)})
 				}
 			} else {
-				result.TagResponse = append(result.TagResponse, model.TagResponse{Tag: tag, Created: globalCache[img]})
+				result.TagResponse = append(result.TagResponse, model.TagResponse{Tag: tag, Created: createDate.(time.Time)})
 			}
 		} else {
 			date, err := ds.GetDate(*repo, imageName, tag)
@@ -62,7 +71,7 @@ func cacheDockerTags(tags []string, imageName string, result *model.ListDockerTa
 			} else {
 				result.TagResponse = append(result.TagResponse, model.TagResponse{Tag: tag, Created: *date})
 			}
-			globalCache[img] = *date
+			globalCache.Store(img, *date)
 		}
 	}
 	return nil
@@ -70,7 +79,7 @@ func cacheDockerTags(tags []string, imageName string, result *model.ListDockerTa
 
 //GetDockerTagsWithDate Method
 func GetDockerTagsWithDate(payload model.ListDockerTagsRequest, testMode bool,
-	dbms dbms.Database, globalCache map[string]time.Time) (*model.ListDockerTagsResult, error) {
+	dbms dbms.Database, globalCache sync.Map) (*model.ListDockerTagsResult, error) {
 
 	var dateFrom time.Time
 	matchFromDate := false

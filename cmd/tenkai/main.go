@@ -1,16 +1,14 @@
 package main
 
 import (
-	"log"
-	"net/http"
-	"os"
-	"sync"
-	"time"
-
 	"github.com/olivere/elastic"
 	"github.com/softplan/tenkai-api/audit"
 	"github.com/softplan/tenkai-api/dbms"
 	helmapi "github.com/softplan/tenkai-api/service/helm"
+	"log"
+	"net/http"
+	"os"
+	"sync"
 
 	"github.com/softplan/tenkai-api/configs"
 	"github.com/softplan/tenkai-api/global"
@@ -27,8 +25,8 @@ type appContext struct {
 	database        dbms.Database
 	elk             *elastic.Client
 	mutex           sync.Mutex
-	chartImageCache map[string]string
-	dockerTagsCache map[string]time.Time
+	chartImageCache sync.Map
+	dockerTagsCache sync.Map
 	testMode        bool
 }
 
@@ -47,8 +45,12 @@ func main() {
 	checkFatalError(error)
 
 	appContext := &appContext{configuration: config}
-	appContext.dockerTagsCache = make(map[string]time.Time)
-	appContext.chartImageCache = make(map[string]string)
+
+	appContext.dockerTagsCache = sync.Map{}
+	appContext.chartImageCache = sync.Map{}
+
+	//appContext.dockerTagsCache = make(map[string]time.Time)
+	//appContext.chartImageCache = make(map[string]string)
 
 	dbmsURI := config.App.Dbms.URI
 
