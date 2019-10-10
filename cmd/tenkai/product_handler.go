@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/dbms/model"
+	productsrv "github.com/softplan/tenkai-api/service"
 	dockerapi "github.com/softplan/tenkai-api/service/docker"
 	analyser "github.com/softplan/tenkai-api/service/tenkai"
 	"github.com/softplan/tenkai-api/util"
@@ -91,7 +92,8 @@ func (appContext *appContext) newProductVersion(w http.ResponseWriter, r *http.R
 	}
 
 	payload.Date = time.Now()
-	if _, err := appContext.database.CreateProductVersion(payload); err != nil {
+
+	if _, err := productsrv.CreateProductVersion(appContext.database, payload); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

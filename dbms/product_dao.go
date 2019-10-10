@@ -112,3 +112,20 @@ func (database *Database) ListProductsVersionServices(id int) ([]model.ProductVe
 	}
 	return list, nil
 }
+
+//ListProductVersionServicesLatest - List from the latest Product Version
+func (database *Database) ListProductVersionServicesLatest(productID, productVersionID int) ([]model.ProductVersionService, error) {
+	item := model.ProductVersion{}
+	list := make([]model.ProductVersionService, 0)
+
+	if err := database.Db.Where(&model.ProductVersion{ProductID: productID}).Not("id", productVersionID).Order("created_at desc").Limit(1).Find(&item).Error; err != nil {
+		return list, err
+	}
+
+	list, err := database.ListProductsVersionServices(int(item.ID))
+	if err != nil {
+		return list, err
+	}
+
+	return list, nil
+}
