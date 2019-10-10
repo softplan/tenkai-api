@@ -249,7 +249,7 @@ func getNumberOfTag(tag string) int {
 	n = n + strings.Count(tag, ".")
 	n = n + strings.Count(tag, "-")
 
-	for i := 0; i < 10 - n; i++ {
+	for i := 0; i < 10-n; i++ {
 		tag = tag + ".00"
 	}
 
