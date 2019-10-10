@@ -14,8 +14,8 @@ import (
 )
 
 type releaseToDeploy struct {
-	Name  string
-	Chart string
+	Name         string
+	Chart        string
 	ChartVersion string
 }
 

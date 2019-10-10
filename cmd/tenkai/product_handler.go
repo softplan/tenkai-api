@@ -193,14 +193,13 @@ func (appContext *appContext) listProductVersionServices(w http.ResponseWriter, 
 			go func(wg *sync.WaitGroup, serviceName string, tag string, index int) {
 				defer wg.Done()
 				version, _ := appContext.verifyNewVersion(serviceName, tag)
-				result.List[index ].LatestVersion = version
+				result.List[index].LatestVersion = version
 
 			}(wg, serviceName, tag, index)
 		}
 	}
 
 	wg.Wait()
-
 
 	data, _ := json.Marshal(result)
 	w.WriteHeader(http.StatusOK)
@@ -233,7 +232,6 @@ func (appContext *appContext) verifyNewVersion(serviceName string, dockerImageTa
 
 		//appContext.chartImageCache[pvs.ServiceName] = payload.ImageName
 
-
 	} else {
 		//payload.ImageName = appContext.chartImageCache[pvs.ServiceName]
 		object, ok := appContext.chartImageCache.Load(serviceName)
@@ -243,9 +241,9 @@ func (appContext *appContext) verifyNewVersion(serviceName string, dockerImageTa
 	}
 
 	//Get version tags
-	result, err := dockerapi.GetDockerTagsWithDate(payload, appContext.testMode, appContext.database, appContext.dockerTagsCache)
+	result, err := dockerapi.GetDockerTagsWithDate(payload, appContext.testMode, appContext.database, &appContext.dockerTagsCache)
 	if err != nil {
-		return "",err
+		return "", err
 	}
 
 	var currentDate time.Time

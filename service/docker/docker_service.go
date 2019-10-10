@@ -38,12 +38,12 @@ func getBaseDomainFromRepo(dbms *dbms.Database, imageName string) (*model.Docker
 }
 
 func cacheDockerTags(tags []string, imageName string, result *model.ListDockerTagsResult, ds DockerServiceInterface,
-	repo *model.DockerRepo, matchFromDate bool, dateFrom time.Time, globalCache sync.Map) error {
+	repo *model.DockerRepo, matchFromDate bool, dateFrom time.Time, globalCache *sync.Map) error {
 
 	for _, tag := range tags {
 
 		img := imageName + ":" + tag
-		createDate, ok :=  globalCache.Load(img)
+		createDate, ok := globalCache.Load(img)
 
 		if ok {
 
@@ -79,7 +79,7 @@ func cacheDockerTags(tags []string, imageName string, result *model.ListDockerTa
 
 //GetDockerTagsWithDate Method
 func GetDockerTagsWithDate(payload model.ListDockerTagsRequest, testMode bool,
-	dbms dbms.Database, globalCache sync.Map) (*model.ListDockerTagsResult, error) {
+	dbms dbms.Database, globalCache *sync.Map) (*model.ListDockerTagsResult, error) {
 
 	var dateFrom time.Time
 	matchFromDate := false
