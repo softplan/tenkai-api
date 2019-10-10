@@ -27,6 +27,7 @@ type appContext struct {
 	database        dbms.Database
 	elk             *elastic.Client
 	mutex           sync.Mutex
+	chartImageCache map[string]string
 	dockerTagsCache map[string]time.Time
 	testMode        bool
 }
@@ -47,6 +48,7 @@ func main() {
 
 	appContext := &appContext{configuration: config}
 	appContext.dockerTagsCache = make(map[string]time.Time)
+	appContext.chartImageCache = make(map[string]string)
 
 	dbmsURI := config.App.Dbms.URI
 

@@ -179,6 +179,7 @@ func (appContext *appContext) listProductVersionServices(w http.ResponseWriter, 
 	}
 
 	for i, e := range result.List {
+		e.LatestVersion = ""
 		if e.ServiceName != "" && e.DockerImageTag != "" {
 			_ = appContext.verifyNewVersion(&e)
 			result.List[i].LatestVersion = e.LatestVersion
@@ -193,12 +194,23 @@ func (appContext *appContext) listProductVersionServices(w http.ResponseWriter, 
 
 func (appContext *appContext) verifyNewVersion(pvs *model.ProductVersionService) error {
 
+	currentTag := getNumberOfTag(pvs.DockerImageTag)
+
 	var payload model.ListDockerTagsRequest
-	var err error
-	payload.ImageName, err = analyser.GetImageFromService(pvs.ServiceName)
-	if err != nil {
-		return err
+
+	appContext.mutex.Lock()
+	if appContext.chartImageCache[pvs.ServiceName] == "" {
+		var err error
+
+		payload.ImageName, err = analyser.GetImageFromService(pvs.ServiceName)
+		if err != nil {
+			return err
+		}
+		appContext.chartImageCache[pvs.ServiceName] = payload.ImageName
+	} else {
+		payload.ImageName = appContext.chartImageCache[pvs.ServiceName]
 	}
+	appContext.mutex.Unlock()
 
 	//Get version tags
 	result, err := dockerapi.GetDockerTagsWithDate(payload, appContext.testMode, appContext.database, appContext.dockerTagsCache)
@@ -228,7 +240,9 @@ func (appContext *appContext) verifyNewVersion(pvs *model.ProductVersionService)
 
 	//Filter based on version tag
 	for _, e := range majorList {
-		if getNumberOfTag(e.Tag) > getNumberOfTag(pvs.DockerImageTag) {
+
+		elementTag := getNumberOfTag(e.Tag)
+		if elementTag > currentTag {
 			finalList = append(finalList, e)
 		}
 	}
