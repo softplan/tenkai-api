@@ -9,6 +9,7 @@ import (
 	analyser "github.com/softplan/tenkai-api/service/tenkai"
 	"github.com/softplan/tenkai-api/util"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -202,6 +203,10 @@ func (appContext *appContext) listProductVersionServices(w http.ResponseWriter, 
 	}
 
 	wg.Wait()
+
+	sort.Slice(result.List, func(i, j int) bool {
+		return result.List[i].ServiceName > (result.List[j].ServiceName)
+	})
 
 	data, _ := json.Marshal(result)
 	w.WriteHeader(http.StatusOK)

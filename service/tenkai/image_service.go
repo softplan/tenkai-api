@@ -3,6 +3,7 @@ package analyser
 import (
 	"encoding/json"
 	helmapi "github.com/softplan/tenkai-api/service/helm"
+	"sync"
 )
 
 //Image object
@@ -16,10 +17,13 @@ type JSONObject struct {
 }
 
 //GetImageFromService Retrieve Image from Servic eChart
-func GetImageFromService(serviceName string) (string, error) {
+func GetImageFromService(serviceName string, mutex *sync.Mutex) (string, error) {
 
 	//Look at the chart
-	bytes, _ := helmapi.GetValues(serviceName, "0")
+	bytes, err := helmapi.GetValues(serviceName, "0")
+	if err != nil {
+		return "", err
+	}
 
 	var data JSONObject
 	if err := json.Unmarshal(bytes, &data); err != nil {
