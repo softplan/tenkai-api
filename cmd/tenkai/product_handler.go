@@ -223,7 +223,7 @@ func (appContext *appContext) verifyNewVersion(serviceName string, dockerImageTa
 	if !ok || imageCache == "" {
 		var err error
 
-		payload.ImageName, err = analyser.GetImageFromService(serviceName)
+		payload.ImageName, err = analyser.GetImageFromService(serviceName, &appContext.mutex)
 		if err != nil {
 			return "", err
 		}
