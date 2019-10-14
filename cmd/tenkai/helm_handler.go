@@ -269,6 +269,49 @@ func (appContext *appContext) getChartVariables(w http.ResponseWriter, r *http.R
 
 }
 
+func (appContext *appContext) getHelmCommand(w http.ResponseWriter, r *http.Request) {
+
+	principal := util.GetPrincipal(r)
+	if !contains(principal.Roles, TenkaiHelmUpgrade) {
+		http.Error(w, errors.New("Access Denied").Error(), http.StatusUnauthorized)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	var payload model.MultipleInstallPayload
+
+	if err := util.UnmarshalPayload(r, &payload); err != nil {
+		http.Error(w, err.Error(), 501)
+		return
+	}
+
+	out := &bytes.Buffer{}
+
+	var fullCommand string
+	for _, element := range payload.Deployables {
+
+		//Locate Environment
+		environment, err := appContext.database.GetByID(element.EnvironmentID)
+		if err != nil {
+			http.Error(w, err.Error(), 501)
+			return
+		}
+
+		command, errX := appContext.simpleInstall(environment, element.Chart, element.ChartVersion, element.Name, out, false, true)
+		if errX != nil {
+			http.Error(w, err.Error(), 501)
+			return
+		}
+
+		fullCommand = fullCommand + "\n\n" + command
+
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(fullCommand))
+
+}
+
 func (appContext *appContext) multipleInstall(w http.ResponseWriter, r *http.Request) {
 
 	principal := util.GetPrincipal(r)
@@ -296,7 +339,7 @@ func (appContext *appContext) multipleInstall(w http.ResponseWriter, r *http.Req
 			return
 		}
 
-		err = appContext.simpleInstall(environment, element.Chart, element.ChartVersion, element.Name, out, false)
+		_, err = appContext.simpleInstall(environment, element.Chart, element.ChartVersion, element.Name, out, false, false)
 		if err != nil {
 			http.Error(w, err.Error(), 501)
 			return
@@ -343,7 +386,7 @@ func (appContext *appContext) install(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//TODO Verify if chart exists
-	err = appContext.simpleInstall(environment, payload.Chart, payload.ChartVersion, payload.Name, out, false)
+	_, err = appContext.simpleInstall(environment, payload.Chart, payload.ChartVersion, payload.Name, out, false, false)
 	if err != nil {
 		fmt.Println(out.String())
 		http.Error(w, err.Error(), 501)
@@ -374,7 +417,7 @@ func (appContext *appContext) helmDryRun(w http.ResponseWriter, r *http.Request)
 	}
 
 	//TODO Verify if chart exists
-	err = appContext.simpleInstall(environment, payload.Chart, payload.ChartVersion, payload.Name, out, true)
+	_, err = appContext.simpleInstall(environment, payload.Chart, payload.ChartVersion, payload.Name, out, true, false)
 
 	if err != nil {
 		http.Error(w, err.Error(), 501)
@@ -386,7 +429,8 @@ func (appContext *appContext) helmDryRun(w http.ResponseWriter, r *http.Request)
 
 }
 
-func (appContext *appContext) simpleInstall(environment *model.Environment, chart string, chartVersion string, name string, out *bytes.Buffer, dryRun bool) error {
+func (appContext *appContext) simpleInstall(environment *model.Environment, chart string, chartVersion string,
+	name string, out *bytes.Buffer, dryRun bool, helmCommandOnly bool) (string, error) {
 
 	//TODO - VERIFY IF CONFIG FILE EXISTS !!! This is the cause of  u.client.ReleaseHistory fail sometimes.
 
@@ -426,14 +470,27 @@ func (appContext *appContext) simpleInstall(environment *model.Environment, char
 		name := name + "-" + environment.Namespace
 		kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
 
-		err := helmapi.Upgrade(kubeConfig, name, chart, chartVersion, environment.Namespace, args, out, dryRun)
+		if !helmCommandOnly {
+			err := helmapi.Upgrade(kubeConfig, name, chart, chartVersion, environment.Namespace, args, out, dryRun)
+			if err != nil {
+				return "", err
+			}
+		} else {
+			var message string
 
-		if err != nil {
-			return err
+			message = "helm upgrade --install " + name + " \\\n"
+
+			for _, e := range args {
+				message = message + " --set \"" + e + "\" " + " \\\n"
+			}
+
+			message = message + " " + chart + " --namespace=" + environment.Namespace
+
+			return message, nil
 		}
 	}
 
-	return nil
+	return "", nil
 }
 
 func replace(value string, environment model.Environment, variables []model.Variable) string {
