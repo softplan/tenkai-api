@@ -2,18 +2,19 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/gorilla/mux"
-	"github.com/softplan/tenkai-api/dbms/model"
-	productsrv "github.com/softplan/tenkai-api/service"
-	dockerapi "github.com/softplan/tenkai-api/service/docker"
-	analyser "github.com/softplan/tenkai-api/service/tenkai"
-	"github.com/softplan/tenkai-api/util"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/gorilla/mux"
+	"github.com/softplan/tenkai-api/dbms/model"
+	productsrv "github.com/softplan/tenkai-api/service"
+	dockerapi "github.com/softplan/tenkai-api/service/docker"
+	analyser "github.com/softplan/tenkai-api/service/tenkai"
+	"github.com/softplan/tenkai-api/util"
 )
 
 func (appContext *appContext) newProduct(w http.ResponseWriter, r *http.Request) {
@@ -104,6 +105,36 @@ func (appContext *appContext) newProductVersion(w http.ResponseWriter, r *http.R
 
 }
 
+func (appContext *appContext) deleteProductVersion(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	sl := vars["id"]
+	id, _ := strconv.Atoi(sl)
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+
+	// Deletes ProductVersionServices
+	childs := &model.ProductVersionServiceRequestReponse{}
+	var err error
+	if childs.List, err = appContext.database.ListProductsVersionServices(id); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	for _, e := range childs.List {
+		if err := appContext.database.DeleteProductVersionService(int(e.ID)); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Deletes ProductVersion itself
+	if err = appContext.database.DeleteProductVersion(id); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+
+}
+
 func (appContext *appContext) newProductVersionService(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -137,6 +168,20 @@ func (appContext *appContext) editProductVersionService(w http.ResponseWriter, r
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (appContext *appContext) deleteProductVersionService(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	sl := vars["id"]
+	id, _ := strconv.Atoi(sl)
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	if err := appContext.database.DeleteProductVersionService(id); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+
 }
 
 func (appContext *appContext) listProductVersions(w http.ResponseWriter, r *http.Request) {
