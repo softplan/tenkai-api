@@ -1,14 +1,15 @@
 package main
 
 import (
-	"github.com/olivere/elastic"
-	"github.com/softplan/tenkai-api/audit"
-	"github.com/softplan/tenkai-api/dbms"
-	helmapi "github.com/softplan/tenkai-api/service/helm"
 	"log"
 	"net/http"
 	"os"
 	"sync"
+
+	"github.com/olivere/elastic"
+	"github.com/softplan/tenkai-api/audit"
+	"github.com/softplan/tenkai-api/dbms"
+	helmapi "github.com/softplan/tenkai-api/service/helm"
 
 	"github.com/softplan/tenkai-api/configs"
 	"github.com/softplan/tenkai-api/global"
@@ -137,10 +138,12 @@ func startHTTPServer(appContext *appContext) {
 
 	r.HandleFunc("/productVersions", appContext.listProductVersions).Methods("GET")
 	r.HandleFunc("/productVersions", appContext.newProductVersion).Methods("POST")
+	r.HandleFunc("/productVersions/{id}", appContext.deleteProductVersion).Methods("DELETE")
 
 	r.HandleFunc("/productVersionServices", appContext.listProductVersionServices).Methods("GET")
 	r.HandleFunc("/productVersionServices", appContext.newProductVersionService).Methods("POST")
 	r.HandleFunc("/productVersionServices/edit", appContext.editProductVersionService).Methods("POST")
+	r.HandleFunc("/productVersionServices/{id}", appContext.deleteProductVersionService).Methods("DELETE")
 
 	r.HandleFunc("/dockerRepo", appContext.listDockerRepositories).Methods("GET")
 	r.HandleFunc("/dockerRepo", appContext.newDockerRepository).Methods("POST")
