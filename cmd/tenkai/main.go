@@ -76,6 +76,7 @@ func startHTTPServer(appContext *appContext) {
 
 	r.HandleFunc("/install", appContext.install).Methods("POST")
 	r.HandleFunc("/multipleInstall", appContext.multipleInstall).Methods("POST")
+	r.HandleFunc("/getHelmCommand", appContext.getHelmCommand).Methods("POST")
 
 	r.HandleFunc("/getVariablesNotUsed/{id}", appContext.getVariablesNotUsed).Methods("GET")
 
