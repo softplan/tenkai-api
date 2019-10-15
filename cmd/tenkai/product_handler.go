@@ -292,7 +292,7 @@ func (appContext *appContext) verifyNewVersion(serviceName string, dockerImageTa
 	}
 
 	//Get version tags
-	result, err := appContext.dockerServiceApi.GetDockerTagsWithDate(payload, appContext.database, &appContext.dockerTagsCache)
+	result, err := appContext.dockerServiceAPI.GetDockerTagsWithDate(payload, appContext.database, &appContext.dockerTagsCache)
 	if err != nil {
 		return "", err
 	}

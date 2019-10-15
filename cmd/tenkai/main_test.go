@@ -26,7 +26,7 @@ func GetAppContext() *appContext {
 		},
 	}
 
-	appContext := &appContext{configuration: &config, testMode: true}
+	appContext := &appContext{configuration: &config}
 	appContext.dockerTagsCache = sync.Map{}
 	return appContext
 }

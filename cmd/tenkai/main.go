@@ -23,7 +23,8 @@ const (
 )
 
 type appContext struct {
-	dockerServiceApi dockerapi.DockerServiceInterface
+	dockerServiceAPI dockerapi.DockerServiceInterface
+	helmServiceAPI   helmapi.HelmServiceInterface
 	k8sConfigPath    string
 	configuration    *configs.Configuration
 	configDAO        dbms.ConfigDAOInterface
@@ -64,7 +65,8 @@ func main() {
 	defer appContext.database.Db.Close()
 
 	appContext.k8sConfigPath = global.KubeConfigBasePath
-	appContext.dockerServiceApi = &dockerapi.DockerService{}
+	appContext.dockerServiceAPI = &dockerapi.DockerService{}
+	appContext.helmServiceAPI = &helmapi.HelmServiceImpl{}
 
 	//Init DAO
 	appContext.configDAO = &dbms.ConfigDAOImpl{Db: appContext.database.Db}

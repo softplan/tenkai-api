@@ -34,7 +34,7 @@ func (appContext *appContext) listCharts(w http.ResponseWriter, r *http.Request)
 	}
 
 	searchTerms := []string{repo}
-	searchResult := helmapi.SearchCharts(searchTerms, allVersions)
+	searchResult := appContext.helmServiceAPI.SearchCharts(searchTerms, allVersions)
 	result := &model.ChartsResult{Charts: *searchResult}
 
 	data, _ := json.Marshal(result)

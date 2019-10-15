@@ -27,7 +27,7 @@ type searchCmd struct {
 }
 
 //SearchCharts Methotd
-func SearchCharts(searchTerms []string, allVersions bool) *[]model.SearchResult {
+func (svc HelmServiceImpl) SearchCharts(searchTerms []string, allVersions bool) *[]model.SearchResult {
 
 	logFields := global.AppFields{global.Function: "SearchCharts"}
 

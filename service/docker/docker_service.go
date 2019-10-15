@@ -14,7 +14,6 @@ import (
 	"time"
 )
 
-
 // DockerServiceInterface can be used to interact with a remote Docker repo
 type DockerServiceInterface interface {
 	GetDockerTagsWithDate(payload model.ListDockerTagsRequest, dbms dbms.Database, globalCache *sync.Map) (*model.ListDockerTagsResult, error)
@@ -87,7 +86,7 @@ func cacheDockerTags(tags []string, imageName string, result *model.ListDockerTa
 }
 
 //GetDockerTagsWithDate Method
-func (docker DockerService)  GetDockerTagsWithDate(payload model.ListDockerTagsRequest, dbms dbms.Database, globalCache *sync.Map) (*model.ListDockerTagsResult, error) {
+func (docker DockerService) GetDockerTagsWithDate(payload model.ListDockerTagsRequest, dbms dbms.Database, globalCache *sync.Map) (*model.ListDockerTagsResult, error) {
 
 	var dateFrom time.Time
 	matchFromDate := false
@@ -122,7 +121,6 @@ func (docker DockerService)  GetDockerTagsWithDate(payload model.ListDockerTagsR
 	return result, nil
 
 }
-
 
 // DockerService is used to concretize DockerServiceInterface
 type DockerService struct {
@@ -211,6 +209,6 @@ func (docker DockerService) GetTags(repo *model.DockerRepo, imageName string) (*
 }
 
 // GetDateCalledTimes returns number of times the func was called.
-func (docker DockerService)  GetDateCalledTimes() int {
+func (docker DockerService) GetDateCalledTimes() int {
 	return 0
 }
