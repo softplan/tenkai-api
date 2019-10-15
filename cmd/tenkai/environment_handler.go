@@ -114,7 +114,7 @@ func (appContext *appContext) duplicateEnvironments(w http.ResponseWriter, r *ht
 		return
 	}
 
-	variables, err := appContext.database.GetAllVariablesByEnvironment(id)
+	variables, err := appContext.variableDAO.GetAllVariablesByEnvironment(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -147,7 +147,7 @@ func (appContext *appContext) duplicateEnvironments(w http.ResponseWriter, r *ht
 		newVariable.Description = variable.Description
 		newVariable.Scope = variable.Scope
 
-		if _, _, err := appContext.database.CreateVariable(*newVariable); err != nil {
+		if _, _, err := appContext.variableDAO.CreateVariable(*newVariable); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -234,7 +234,7 @@ func (appContext *appContext) export(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var variables []model.Variable
-	if variables, err = appContext.database.GetAllVariablesByEnvironment(id); err != nil {
+	if variables, err = appContext.variableDAO.GetAllVariablesByEnvironment(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

@@ -24,7 +24,7 @@ func (appContext *appContext) deleteVariable(w http.ResponseWriter, r *http.Requ
 	sl := vars["id"]
 	id, _ := strconv.Atoi(sl)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	if err := appContext.database.DeleteVariable(id); err != nil {
+	if err := appContext.variableDAO.DeleteVariable(id); err != nil {
 		log.Println("Error deleting variable: ", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
@@ -52,7 +52,7 @@ func (appContext *appContext) editVariable(w http.ResponseWriter, r *http.Reques
 		payload.Data.Value = hex.EncodeToString(secret)
 	}
 
-	if err := appContext.database.EditVariable(payload.Data); err != nil {
+	if err := appContext.variableDAO.EditVariable(payload.Data); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -80,7 +80,7 @@ func (appContext *appContext) addVariables(w http.ResponseWriter, r *http.Reques
 		payload.Data.Value = hex.EncodeToString(secret)
 	}
 
-	if err := appContext.database.EditVariable(payload.Data); err != nil {
+	if err := appContext.variableDAO.EditVariable(payload.Data); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -105,7 +105,7 @@ func (appContext *appContext) getVariables(w http.ResponseWriter, r *http.Reques
 	}
 
 	var err error
-	if variableResult.Variables, err = appContext.database.GetAllVariablesByEnvironment(id); err != nil {
+	if variableResult.Variables, err = appContext.variableDAO.GetAllVariablesByEnvironment(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
