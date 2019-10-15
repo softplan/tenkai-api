@@ -5,13 +5,13 @@ import (
 	"github.com/softplan/tenkai-api/dbms/model"
 )
 
-//ConfigDAO ConfigDAO
+//ConfigDAOInterface ConfigDAOInterface
 type ConfigDAOInterface interface {
 	CreateOrUpdateConfig(item model.ConfigMap) (int, error)
 	GetConfigByName(name string) (model.ConfigMap, error)
 }
 
-//ConfigDAOImpl
+//ConfigDAOImpl ConfigDAOImpl
 type ConfigDAOImpl struct {
 	Db *gorm.DB
 }

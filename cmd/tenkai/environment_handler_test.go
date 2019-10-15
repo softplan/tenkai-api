@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-
 func TestAddEnvironments(t *testing.T) {
 
 	var payload model.DataElement
@@ -29,7 +28,7 @@ func TestAddEnvironments(t *testing.T) {
 	appContext.k8sConfigPath = "/tmp/"
 
 	mockObject := &mocks.EnvironmentDAOInterface{}
-	mockObject.On("CreateEnvironment",  mock.Anything).Return(1, nil)
+	mockObject.On("CreateEnvironment", mock.Anything).Return(1, nil)
 
 	appContext.environmentDAO = mockObject
 
@@ -40,7 +39,7 @@ func TestAddEnvironments(t *testing.T) {
 	}
 
 	roles := []string{"tenkai-admin"}
-	principal := model.Principal{Name:"alfa", Email:"beta", Roles:roles}
+	principal := model.Principal{Name: "alfa", Email: "beta", Roles: roles}
 
 	pSe, _ := json.Marshal(principal)
 	req.Header.Set("principal", string(pSe))
@@ -58,6 +57,5 @@ func TestAddEnvironments(t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusOK)
 	}
-
 
 }

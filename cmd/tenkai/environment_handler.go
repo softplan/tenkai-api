@@ -80,7 +80,7 @@ func (appContext *appContext) editEnvironment(w http.ResponseWriter, r *http.Req
 	oldFile := result.Group + "_" + result.Name
 	removeEnvironmentFile(oldFile)
 
-	createEnvironmentFile(env.Name, env.Token, appContext.k8sConfigPath + env.Group+"_"+env.Name,
+	createEnvironmentFile(env.Name, env.Token, appContext.k8sConfigPath+env.Group+"_"+env.Name,
 		env.CACertificate, env.ClusterURI, env.Namespace)
 
 	if err := appContext.environmentDAO.EditEnvironment(env); err != nil {
@@ -129,7 +129,7 @@ func (appContext *appContext) duplicateEnvironments(w http.ResponseWriter, r *ht
 	env.ClusterURI = environment.ClusterURI
 	env.Gateway = environment.Gateway
 
-	createEnvironmentFile(env.Name, env.Token, appContext.k8sConfigPath + env.Group+"_"+env.Name,
+	createEnvironmentFile(env.Name, env.Token, appContext.k8sConfigPath+env.Group+"_"+env.Name,
 		env.CACertificate, env.ClusterURI, env.Namespace)
 
 	var envID int
@@ -173,7 +173,7 @@ func (appContext *appContext) addEnvironments(w http.ResponseWriter, r *http.Req
 
 	env := payload.Data
 
-	createEnvironmentFile(env.Name, env.Token, appContext.k8sConfigPath + env.Group+"_"+env.Name,
+	createEnvironmentFile(env.Name, env.Token, appContext.k8sConfigPath+env.Group+"_"+env.Name,
 		env.CACertificate, env.ClusterURI, env.Namespace)
 
 	if _, err := appContext.environmentDAO.CreateEnvironment(env); err != nil {

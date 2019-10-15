@@ -3,7 +3,7 @@ package helmapi
 import (
 	"bytes"
 	"fmt"
-	"github.com/helm/helm/pkg/timeconv"
+	"github.com/softplan/tenkai-api/util"
 	"io"
 	"io/ioutil"
 	"net/url"
@@ -331,7 +331,7 @@ func printRelease(out io.Writer, rel *release.Release) error {
 	data := map[string]interface{}{
 		"Release":        rel,
 		"ComputedValues": cfgStr,
-		"ReleaseDate":    timeconv.Format(rel.Info.LastDeployed, time.ANSIC),
+		"ReleaseDate":    util.FormatTimeStamp(rel.Info.LastDeployed, time.ANSIC),
 	}
 	return tpl(printReleaseTemplate, data, out)
 }
