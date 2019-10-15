@@ -6,9 +6,9 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	//sqllite
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
-	mocket "github.com/selvatico/go-mocket"
 	"github.com/softplan/tenkai-api/dbms/model"
 )
+
 
 //Database Structure
 type Database struct {
@@ -44,11 +44,3 @@ func (database *Database) Connect(dbmsURI string, local bool) {
 
 }
 
-//MockConnect - Mock a database connection
-func (database *Database) MockConnect() {
-	mocket.Catcher.Register() // Safe register. Allowed multiple calls to save
-	mocket.Catcher.Logging = true
-	// GORM
-	db, _ := gorm.Open(mocket.DriverName, "connection_string") // Can be any connection string
-	database.Db = db
-}

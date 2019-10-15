@@ -13,7 +13,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/dbms/model"
-	"github.com/softplan/tenkai-api/global"
 	"github.com/softplan/tenkai-api/util"
 )
 
@@ -34,14 +33,14 @@ func (appContext *appContext) deleteEnvironment(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	env, error := appContext.database.GetByID(id)
+	env, error := appContext.environmentDAO.GetByID(id)
 	if error != nil {
 		log.Println("Error retrieving environment by ID: ", error)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if err := appContext.database.DeleteEnvironment(*env); err != nil {
+	if err := appContext.environmentDAO.DeleteEnvironment(*env); err != nil {
 		log.Println("Error deleting environment: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -72,7 +71,7 @@ func (appContext *appContext) editEnvironment(w http.ResponseWriter, r *http.Req
 
 	env := payload.Data
 
-	result, err := appContext.database.GetByID(int(env.ID))
+	result, err := appContext.environmentDAO.GetByID(int(env.ID))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -81,10 +80,10 @@ func (appContext *appContext) editEnvironment(w http.ResponseWriter, r *http.Req
 	oldFile := result.Group + "_" + result.Name
 	removeEnvironmentFile(oldFile)
 
-	createEnvironmentFile(env.Name, env.Token, env.Group+"_"+env.Name,
+	createEnvironmentFile(env.Name, env.Token, appContext.k8sConfigPath + env.Group+"_"+env.Name,
 		env.CACertificate, env.ClusterURI, env.Namespace)
 
-	if err := appContext.database.EditEnvironment(env); err != nil {
+	if err := appContext.environmentDAO.EditEnvironment(env); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -109,7 +108,7 @@ func (appContext *appContext) duplicateEnvironments(w http.ResponseWriter, r *ht
 		return
 	}
 
-	environment, err := appContext.database.GetByID(id)
+	environment, err := appContext.environmentDAO.GetByID(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -130,11 +129,11 @@ func (appContext *appContext) duplicateEnvironments(w http.ResponseWriter, r *ht
 	env.ClusterURI = environment.ClusterURI
 	env.Gateway = environment.Gateway
 
-	createEnvironmentFile(env.Name, env.Token, env.Group+"_"+env.Name,
+	createEnvironmentFile(env.Name, env.Token, appContext.k8sConfigPath + env.Group+"_"+env.Name,
 		env.CACertificate, env.ClusterURI, env.Namespace)
 
 	var envID int
-	if envID, err = appContext.database.CreateEnvironment(env); err != nil {
+	if envID, err = appContext.environmentDAO.CreateEnvironment(env); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -174,10 +173,10 @@ func (appContext *appContext) addEnvironments(w http.ResponseWriter, r *http.Req
 
 	env := payload.Data
 
-	createEnvironmentFile(env.Name, env.Token, env.Group+"_"+env.Name,
+	createEnvironmentFile(env.Name, env.Token, appContext.k8sConfigPath + env.Group+"_"+env.Name,
 		env.CACertificate, env.ClusterURI, env.Namespace)
 
-	if _, err := appContext.database.CreateEnvironment(env); err != nil {
+	if _, err := appContext.environmentDAO.CreateEnvironment(env); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -198,7 +197,7 @@ func (appContext *appContext) getEnvironments(w http.ResponseWriter, r *http.Req
 	}
 
 	var err error
-	if envResult.Envs, err = appContext.database.GetAllEnvironments(principal.Email); err != nil {
+	if envResult.Envs, err = appContext.environmentDAO.GetAllEnvironments(principal.Email); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -264,7 +263,7 @@ func (appContext *appContext) getAllEnvironments(w http.ResponseWriter, r *http.
 	envResult := &model.EnvResult{}
 
 	var err error
-	if envResult.Envs, err = appContext.database.GetAllEnvironments(""); err != nil {
+	if envResult.Envs, err = appContext.environmentDAO.GetAllEnvironments(""); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -291,7 +290,7 @@ func removeEnvironmentFile(fileName string) error {
 func createEnvironmentFile(clusterName string, clusterUserToken string,
 	fileName string, ca string, server string, namespace string) {
 
-	file, err := os.Create(global.KubeConfigBasePath + fileName)
+	file, err := os.Create(fileName)
 	if err != nil {
 		panic(err)
 	}

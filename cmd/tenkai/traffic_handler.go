@@ -23,7 +23,7 @@ func (appContext *appContext) deployTrafficRule(w http.ResponseWriter, r *http.R
 	}
 
 	//Locate Environment
-	environment, err := appContext.database.GetByID(payload.EnvironmentID)
+	environment, err := appContext.environmentDAO.GetByID(payload.EnvironmentID)
 	domain := strings.Replace(payload.Domain, "${NAMESPACE}", environment.Namespace, -1)
 	serviceName := strings.Replace(payload.ServiceName, "${NAMESPACE}", environment.Namespace, -1)
 

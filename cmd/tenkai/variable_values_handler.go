@@ -32,7 +32,7 @@ func (appContext *appContext) saveVariableValues(w http.ResponseWriter, r *http.
 
 	for _, item := range payload.Data {
 
-		targetEnvironment, err := appContext.database.GetByID(int(item.EnvironmentID))
+		targetEnvironment, err := appContext.environmentDAO.GetByID(int(item.EnvironmentID))
 		if err != nil {
 			http.Error(w, err.Error(), 501)
 			return
@@ -133,7 +133,7 @@ func (appContext *appContext) getVariablesNotUsed(w http.ResponseWriter, r *http
 
 	//Retrieve all helm release in environment
 	//Locate Environment
-	environment, err := appContext.database.GetByID(id)
+	environment, err := appContext.environmentDAO.GetByID(id)
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return

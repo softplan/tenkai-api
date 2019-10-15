@@ -85,7 +85,7 @@ func (appContext *appContext) analyse(w http.ResponseWriter, r *http.Request) {
 
 	var analyse model.DepAnalyse
 
-	err := service_tenkai.Analyse(appContext.database, payload, &analyse)
+	err := service_tenkai.Analyse(appContext.environmentDAO, appContext.database, payload, &analyse)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

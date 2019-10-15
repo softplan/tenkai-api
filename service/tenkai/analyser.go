@@ -10,9 +10,9 @@ import (
 )
 
 //Analyse - Analyse dependencies
-func Analyse(database dbms.Database, payload model.DepAnalyseRequest, analyse *model.DepAnalyse) error {
+func Analyse(dao dbms.EnvironmentDAOInterface, database dbms.Database, payload model.DepAnalyseRequest, analyse *model.DepAnalyse) error {
 	innerAnalyse(database, "", payload.ChartName, payload.Tag, analyse)
-	err := analyseIfDeployed(database, payload, analyse)
+	err := analyseIfDeployed(dao, payload, analyse)
 	if err != nil {
 		return err
 	}
@@ -81,10 +81,10 @@ func getMatchedVersions(chartName string, tag string) []model.DepAnalyseRequest 
 	return result
 }
 
-func analyseIfDeployed(database dbms.Database, payload model.DepAnalyseRequest, analyse *model.DepAnalyse) error {
+func analyseIfDeployed(dao dbms.EnvironmentDAOInterface, payload model.DepAnalyseRequest, analyse *model.DepAnalyse) error {
 
 	//Find environment
-	environment, _ := database.GetByID(payload.EnvironmentID)
+	environment, _ := dao.GetByID(payload.EnvironmentID)
 
 	for index, element := range analyse.Nodes {
 		releaseName := removeTag(removeRepo(element.ID)) + "-" + environment.Namespace
