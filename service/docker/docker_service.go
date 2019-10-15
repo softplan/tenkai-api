@@ -14,6 +14,15 @@ import (
 	"time"
 )
 
+
+// DockerServiceInterface can be used to interact with a remote Docker repo
+type DockerServiceInterface interface {
+	GetDockerTagsWithDate(payload model.ListDockerTagsRequest, dbms dbms.Database, globalCache *sync.Map) (*model.ListDockerTagsResult, error)
+	GetDate(repo model.DockerRepo, imageName string, tag string) (*time.Time, error)
+	GetTags(repo *model.DockerRepo, imageName string) (*model.TagsResult, error)
+	GetDateCalledTimes() int
+}
+
 func getImageWithoutRepo(image string) string {
 	result := ""
 	index := strings.Index(image, "/")
@@ -78,8 +87,7 @@ func cacheDockerTags(tags []string, imageName string, result *model.ListDockerTa
 }
 
 //GetDockerTagsWithDate Method
-func GetDockerTagsWithDate(payload model.ListDockerTagsRequest, testMode bool,
-	dbms dbms.Database, globalCache *sync.Map) (*model.ListDockerTagsResult, error) {
+func (docker DockerService)  GetDockerTagsWithDate(payload model.ListDockerTagsRequest, dbms dbms.Database, globalCache *sync.Map) (*model.ListDockerTagsResult, error) {
 
 	var dateFrom time.Time
 	matchFromDate := false
@@ -90,21 +98,19 @@ func GetDockerTagsWithDate(payload model.ListDockerTagsRequest, testMode bool,
 
 	}
 
-	ds := GetDockerService(testMode)
-
 	repo, err := getBaseDomainFromRepo(&dbms, payload.ImageName)
 	if err != nil {
 		return nil, err
 	}
 
-	tagResult, err := ds.GetTags(repo, payload.ImageName)
+	tagResult, err := docker.GetTags(repo, payload.ImageName)
 	if err != nil {
 		return nil, err
 	}
 
 	result := &model.ListDockerTagsResult{}
 
-	cacheErr := cacheDockerTags(tagResult.Tags, payload.ImageName, result, ds, repo, matchFromDate, dateFrom, globalCache)
+	cacheErr := cacheDockerTags(tagResult.Tags, payload.ImageName, result, docker, repo, matchFromDate, dateFrom, globalCache)
 	if cacheErr != nil {
 		return nil, cacheErr
 	}
@@ -117,57 +123,13 @@ func GetDockerTagsWithDate(payload model.ListDockerTagsRequest, testMode bool,
 
 }
 
-// GetDockerService is a builder to return DockerService or DockerMockService based on appContext.testMode value
-func GetDockerService(testMode bool) DockerServiceInterface {
-	var result DockerServiceInterface
-	if testMode {
-		result = &DockerMockService{}
-	} else {
-		result = &DockerService{}
-	}
-	return result
-}
-
-// DockerServiceInterface can be used to interact with a remote Docker repo
-type DockerServiceInterface interface {
-	GetDate(repo model.DockerRepo, imageName string, tag string) (*time.Time, error)
-	GetTags(repo *model.DockerRepo, imageName string) (*model.TagsResult, error)
-	GetDateCalledTimes() int
-}
-
-// MOCK IMPLEMENTATION
-
-// DockerMockService is used to concretize DockerServiceInterface for test only
-type DockerMockService struct {
-	dateCalledTimes int
-}
-
-// GetDate returns a date using time.Now for test only
-func (docker *DockerMockService) GetDate(repo model.DockerRepo, imageName string, tag string) (*time.Time, error) {
-	list := make([]model.V1Compatibility, 0)
-	list = append(list, model.V1Compatibility{Created: time.Now()})
-	docker.dateCalledTimes = docker.dateCalledTimes + 1
-	return &list[len(list)-1].Created, nil
-}
-
-// GetTags is a mock function for test only
-func (docker *DockerMockService) GetTags(repo *model.DockerRepo, imageName string) (*model.TagsResult, error) {
-	return nil, nil
-}
-
-// GetDateCalledTimes returns number of times the func was called.
-func (docker *DockerMockService) GetDateCalledTimes() int {
-	return docker.dateCalledTimes
-}
-
-// REAL IMPLEMENTATION
 
 // DockerService is used to concretize DockerServiceInterface
 type DockerService struct {
 }
 
 // GetDate fetches the docker image creation from a remote repo
-func (docker *DockerService) GetDate(repo model.DockerRepo, imageName string, tag string) (*time.Time, error) {
+func (docker DockerService) GetDate(repo model.DockerRepo, imageName string, tag string) (*time.Time, error) {
 
 	imageName = getImageWithoutRepo(imageName)
 
@@ -215,7 +177,7 @@ func (docker *DockerService) GetDate(repo model.DockerRepo, imageName string, ta
 }
 
 // GetTags fetches the docker tags from a remote repo
-func (docker *DockerService) GetTags(repo *model.DockerRepo, imageName string) (*model.TagsResult, error) {
+func (docker DockerService) GetTags(repo *model.DockerRepo, imageName string) (*model.TagsResult, error) {
 
 	url := "https://" + repo.Host + "/v2/" + getImageWithoutRepo(imageName) + "/tags/list"
 
@@ -249,6 +211,6 @@ func (docker *DockerService) GetTags(repo *model.DockerRepo, imageName string) (
 }
 
 // GetDateCalledTimes returns number of times the func was called.
-func (docker *DockerService) GetDateCalledTimes() int {
+func (docker DockerService)  GetDateCalledTimes() int {
 	return 0
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	dockerapi "github.com/softplan/tenkai-api/service/docker"
 	"log"
 	"net/http"
 	"os"
@@ -22,16 +23,16 @@ const (
 )
 
 type appContext struct {
-	k8sConfigPath   string
-	configuration   *configs.Configuration
-	configDAO       dbms.ConfigDAOInterface
-	environmentDAO  dbms.EnvironmentDAOInterface
-	database        dbms.Database
-	elk             *elastic.Client
-	mutex           sync.Mutex
-	chartImageCache sync.Map
-	dockerTagsCache sync.Map
-	testMode        bool
+	dockerServiceApi dockerapi.DockerServiceInterface
+	k8sConfigPath    string
+	configuration    *configs.Configuration
+	configDAO        dbms.ConfigDAOInterface
+	environmentDAO   dbms.EnvironmentDAOInterface
+	database         dbms.Database
+	elk              *elastic.Client
+	mutex            sync.Mutex
+	chartImageCache  sync.Map
+	dockerTagsCache  sync.Map
 }
 
 func main() {
@@ -63,6 +64,7 @@ func main() {
 	defer appContext.database.Db.Close()
 
 	appContext.k8sConfigPath = global.KubeConfigBasePath
+	appContext.dockerServiceApi = &dockerapi.DockerService{}
 
 	//Init DAO
 	appContext.configDAO = &dbms.ConfigDAOImpl{Db: appContext.database.Db}

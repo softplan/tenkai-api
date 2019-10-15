@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"github.com/softplan/tenkai-api/dbms/model"
-	dockerapi "github.com/softplan/tenkai-api/service/docker"
 	"github.com/softplan/tenkai-api/util"
 	"net/http"
 )
@@ -19,7 +18,7 @@ func (appContext *appContext) listDockerTags(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	result, err := dockerapi.GetDockerTagsWithDate(payload, appContext.testMode, appContext.database, &appContext.dockerTagsCache)
+	result, err := appContext.dockerServiceApi.GetDockerTagsWithDate(payload, appContext.database, &appContext.dockerTagsCache)
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
