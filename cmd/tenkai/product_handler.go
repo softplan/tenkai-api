@@ -12,7 +12,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/dbms/model"
 	productsrv "github.com/softplan/tenkai-api/service"
-	dockerapi "github.com/softplan/tenkai-api/service/docker"
 	analyser "github.com/softplan/tenkai-api/service/tenkai"
 	"github.com/softplan/tenkai-api/util"
 )
@@ -293,7 +292,7 @@ func (appContext *appContext) verifyNewVersion(serviceName string, dockerImageTa
 	}
 
 	//Get version tags
-	result, err := dockerapi.GetDockerTagsWithDate(payload, appContext.testMode, appContext.database, &appContext.dockerTagsCache)
+	result, err := appContext.dockerServiceApi.GetDockerTagsWithDate(payload, appContext.database, &appContext.dockerTagsCache)
 	if err != nil {
 		return "", err
 	}
