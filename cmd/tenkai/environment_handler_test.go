@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/softplan/tenkai-api/dbms/mocks"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -11,29 +12,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type EnvironmentDAOMock struct {
-	mock.Mock
-}
-
-func (EnvironmentDAOMock) CreateEnvironment(env model.Environment) (int, error) {
-	return 1, nil
-}
-
-func (EnvironmentDAOMock) EditEnvironment(env model.Environment) error {
-	return nil
-}
-
-func (EnvironmentDAOMock) DeleteEnvironment(env model.Environment) error {
-	return nil
-}
-
-func (EnvironmentDAOMock) GetAllEnvironments(principal string) ([]model.Environment, error) {
-	return make([]model.Environment, 0), nil
-}
-
-func (EnvironmentDAOMock) GetByID(envID int) (*model.Environment, error) {
-	return &model.Environment{}, nil
-}
 
 func TestAddEnvironments(t *testing.T) {
 
@@ -49,7 +27,11 @@ func TestAddEnvironments(t *testing.T) {
 
 	appContext := appContext{}
 	appContext.k8sConfigPath = "/tmp/"
-	appContext.environmentDAO = &EnvironmentDAOMock{}
+
+	mockObject := &mocks.EnvironmentDAOInterface{}
+	mockObject.On("CreateEnvironment",  mock.Anything).Return(1, nil)
+
+	appContext.environmentDAO = mockObject
 
 	// pass 'nil' as the third parameter.
 	req, err := http.NewRequest("POST", "/environments", bytes.NewBuffer(payS))
