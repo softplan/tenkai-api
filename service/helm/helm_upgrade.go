@@ -54,7 +54,7 @@ type upgradeCmd struct {
 }
 
 //Upgrade Method
-func Upgrade(kubeconfig string, release string, chart string, chartVersion string, namespace string, variables []string, out *bytes.Buffer, dryrun bool) error {
+func (svc HelmServiceImpl) Upgrade(kubeconfig string, release string, chart string, chartVersion string, namespace string, variables []string, out *bytes.Buffer, dryrun bool) error {
 
 	settings.KubeConfig = kubeconfig
 	settings.Home = global.HelmDir

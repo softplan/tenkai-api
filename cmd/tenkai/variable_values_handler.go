@@ -139,7 +139,7 @@ func (appContext *appContext) getVariablesNotUsed(w http.ResponseWriter, r *http
 		return
 	}
 	kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
-	helmReleases, err := helmapi.ListHelmDeployments(kubeConfig, environment.Namespace)
+	helmReleases, err := appContext.helmServiceAPI.ListHelmDeployments(kubeConfig, environment.Namespace)
 
 	result := make([]responseResult, 0)
 	for _, e := range variableResult.Variables {

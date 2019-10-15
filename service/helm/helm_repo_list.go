@@ -8,7 +8,7 @@ import (
 )
 
 //GetRepositories - Returns a repository list
-func GetRepositories() ([]model.Repository, error) {
+func (svc HelmServiceImpl) GetRepositories() ([]model.Repository, error) {
 
 	settings.Home = global.HelmDir
 

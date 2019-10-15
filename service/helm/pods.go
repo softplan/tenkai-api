@@ -11,7 +11,7 @@ import (
 )
 
 //DeletePod - Delete a Pod
-func DeletePod(kubeconfig string, podName string, namespace string) error {
+func (svc HelmServiceImpl) DeletePod(kubeconfig string, podName string, namespace string) error {
 	_, client, err := getKubeClient(settings.KubeContext, kubeconfig)
 	if err != nil {
 		return err
@@ -22,7 +22,7 @@ func DeletePod(kubeconfig string, podName string, namespace string) error {
 }
 
 //GetPods Method
-func GetPods(kubeconfig string, namespace string) ([]model.Pod, error) {
+func (svc HelmServiceImpl) GetPods(kubeconfig string, namespace string) ([]model.Pod, error) {
 	pods := make([]model.Pod, 0)
 	_, client, err := getKubeClient(settings.KubeContext, kubeconfig)
 	if err != nil {

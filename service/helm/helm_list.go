@@ -56,7 +56,7 @@ type listRelease struct {
 }
 
 //ListHelmDeployments method
-func ListHelmDeployments(kubeconfig string, namespace string) (*HelmListResult, error) {
+func (svc HelmServiceImpl) ListHelmDeployments(kubeconfig string, namespace string) (*HelmListResult, error) {
 
 	logFields := global.AppFields{global.Function: "ListHelmDeployments", "namespace": namespace}
 

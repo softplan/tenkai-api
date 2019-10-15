@@ -37,7 +37,7 @@ type historyCmd struct {
 }
 
 //IsThereAnyPodWithThisVersion - Verify if is there a pod with a specific version deployed
-func IsThereAnyPodWithThisVersion(kubeconfig string, namespace string, releaseName string, tag string) (bool, error) {
+func (svc HelmServiceImpl) IsThereAnyPodWithThisVersion(kubeconfig string, namespace string, releaseName string, tag string) (bool, error) {
 
 	_, client, err := getKubeClient(settings.KubeContext, kubeconfig)
 	if err != nil {
@@ -60,7 +60,7 @@ func IsThereAnyPodWithThisVersion(kubeconfig string, namespace string, releaseNa
 }
 
 //GetReleaseHistory - Retrieve Release History
-func GetReleaseHistory(kubeconfig string, releaseName string) (bool, error) {
+func (svc HelmServiceImpl) GetReleaseHistory(kubeconfig string, releaseName string) (bool, error) {
 	settings.KubeConfig = kubeconfig
 	settings.Home = global.HelmDir
 	settings.TillerNamespace = "kube-system"
@@ -81,7 +81,7 @@ func GetReleaseHistory(kubeconfig string, releaseName string) (bool, error) {
 }
 
 //GetHelmReleaseHistory - Get helm release history
-func GetHelmReleaseHistory(kubeconfig string, releaseName string) (ReleaseHistory, error) {
+func (svc HelmServiceImpl) GetHelmReleaseHistory(kubeconfig string, releaseName string) (ReleaseHistory, error) {
 
 	var result ReleaseHistory
 	settings.KubeConfig = kubeconfig
