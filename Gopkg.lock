@@ -365,8 +365,7 @@
     "cmd/helm/search",
     "pkg/downloader"
   ]
-  revision = "05811b84a3f93603dd6c2fcfe57944dfa7ab7fd0"
-  version = "v2.14.0"
+  revision = "v2.14.3"
 
 [[projects]]
   name = "github.com/huandu/xstrings"
@@ -546,6 +545,12 @@
   version = "v0.8.1"
 
 [[projects]]
+  name = "github.com/pmezard/go-difflib"
+  packages = ["difflib"]
+  revision = "792786c7400a136282c1664665ae0a8db921c6c2"
+  version = "v1.0.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/rubenv/sql-migrate"
   packages = [
@@ -558,12 +563,6 @@
   name = "github.com/russross/blackfriday"
   packages = ["."]
   revision = "300106c228d52c8941d4b3de6054a6062a86dda3"
-
-[[projects]]
-  name = "github.com/selvatico/go-mocket"
-  packages = ["."]
-  revision = "c368d4162be502eea110ae12fb85e98567b0f1e6"
-  version = "v1.0.7"
 
 [[projects]]
   name = "github.com/shurcooL/sanitized_anchor_name"
@@ -615,6 +614,21 @@
   packages = ["."]
   revision = "9e56dacc08fbbf8c9ee2dbc717553c758ce42bc9"
   version = "v1.3.2"
+
+[[projects]]
+  name = "github.com/stretchr/objx"
+  packages = ["."]
+  revision = "477a77ecc69700c7cdeb1fa9e129548e1c1c393c"
+  version = "v0.1.1"
+
+[[projects]]
+  name = "github.com/stretchr/testify"
+  packages = [
+    "assert",
+    "mock"
+  ]
+  revision = "221dbe5ed46703ee255b1da0dec05086f5035f62"
+  version = "v1.4.0"
 
 [[projects]]
   name = "go.opencensus.io"
@@ -1304,6 +1318,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "5e39340a2725408030b5cbd53ad2f214e3700a73a796c3bd646fba957f2667fc"
+  inputs-digest = "1767b5d878257804f3fdb4ed7011895cc251a74477613ca8d8d0bbebad9ffadf"
   solver-name = "gps-cdcl"
   solver-version = 1

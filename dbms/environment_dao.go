@@ -5,11 +5,8 @@ import (
 	"github.com/softplan/tenkai-api/dbms/model"
 )
 
-
-
 //EnvironmentDAOInterface EnvironmentDAOInterface
 type EnvironmentDAOInterface interface {
-
 	CreateEnvironment(env model.Environment) (int, error)
 	EditEnvironment(env model.Environment) error
 	DeleteEnvironment(env model.Environment) error
@@ -17,11 +14,10 @@ type EnvironmentDAOInterface interface {
 	GetByID(envID int) (*model.Environment, error)
 }
 
-//ConfigDAOImpl
+//EnvironmentDAOImpl EnvironmentDAOImpl
 type EnvironmentDAOImpl struct {
 	Db *gorm.DB
 }
-
 
 //CreateEnvironment - Create a new environment
 func (dao EnvironmentDAOImpl) CreateEnvironment(env model.Environment) (int, error) {

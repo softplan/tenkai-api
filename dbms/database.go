@@ -9,7 +9,6 @@ import (
 	"github.com/softplan/tenkai-api/dbms/model"
 )
 
-
 //Database Structure
 type Database struct {
 	Db *gorm.DB
@@ -43,4 +42,3 @@ func (database *Database) Connect(dbmsURI string, local bool) {
 	database.Db.AutoMigrate(&model.ProductVersionService{})
 
 }
-
