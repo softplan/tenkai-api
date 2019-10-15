@@ -20,7 +20,7 @@ type UserDAOImpl struct {
 }
 
 //CreateUser - Creates a new user
-func (dao *UserDAOImpl) CreateUser(user model.User) error {
+func (dao UserDAOImpl) CreateUser(user model.User) error {
 	if err := dao.Db.Create(&user).Error; err != nil {
 		return err
 	}
@@ -28,7 +28,7 @@ func (dao *UserDAOImpl) CreateUser(user model.User) error {
 }
 
 //DeleteUser - Delete user
-func (dao *UserDAOImpl) DeleteUser(id int) error {
+func (dao UserDAOImpl) DeleteUser(id int) error {
 
 	var user model.User
 
@@ -49,7 +49,7 @@ func (dao *UserDAOImpl) DeleteUser(id int) error {
 }
 
 //AssociateEnvironmentUser - Associate an environment with a user
-func (dao *UserDAOImpl) AssociateEnvironmentUser(userID int, environmentID int) error {
+func (dao UserDAOImpl) AssociateEnvironmentUser(userID int, environmentID int) error {
 	var user model.User
 	var environment model.Environment
 
@@ -68,7 +68,7 @@ func (dao *UserDAOImpl) AssociateEnvironmentUser(userID int, environmentID int) 
 }
 
 //ListAllUsers - List all users
-func (dao *UserDAOImpl) ListAllUsers() ([]model.User, error) {
+func (dao UserDAOImpl) ListAllUsers() ([]model.User, error) {
 	users := make([]model.User, 0)
 	if err := dao.Db.Preload("Environments").Find(&users).Error; err != nil {
 		return nil, err
@@ -77,7 +77,7 @@ func (dao *UserDAOImpl) ListAllUsers() ([]model.User, error) {
 }
 
 //CreateOrUpdateUser - Create or update a user
-func (dao *UserDAOImpl) CreateOrUpdateUser(user model.User) error {
+func (dao UserDAOImpl) CreateOrUpdateUser(user model.User) error {
 
 	var loadUser model.User
 	edit := true

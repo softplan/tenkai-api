@@ -19,7 +19,7 @@ type SolutionDAOImpl struct {
 }
 
 //CreateSolution - Create a new solution
-func (dao *SolutionDAOImpl) CreateSolution(solution model.Solution) (int, error) {
+func (dao SolutionDAOImpl) CreateSolution(solution model.Solution) (int, error) {
 	if err := dao.Db.Create(&solution).Error; err != nil {
 		return -1, err
 	}
@@ -27,7 +27,7 @@ func (dao *SolutionDAOImpl) CreateSolution(solution model.Solution) (int, error)
 }
 
 //EditSolution - Updates an existing solution
-func (dao *SolutionDAOImpl) EditSolution(solution model.Solution) error {
+func (dao SolutionDAOImpl) EditSolution(solution model.Solution) error {
 	if err := dao.Db.Save(&solution).Error; err != nil {
 		return err
 	}
@@ -35,7 +35,7 @@ func (dao *SolutionDAOImpl) EditSolution(solution model.Solution) error {
 }
 
 //DeleteSolution - Deletes a solution
-func (dao *SolutionDAOImpl) DeleteSolution(id int) error {
+func (dao SolutionDAOImpl) DeleteSolution(id int) error {
 	if err := dao.Db.Unscoped().Delete(model.Solution{}, id).Error; err != nil {
 		return err
 	}
@@ -43,7 +43,7 @@ func (dao *SolutionDAOImpl) DeleteSolution(id int) error {
 }
 
 //ListSolutions - List solutions
-func (dao *SolutionDAOImpl) ListSolutions() ([]model.Solution, error) {
+func (dao SolutionDAOImpl) ListSolutions() ([]model.Solution, error) {
 	list := make([]model.Solution, 0)
 	if err := dao.Db.Find(&list).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
