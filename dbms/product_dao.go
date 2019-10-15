@@ -119,6 +119,9 @@ func (database *Database) ListProductVersionServicesLatest(productID, productVer
 	list := make([]model.ProductVersionService, 0)
 
 	if err := database.Db.Where(&model.ProductVersion{ProductID: productID}).Not("id", productVersionID).Order("created_at desc").Limit(1).Find(&item).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return make([]model.ProductVersionService, 0), nil
+		}
 		return list, err
 	}
 
