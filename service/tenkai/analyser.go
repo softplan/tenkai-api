@@ -109,7 +109,7 @@ func identifyDeployedReleased(kubeconfig string, hsi helmapi.HelmServiceInterfac
 		analyse.Nodes[index].Svg = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0xMyA5aDlsLTE0IDE1IDMtOWgtOWwxNC0xNS0zIDl6bS04LjY5OSA1aDguMDg2bC0xLjk4NyA1Ljk2MyA5LjI5OS05Ljk2M2gtOC4wODZsMS45ODctNS45NjMtOS4yOTkgOS45NjN6Ii8+PC9zdmc+"
 	} else {
 		//Verify if version is OK.
-		versionMatched, err := hsi .IsThereAnyPodWithThisVersion(kubeconfig, namespace, releaseName, tag)
+		versionMatched, err := hsi.IsThereAnyPodWithThisVersion(kubeconfig, namespace, releaseName, tag)
 		if err != nil {
 			return err
 		}

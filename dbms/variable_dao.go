@@ -5,7 +5,6 @@ import (
 	"github.com/softplan/tenkai-api/dbms/model"
 )
 
-
 //VariableDAOInterface VariableDAOInterface
 type VariableDAOInterface interface {
 	EditVariable(data model.Variable) error
@@ -19,8 +18,6 @@ type VariableDAOInterface interface {
 type VariableDAOImpl struct {
 	Db *gorm.DB
 }
-
-
 
 // EditVariable - Edit an existent variable
 func (dao VariableDAOImpl) EditVariable(data model.Variable) error {
