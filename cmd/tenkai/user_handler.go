@@ -3,12 +3,13 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"github.com/gorilla/mux"
-	"github.com/softplan/tenkai-api/dbms/model"
-	"github.com/softplan/tenkai-api/util"
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/gorilla/mux"
+	"github.com/softplan/tenkai-api/dbms/model"
+	"github.com/softplan/tenkai-api/util"
 )
 
 func (appContext *appContext) newUser(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +28,7 @@ func (appContext *appContext) newUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := appContext.database.CreateUser(payload); err != nil {
+	if err := appContext.userDAO.CreateUser(payload); err != nil {
 		http.Error(w, err.Error(), 501)
 		return
 	}
@@ -47,7 +48,7 @@ func (appContext *appContext) createOrUpdateUser(w http.ResponseWriter, r *http.
 		return
 	}
 
-	if err := appContext.database.CreateOrUpdateUser(payload); err != nil {
+	if err := appContext.userDAO.CreateOrUpdateUser(payload); err != nil {
 		http.Error(w, err.Error(), 501)
 		return
 	}
@@ -61,7 +62,7 @@ func (appContext *appContext) listUsers(w http.ResponseWriter, r *http.Request) 
 	result := &model.UserResult{}
 	var err error
 
-	if result.Users, err = appContext.database.ListAllUsers(); err != nil {
+	if result.Users, err = appContext.userDAO.ListAllUsers(); err != nil {
 		http.Error(w, err.Error(), 501)
 		return
 	}
@@ -83,7 +84,7 @@ func (appContext *appContext) deleteUser(w http.ResponseWriter, r *http.Request)
 	sl := vars["id"]
 	id, _ := strconv.Atoi(sl)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	if err := appContext.database.DeleteUser(id); err != nil {
+	if err := appContext.userDAO.DeleteUser(id); err != nil {
 		log.Println("Error deleting variable: ", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return

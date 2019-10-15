@@ -2,10 +2,11 @@ package main
 
 import (
 	"errors"
-	"github.com/gorilla/mux"
-	"github.com/softplan/tenkai-api/util"
 	"net/http"
 	"strconv"
+
+	"github.com/gorilla/mux"
+	"github.com/softplan/tenkai-api/util"
 )
 
 func (appContext *appContext) newEnvironmentPermission(w http.ResponseWriter, r *http.Request) {
@@ -31,7 +32,7 @@ func (appContext *appContext) newEnvironmentPermission(w http.ResponseWriter, r 
 		return
 	}
 
-	if err := appContext.database.AssociateEnvironmentUser(userID, environmentID); err != nil {
+	if err := appContext.userDAO.AssociateEnvironmentUser(userID, environmentID); err != nil {
 		http.Error(w, err.Error(), 501)
 		return
 	}
