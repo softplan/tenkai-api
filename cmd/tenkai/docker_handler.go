@@ -18,7 +18,7 @@ func (appContext *appContext) listDockerTags(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	result, err := appContext.dockerServiceApi.GetDockerTagsWithDate(payload, appContext.database, &appContext.dockerTagsCache)
+	result, err := appContext.dockerServiceAPI.GetDockerTagsWithDate(payload, appContext.database, &appContext.dockerTagsCache)
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
