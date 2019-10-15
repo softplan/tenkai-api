@@ -20,7 +20,7 @@ func (appContext *appContext) newSolutionChart(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	if err := appContext.database.CreateSolutionChart(payload); err != nil {
+	if err := appContext.repositories.solutionChartDAO.CreateSolutionChart(payload); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -37,7 +37,7 @@ func (appContext *appContext) deleteSolutionChart(w http.ResponseWriter, r *http
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
-	if err := appContext.database.DeleteSolutionChart(id); err != nil {
+	if err := appContext.repositories.solutionChartDAO.DeleteSolutionChart(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -60,7 +60,7 @@ func (appContext *appContext) listSolutionCharts(w http.ResponseWriter, r *http.
 	result := &model.SolutionChartResult{}
 	var err error
 
-	if result.List, err = appContext.database.ListSolutionChart(id); err != nil {
+	if result.List, err = appContext.repositories.solutionChartDAO.ListSolutionChart(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

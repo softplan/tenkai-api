@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/softplan/tenkai-api/dbms/repository"
 	"log"
 	"net/http"
 	"os"
@@ -23,21 +24,31 @@ const (
 	configFileName = "app"
 )
 
+type repositories struct {
+	configDAO        repository.ConfigDAOInterface
+	dependencyDAO    repository.DependencyDAOInterface
+	dockerDAO        repository.DockerDAOInterface
+	environmentDAO   repository.EnvironmentDAOInterface
+	productDAO       repository.ProductDAOInterface
+	releaseDAO       repository.ReleaseDAOInterface
+	solutionDAO      repository.SolutionDAOInterface
+	solutionChartDAO repository.SolutionChartDAOInterface
+	userDAO          repository.UserDAOInterface
+	variableDAO      repository.VariableDAOInterface
+}
+
 type appContext struct {
 	dockerServiceAPI dockerapi.DockerServiceInterface
 	helmServiceAPI   helmapi.HelmServiceInterface
 	k8sConfigPath    string
 	configuration    *configs.Configuration
-	configDAO        dbms.ConfigDAOInterface
-	environmentDAO   dbms.EnvironmentDAOInterface
-	variableDAO      dbms.VariableDAOInterface
-	userDAO          dbms.UserDAOInterface
-	solutionDAO      dbms.SolutionDAOInterface
-	database         dbms.Database
-	elk              *elastic.Client
-	mutex            sync.Mutex
-	chartImageCache  sync.Map
-	dockerTagsCache  sync.Map
+	repositories     repositories
+
+	database        dbms.Database
+	elk             *elastic.Client
+	mutex           sync.Mutex
+	chartImageCache sync.Map
+	dockerTagsCache sync.Map
 }
 
 func main() {
@@ -72,18 +83,28 @@ func main() {
 		appContext.helmServiceAPI.InitializeHelm()
 	}
 
-	//Init DAO
-	appContext.configDAO = &dbms.ConfigDAOImpl{Db: appContext.database.Db}
-	appContext.environmentDAO = &dbms.EnvironmentDAOImpl{Db: appContext.database.Db}
-	appContext.variableDAO = &dbms.VariableDAOImpl{Db: appContext.database.Db}
-	appContext.userDAO = &dbms.UserDAOImpl{Db: appContext.database.Db}
-	appContext.solutionDAO = &dbms.SolutionDAOImpl{Db: appContext.database.Db}
+	appContext.repositories = initRepository(&appContext.database)
 
 	//Elk setup
 	appContext.elk, _ = audit.ElkClient(config.App.Elastic.URL, config.App.Elastic.Username, config.App.Elastic.Password)
 
 	global.Logger.Info(logFields, "iniciando o servidor http")
 	startHTTPServer(appContext)
+}
+
+func initRepository(database *dbms.Database) repositories {
+	repositories := repositories{}
+	repositories.configDAO = &repository.ConfigDAOImpl{Db: database.Db}
+	repositories.dependencyDAO = &repository.DependencyDAOImpl{Db: database.Db}
+	repositories.dockerDAO = &repository.DockerDAOImpl{Db: database.Db}
+	repositories.environmentDAO = &repository.EnvironmentDAOImpl{Db: database.Db}
+	repositories.productDAO = &repository.ProductDAOImpl{Db: database.Db}
+	repositories.releaseDAO = &repository.ReleaseDAOImpl{Db: database.Db}
+	repositories.solutionDAO = &repository.SolutionDAOImpl{Db: database.Db}
+	repositories.solutionChartDAO = &repository.SolutionChartDAOImpl{Db: database.Db}
+	repositories.userDAO = &repository.UserDAOImpl{Db: database.Db}
+	repositories.variableDAO = &repository.VariableDAOImpl{Db: database.Db}
+	return repositories
 }
 
 func startHTTPServer(appContext *appContext) {

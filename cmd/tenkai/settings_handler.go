@@ -19,7 +19,7 @@ func (appContext *appContext) addSettings(w http.ResponseWriter, r *http.Request
 
 	for _, e := range payload.List {
 		configMap := model.ConfigMap{Name: e.Name, Value: e.Value}
-		if _, err := appContext.configDAO.CreateOrUpdateConfig(configMap); err != nil {
+		if _, err := appContext.repositories.configDAO.CreateOrUpdateConfig(configMap); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -45,7 +45,7 @@ func (appContext *appContext) getSettingList(w http.ResponseWriter, r *http.Requ
 
 		var config model.ConfigMap
 		var err error
-		if config, err = appContext.configDAO.GetConfigByName(name); err != nil {
+		if config, err = appContext.repositories.configDAO.GetConfigByName(name); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 

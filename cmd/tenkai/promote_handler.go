@@ -54,13 +54,13 @@ func (appContext *appContext) promote(w http.ResponseWriter, r *http.Request) {
 	srcEnvIDi, _ := strconv.ParseInt(srcEnvID[0], 10, 64)
 	targetEnvIDi, _ := strconv.ParseInt(targetEnvID[0], 10, 64)
 
-	srcEnvironment, err := appContext.environmentDAO.GetByID(int(srcEnvIDi))
+	srcEnvironment, err := appContext.repositories.environmentDAO.GetByID(int(srcEnvIDi))
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
 	}
 
-	targetEnvironment, err := appContext.environmentDAO.GetByID(int(targetEnvIDi))
+	targetEnvironment, err := appContext.repositories.environmentDAO.GetByID(int(targetEnvIDi))
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
@@ -162,13 +162,13 @@ func (appContext *appContext) purgeAll(kubeConfig string, envs []releaseToDeploy
 }
 
 func (appContext *appContext) deleteEnvironmentVariables(envID uint) error {
-	err := appContext.database.DeleteVariableByEnvironmentID(int(envID))
+	err := appContext.repositories.variableDAO.DeleteVariableByEnvironmentID(int(envID))
 	return err
 }
 
 func (appContext *appContext) copyEnvironmentVariablesFromSrcToTarget(srcEnvID uint, targetEnvID uint) error {
 
-	variables, err := appContext.variableDAO.GetAllVariablesByEnvironment(int(srcEnvID))
+	variables, err := appContext.repositories.variableDAO.GetAllVariablesByEnvironment(int(srcEnvID))
 	if err != nil {
 		return err
 	}
@@ -182,7 +182,7 @@ func (appContext *appContext) copyEnvironmentVariablesFromSrcToTarget(srcEnvID u
 		newVariable.Description = variable.Description
 		newVariable.Scope = variable.Scope
 
-		if _, _, err := appContext.variableDAO.CreateVariable(*newVariable); err != nil {
+		if _, _, err := appContext.repositories.variableDAO.CreateVariable(*newVariable); err != nil {
 			return err
 		}
 	}
@@ -193,7 +193,7 @@ func (appContext *appContext) copyEnvironmentVariablesFromSrcToTarget(srcEnvID u
 
 func (appContext *appContext) copyImageAndTagFromSrcToTarget(srcEnvID uint, targetEnvID uint) error {
 
-	variables, err := appContext.variableDAO.GetAllVariablesByEnvironment(int(srcEnvID))
+	variables, err := appContext.repositories.variableDAO.GetAllVariablesByEnvironment(int(srcEnvID))
 	if err != nil {
 		return err
 	}
@@ -210,7 +210,7 @@ func (appContext *appContext) copyImageAndTagFromSrcToTarget(srcEnvID uint, targ
 			newVariable.Description = variable.Description
 			newVariable.Scope = variable.Scope
 
-			if _, _, err := appContext.variableDAO.CreateVariable(*newVariable); err != nil {
+			if _, _, err := appContext.repositories.variableDAO.CreateVariable(*newVariable); err != nil {
 				return err
 			}
 

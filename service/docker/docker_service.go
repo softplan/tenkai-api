@@ -5,8 +5,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"github.com/softplan/tenkai-api/dbms"
 	"github.com/softplan/tenkai-api/dbms/model"
+	"github.com/softplan/tenkai-api/dbms/repository"
 	"net/http"
 	"sort"
 	"strings"
@@ -16,7 +16,7 @@ import (
 
 // DockerServiceInterface can be used to interact with a remote Docker repo
 type DockerServiceInterface interface {
-	GetDockerTagsWithDate(payload model.ListDockerTagsRequest, dbms dbms.Database, globalCache *sync.Map) (*model.ListDockerTagsResult, error)
+	GetDockerTagsWithDate(payload model.ListDockerTagsRequest, dao repository.DockerDAOInterface, globalCache *sync.Map) (*model.ListDockerTagsResult, error)
 	GetDate(repo model.DockerRepo, imageName string, tag string) (*time.Time, error)
 	GetTags(repo *model.DockerRepo, imageName string) (*model.TagsResult, error)
 	GetDateCalledTimes() int
@@ -35,13 +35,13 @@ func getHTTPClient() *http.Client {
 	return &http.Client{Transport: tr}
 }
 
-func getBaseDomainFromRepo(dbms *dbms.Database, imageName string) (*model.DockerRepo, error) {
+func getBaseDomainFromRepo(dao repository.DockerDAOInterface, imageName string) (*model.DockerRepo, error) {
 	firstBarIndex := strings.Index(imageName, "/")
 	if firstBarIndex <= 0 {
 		return nil, errors.New("Repository expected")
 	}
 	host := imageName[0:firstBarIndex]
-	result, err := dbms.GetDockerRepositoryByHost(host)
+	result, err := dao.GetDockerRepositoryByHost(host)
 	return &result, err
 }
 
@@ -86,7 +86,7 @@ func cacheDockerTags(tags []string, imageName string, result *model.ListDockerTa
 }
 
 //GetDockerTagsWithDate Method
-func (docker DockerService) GetDockerTagsWithDate(payload model.ListDockerTagsRequest, dbms dbms.Database, globalCache *sync.Map) (*model.ListDockerTagsResult, error) {
+func (docker DockerService) GetDockerTagsWithDate(payload model.ListDockerTagsRequest, dao repository.DockerDAOInterface, globalCache *sync.Map) (*model.ListDockerTagsResult, error) {
 
 	var dateFrom time.Time
 	matchFromDate := false
@@ -97,7 +97,7 @@ func (docker DockerService) GetDockerTagsWithDate(payload model.ListDockerTagsRe
 
 	}
 
-	repo, err := getBaseDomainFromRepo(&dbms, payload.ImageName)
+	repo, err := getBaseDomainFromRepo(dao, payload.ImageName)
 	if err != nil {
 		return nil, err
 	}

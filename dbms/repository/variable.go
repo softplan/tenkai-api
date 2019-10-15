@@ -1,4 +1,4 @@
-package dbms
+package repository
 
 import (
 	"github.com/jinzhu/gorm"
@@ -12,6 +12,7 @@ type VariableDAOInterface interface {
 	GetAllVariablesByEnvironment(envID int) ([]model.Variable, error)
 	GetAllVariablesByEnvironmentAndScope(envID int, scope string) ([]model.Variable, error)
 	DeleteVariable(id int) error
+	DeleteVariableByEnvironmentID(envID int) error
 }
 
 //VariableDAOImpl VariableDAOImpl
@@ -109,8 +110,8 @@ func (dao VariableDAOImpl) DeleteVariable(id int) error {
 }
 
 //DeleteVariableByEnvironmentID - Delete environment
-func (database *Database) DeleteVariableByEnvironmentID(envID int) error {
-	if err := database.Db.Unscoped().Where(model.Variable{EnvironmentID: envID}).Delete(model.Variable{}).Error; err != nil {
+func (dao VariableDAOImpl) DeleteVariableByEnvironmentID(envID int) error {
+	if err := dao.Db.Unscoped().Where(model.Variable{EnvironmentID: envID}).Delete(model.Variable{}).Error; err != nil {
 		return err
 	}
 	return nil

@@ -11,7 +11,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/dbms/model"
-	productsrv "github.com/softplan/tenkai-api/service"
 	analyser "github.com/softplan/tenkai-api/service/tenkai"
 	"github.com/softplan/tenkai-api/util"
 )
@@ -27,7 +26,7 @@ func (appContext *appContext) newProduct(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if _, err := appContext.database.CreateProduct(payload); err != nil {
+	if _, err := appContext.repositories.productDAO.CreateProduct(payload); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -45,7 +44,7 @@ func (appContext *appContext) editProduct(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if err := appContext.database.EditProduct(payload); err != nil {
+	if err := appContext.repositories.productDAO.EditProduct(payload); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -59,7 +58,7 @@ func (appContext *appContext) deleteProduct(w http.ResponseWriter, r *http.Reque
 	sl := vars["id"]
 	id, _ := strconv.Atoi(sl)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	if err := appContext.database.DeleteProduct(id); err != nil {
+	if err := appContext.repositories.productDAO.DeleteProduct(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -72,7 +71,7 @@ func (appContext *appContext) listProducts(w http.ResponseWriter, r *http.Reques
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	result := &model.ProductRequestReponse{}
 	var err error
-	if result.List, err = appContext.database.ListProducts(); err != nil {
+	if result.List, err = appContext.repositories.productDAO.ListProducts(); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -95,7 +94,7 @@ func (appContext *appContext) newProductVersion(w http.ResponseWriter, r *http.R
 
 	payload.Date = time.Now()
 
-	if _, err := productsrv.CreateProductVersion(appContext.database, payload); err != nil {
+	if _, err := appContext.repositories.productDAO.CreateProductVersionCopying(payload); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -114,19 +113,19 @@ func (appContext *appContext) deleteProductVersion(w http.ResponseWriter, r *htt
 	// Deletes ProductVersionServices
 	childs := &model.ProductVersionServiceRequestReponse{}
 	var err error
-	if childs.List, err = appContext.database.ListProductsVersionServices(id); err != nil {
+	if childs.List, err = appContext.repositories.productDAO.ListProductsVersionServices(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	for _, e := range childs.List {
-		if err := appContext.database.DeleteProductVersionService(int(e.ID)); err != nil {
+		if err := appContext.repositories.productDAO.DeleteProductVersionService(int(e.ID)); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}
 
 	// Deletes ProductVersion itself
-	if err = appContext.database.DeleteProductVersion(id); err != nil {
+	if err = appContext.repositories.productDAO.DeleteProductVersion(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -144,7 +143,7 @@ func (appContext *appContext) newProductVersionService(w http.ResponseWriter, r 
 		return
 	}
 
-	if _, err := appContext.database.CreateProductVersionService(payload); err != nil {
+	if _, err := appContext.repositories.productDAO.CreateProductVersionService(payload); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -161,7 +160,7 @@ func (appContext *appContext) editProductVersionService(w http.ResponseWriter, r
 		return
 	}
 
-	if err := appContext.database.EditProductVersionService(payload); err != nil {
+	if err := appContext.repositories.productDAO.EditProductVersionService(payload); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -175,7 +174,7 @@ func (appContext *appContext) deleteProductVersionService(w http.ResponseWriter,
 	sl := vars["id"]
 	id, _ := strconv.Atoi(sl)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	if err := appContext.database.DeleteProductVersionService(id); err != nil {
+	if err := appContext.repositories.productDAO.DeleteProductVersionService(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -197,7 +196,7 @@ func (appContext *appContext) listProductVersions(w http.ResponseWriter, r *http
 	result := &model.ProductVersionRequestReponse{}
 	var err error
 
-	if result.List, err = appContext.database.ListProductsVersions(id); err != nil {
+	if result.List, err = appContext.repositories.productDAO.ListProductsVersions(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -221,7 +220,7 @@ func (appContext *appContext) listProductVersionServices(w http.ResponseWriter, 
 	result := &model.ProductVersionServiceRequestReponse{}
 	var err error
 
-	if result.List, err = appContext.database.ListProductsVersionServices(id); err != nil {
+	if result.List, err = appContext.repositories.productDAO.ListProductsVersionServices(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -292,7 +291,7 @@ func (appContext *appContext) verifyNewVersion(serviceName string, dockerImageTa
 	}
 
 	//Get version tags
-	result, err := appContext.dockerServiceAPI.GetDockerTagsWithDate(payload, appContext.database, &appContext.dockerTagsCache)
+	result, err := appContext.dockerServiceAPI.GetDockerTagsWithDate(payload, appContext.repositories.dockerDAO, &appContext.dockerTagsCache)
 	if err != nil {
 		return "", err
 	}
