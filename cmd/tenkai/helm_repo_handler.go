@@ -71,7 +71,7 @@ func (appContext *appContext) setDefaultRepo(w http.ResponseWriter, r *http.Requ
 
 	configMap := model.ConfigMap{Name: "DEFAULT_REPO_" + principal.Email, Value: payload.Reponame}
 
-	if _, err := appContext.configDAO.CreateOrUpdateConfig(configMap); err != nil {
+	if _, err := appContext.repositories.configDAO.CreateOrUpdateConfig(configMap); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -84,7 +84,7 @@ func (appContext *appContext) getDefaultRepo(w http.ResponseWriter, r *http.Requ
 
 	var config model.ConfigMap
 	var err error
-	if config, err = appContext.configDAO.GetConfigByName("DEFAULT_REPO_" + principal.Email); err != nil {
+	if config, err = appContext.repositories.configDAO.GetConfigByName("DEFAULT_REPO_" + principal.Email); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

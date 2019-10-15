@@ -20,7 +20,7 @@ func (appContext *appContext) listDockerRepositories(w http.ResponseWriter, r *h
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	result := &model.ListDockerRepositoryResponse{}
 	var err error
-	if result.Repositories, err = appContext.database.ListDockerRepos(); err != nil {
+	if result.Repositories, err = appContext.repositories.dockerDAO.ListDockerRepos(); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -47,7 +47,7 @@ func (appContext *appContext) newDockerRepository(w http.ResponseWriter, r *http
 		return
 	}
 
-	if _, err := appContext.database.CreateDockerRepo(payload); err != nil {
+	if _, err := appContext.repositories.dockerDAO.CreateDockerRepo(payload); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -67,7 +67,7 @@ func (appContext *appContext) deleteDockerRepository(w http.ResponseWriter, r *h
 	sl := vars["id"]
 	id, _ := strconv.Atoi(sl)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	if err := appContext.database.DeleteDockerRepo(id); err != nil {
+	if err := appContext.repositories.dockerDAO.DeleteDockerRepo(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

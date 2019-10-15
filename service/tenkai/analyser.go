@@ -2,16 +2,16 @@ package analyser
 
 import (
 	"fmt"
-	"github.com/softplan/tenkai-api/dbms"
 	"github.com/softplan/tenkai-api/dbms/model"
+	"github.com/softplan/tenkai-api/dbms/repository"
 	"github.com/softplan/tenkai-api/global"
 	helmapi "github.com/softplan/tenkai-api/service/helm"
 	"strings"
 )
 
 //Analyse - Analyse dependencies
-func Analyse(dao dbms.EnvironmentDAOInterface, hsi helmapi.HelmServiceInterface, database dbms.Database, payload model.DepAnalyseRequest, analyse *model.DepAnalyse) error {
-	innerAnalyse(database, "", payload.ChartName, payload.Tag, analyse)
+func Analyse(dao repository.EnvironmentDAOInterface, hsi helmapi.HelmServiceInterface, dai repository.DependencyDAOInterface, payload model.DepAnalyseRequest, analyse *model.DepAnalyse) error {
+	innerAnalyse(dai, "", payload.ChartName, payload.Tag, analyse)
 	err := analyseIfDeployed(dao, hsi, payload, analyse)
 	if err != nil {
 		return err
@@ -30,7 +30,7 @@ func containsByID(nodes []model.Node, ID string) bool {
 	return result
 }
 
-func innerAnalyse(database dbms.Database, parent string, chartName string, tag string, analyse *model.DepAnalyse) {
+func innerAnalyse(dai repository.DependencyDAOInterface, parent string, chartName string, tag string, analyse *model.DepAnalyse) {
 
 	if analyse.Nodes == nil {
 		analyse.Nodes = make([]model.Node, 0)
@@ -45,7 +45,7 @@ func innerAnalyse(database dbms.Database, parent string, chartName string, tag s
 		analyse.Links = append(analyse.Links, model.DepLink{Source: parent, Target: getNodeName(chartName, tag)})
 	}
 
-	dependencies, err := database.GetDependencies(chartName, tag)
+	dependencies, err := dai.GetDependencies(chartName, tag)
 	if err != nil {
 		fmt.Println("error")
 	}
@@ -55,7 +55,7 @@ func innerAnalyse(database dbms.Database, parent string, chartName string, tag s
 		for _, matched := range matchedDependencies {
 
 			if !containsByID(analyse.Nodes, getNodeName(element.ChartName, element.Version)) {
-				innerAnalyse(database, getNodeName(chartName, tag), matched.ChartName, matched.Tag, analyse)
+				innerAnalyse(dai, getNodeName(chartName, tag), matched.ChartName, matched.Tag, analyse)
 			}
 		}
 	}
@@ -81,7 +81,7 @@ func getMatchedVersions(chartName string, tag string) []model.DepAnalyseRequest 
 	return result
 }
 
-func analyseIfDeployed(dao dbms.EnvironmentDAOInterface, hsi helmapi.HelmServiceInterface, payload model.DepAnalyseRequest, analyse *model.DepAnalyse) error {
+func analyseIfDeployed(dao repository.EnvironmentDAOInterface, hsi helmapi.HelmServiceInterface, payload model.DepAnalyseRequest, analyse *model.DepAnalyse) error {
 
 	//Find environment
 	environment, _ := dao.GetByID(payload.EnvironmentID)

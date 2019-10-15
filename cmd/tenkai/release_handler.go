@@ -21,7 +21,7 @@ func (appContext *appContext) newRelease(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := appContext.database.CreateRelease(payload); err != nil {
+	if err := appContext.repositories.releaseDAO.CreateRelease(payload); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -38,7 +38,7 @@ func (appContext *appContext) deleteRelease(w http.ResponseWriter, r *http.Reque
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
-	if err := appContext.database.DeleteRelease(id); err != nil {
+	if err := appContext.repositories.releaseDAO.DeleteRelease(id); err != nil {
 		log.Println("Error deleting environment: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -58,7 +58,7 @@ func (appContext *appContext) listReleases(w http.ResponseWriter, r *http.Reques
 
 	releaseResult := &model.ReleaseResult{}
 	var err error
-	if releaseResult.Releases, err = appContext.database.ListRelease(chartName[0]); err != nil {
+	if releaseResult.Releases, err = appContext.repositories.releaseDAO.ListRelease(chartName[0]); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

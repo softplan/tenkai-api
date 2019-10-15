@@ -22,7 +22,7 @@ func (appContext *appContext) newDependency(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if err := appContext.database.CreateDependency(payload); err != nil {
+	if err := appContext.repositories.dependencyDAO.CreateDependency(payload); err != nil {
 		http.Error(w, err.Error(), 501)
 		return
 	}
@@ -39,7 +39,7 @@ func (appContext *appContext) deleteDependency(w http.ResponseWriter, r *http.Re
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
-	if err := appContext.database.DeleteDependency(id); err != nil {
+	if err := appContext.repositories.dependencyDAO.DeleteDependency(id); err != nil {
 		log.Println("Error deleting environment: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -63,7 +63,7 @@ func (appContext *appContext) listDependencies(w http.ResponseWriter, r *http.Re
 	dependencyResult := &model.DependencyResult{}
 	var err error
 
-	if dependencyResult.Dependencies, err = appContext.database.ListDependencies(id); err != nil {
+	if dependencyResult.Dependencies, err = appContext.repositories.dependencyDAO.ListDependencies(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -85,7 +85,7 @@ func (appContext *appContext) analyse(w http.ResponseWriter, r *http.Request) {
 
 	var analyse model.DepAnalyse
 
-	err := service_tenkai.Analyse(appContext.environmentDAO, appContext.helmServiceAPI, appContext.database, payload, &analyse)
+	err := service_tenkai.Analyse(appContext.repositories.environmentDAO, appContext.helmServiceAPI, appContext.repositories.dependencyDAO, payload, &analyse)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

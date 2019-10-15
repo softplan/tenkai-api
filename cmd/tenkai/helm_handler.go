@@ -74,7 +74,7 @@ func (appContext *appContext) deleteHelmRelease(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	environment, err := appContext.environmentDAO.GetByID(int(envID))
+	environment, err := appContext.repositories.environmentDAO.GetByID(int(envID))
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
@@ -112,7 +112,7 @@ func (appContext *appContext) rollback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//Locate Environment
-	environment, err := appContext.environmentDAO.GetByID(payload.EnvironmentID)
+	environment, err := appContext.repositories.environmentDAO.GetByID(payload.EnvironmentID)
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
@@ -142,7 +142,7 @@ func (appContext *appContext) revision(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//Locate Environment
-	environment, err := appContext.environmentDAO.GetByID(payload.EnvironmentID)
+	environment, err := appContext.repositories.environmentDAO.GetByID(payload.EnvironmentID)
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
@@ -170,7 +170,7 @@ func (appContext *appContext) listReleaseHistory(w http.ResponseWriter, r *http.
 	}
 
 	//Locate Environment
-	environment, err := appContext.environmentDAO.GetByID(payload.EnvironmentID)
+	environment, err := appContext.repositories.environmentDAO.GetByID(payload.EnvironmentID)
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
@@ -196,7 +196,7 @@ func (appContext *appContext) listHelmDeploymentsByEnvironment(w http.ResponseWr
 	}
 
 	//Locate Environment
-	environment, err := appContext.environmentDAO.GetByID(id)
+	environment, err := appContext.repositories.environmentDAO.GetByID(id)
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
@@ -290,7 +290,7 @@ func (appContext *appContext) getHelmCommand(w http.ResponseWriter, r *http.Requ
 	for _, element := range payload.Deployables {
 
 		//Locate Environment
-		environment, err := appContext.environmentDAO.GetByID(element.EnvironmentID)
+		environment, err := appContext.repositories.environmentDAO.GetByID(element.EnvironmentID)
 		if err != nil {
 			http.Error(w, err.Error(), 501)
 			return
@@ -332,7 +332,7 @@ func (appContext *appContext) multipleInstall(w http.ResponseWriter, r *http.Req
 	for _, element := range payload.Deployables {
 
 		//Locate Environment
-		environment, err := appContext.environmentDAO.GetByID(element.EnvironmentID)
+		environment, err := appContext.repositories.environmentDAO.GetByID(element.EnvironmentID)
 		if err != nil {
 			http.Error(w, err.Error(), 501)
 			return
@@ -378,7 +378,7 @@ func (appContext *appContext) install(w http.ResponseWriter, r *http.Request) {
 	out := &bytes.Buffer{}
 
 	//Locate Environment
-	environment, err := appContext.environmentDAO.GetByID(payload.EnvironmentID)
+	environment, err := appContext.repositories.environmentDAO.GetByID(payload.EnvironmentID)
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
@@ -409,7 +409,7 @@ func (appContext *appContext) helmDryRun(w http.ResponseWriter, r *http.Request)
 	out := &bytes.Buffer{}
 
 	//Locate Environment
-	environment, err := appContext.environmentDAO.GetByID(payload.EnvironmentID)
+	environment, err := appContext.repositories.environmentDAO.GetByID(payload.EnvironmentID)
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
@@ -437,7 +437,7 @@ func (appContext *appContext) simpleInstall(environment *model.Environment, char
 	if strings.Index(name, "gcm") > -1 {
 		searchTerm = name
 	}
-	variables, err := appContext.variableDAO.GetAllVariablesByEnvironmentAndScope(int(environment.ID), searchTerm)
+	variables, err := appContext.repositories.variableDAO.GetAllVariablesByEnvironmentAndScope(int(environment.ID), searchTerm)
 	globalVariables := appContext.getGlobalVariables(int(environment.ID))
 
 	var args []string
@@ -514,7 +514,7 @@ func normalizeVariableName(value string) string {
 }
 
 func (appContext *appContext) getGlobalVariables(id int) []model.Variable {
-	variables, _ := appContext.variableDAO.GetAllVariablesByEnvironmentAndScope(id, "global")
+	variables, _ := appContext.repositories.variableDAO.GetAllVariablesByEnvironmentAndScope(id, "global")
 
 	for i, e := range variables {
 		if e.Secret {

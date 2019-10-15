@@ -33,14 +33,14 @@ func (appContext *appContext) deleteEnvironment(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	env, error := appContext.environmentDAO.GetByID(id)
+	env, error := appContext.repositories.environmentDAO.GetByID(id)
 	if error != nil {
 		log.Println("Error retrieving environment by ID: ", error)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if err := appContext.environmentDAO.DeleteEnvironment(*env); err != nil {
+	if err := appContext.repositories.environmentDAO.DeleteEnvironment(*env); err != nil {
 		log.Println("Error deleting environment: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -71,7 +71,7 @@ func (appContext *appContext) editEnvironment(w http.ResponseWriter, r *http.Req
 
 	env := payload.Data
 
-	result, err := appContext.environmentDAO.GetByID(int(env.ID))
+	result, err := appContext.repositories.environmentDAO.GetByID(int(env.ID))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -83,7 +83,7 @@ func (appContext *appContext) editEnvironment(w http.ResponseWriter, r *http.Req
 	createEnvironmentFile(env.Name, env.Token, appContext.k8sConfigPath+env.Group+"_"+env.Name,
 		env.CACertificate, env.ClusterURI, env.Namespace)
 
-	if err := appContext.environmentDAO.EditEnvironment(env); err != nil {
+	if err := appContext.repositories.environmentDAO.EditEnvironment(env); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -108,13 +108,13 @@ func (appContext *appContext) duplicateEnvironments(w http.ResponseWriter, r *ht
 		return
 	}
 
-	environment, err := appContext.environmentDAO.GetByID(id)
+	environment, err := appContext.repositories.environmentDAO.GetByID(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	variables, err := appContext.variableDAO.GetAllVariablesByEnvironment(id)
+	variables, err := appContext.repositories.variableDAO.GetAllVariablesByEnvironment(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -133,7 +133,7 @@ func (appContext *appContext) duplicateEnvironments(w http.ResponseWriter, r *ht
 		env.CACertificate, env.ClusterURI, env.Namespace)
 
 	var envID int
-	if envID, err = appContext.environmentDAO.CreateEnvironment(env); err != nil {
+	if envID, err = appContext.repositories.environmentDAO.CreateEnvironment(env); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -147,7 +147,7 @@ func (appContext *appContext) duplicateEnvironments(w http.ResponseWriter, r *ht
 		newVariable.Description = variable.Description
 		newVariable.Scope = variable.Scope
 
-		if _, _, err := appContext.variableDAO.CreateVariable(*newVariable); err != nil {
+		if _, _, err := appContext.repositories.variableDAO.CreateVariable(*newVariable); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -176,7 +176,7 @@ func (appContext *appContext) addEnvironments(w http.ResponseWriter, r *http.Req
 	createEnvironmentFile(env.Name, env.Token, appContext.k8sConfigPath+env.Group+"_"+env.Name,
 		env.CACertificate, env.ClusterURI, env.Namespace)
 
-	if _, err := appContext.environmentDAO.CreateEnvironment(env); err != nil {
+	if _, err := appContext.repositories.environmentDAO.CreateEnvironment(env); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -197,7 +197,7 @@ func (appContext *appContext) getEnvironments(w http.ResponseWriter, r *http.Req
 	}
 
 	var err error
-	if envResult.Envs, err = appContext.environmentDAO.GetAllEnvironments(principal.Email); err != nil {
+	if envResult.Envs, err = appContext.repositories.environmentDAO.GetAllEnvironments(principal.Email); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -234,7 +234,7 @@ func (appContext *appContext) export(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var variables []model.Variable
-	if variables, err = appContext.variableDAO.GetAllVariablesByEnvironment(id); err != nil {
+	if variables, err = appContext.repositories.variableDAO.GetAllVariablesByEnvironment(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -263,7 +263,7 @@ func (appContext *appContext) getAllEnvironments(w http.ResponseWriter, r *http.
 	envResult := &model.EnvResult{}
 
 	var err error
-	if envResult.Envs, err = appContext.environmentDAO.GetAllEnvironments(""); err != nil {
+	if envResult.Envs, err = appContext.repositories.environmentDAO.GetAllEnvironments(""); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

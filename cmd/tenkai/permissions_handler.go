@@ -32,7 +32,7 @@ func (appContext *appContext) newEnvironmentPermission(w http.ResponseWriter, r 
 		return
 	}
 
-	if err := appContext.userDAO.AssociateEnvironmentUser(userID, environmentID); err != nil {
+	if err := appContext.repositories.userDAO.AssociateEnvironmentUser(userID, environmentID); err != nil {
 		http.Error(w, err.Error(), 501)
 		return
 	}

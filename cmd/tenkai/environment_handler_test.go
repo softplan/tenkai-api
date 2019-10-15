@@ -30,7 +30,8 @@ func TestAddEnvironments(t *testing.T) {
 	mockObject := &mocks.EnvironmentDAOInterface{}
 	mockObject.On("CreateEnvironment", mock.Anything).Return(1, nil)
 
-	appContext.environmentDAO = mockObject
+	appContext.repositories = repositories{}
+	appContext.repositories.environmentDAO = mockObject
 
 	// pass 'nil' as the third parameter.
 	req, err := http.NewRequest("POST", "/environments", bytes.NewBuffer(payS))
