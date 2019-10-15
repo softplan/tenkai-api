@@ -2,11 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"net/http"
+	"strconv"
+
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/dbms/model"
 	"github.com/softplan/tenkai-api/util"
-	"net/http"
-	"strconv"
 )
 
 func (appContext *appContext) newSolution(w http.ResponseWriter, r *http.Request) {
@@ -20,7 +21,7 @@ func (appContext *appContext) newSolution(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if _, err := appContext.database.CreateSolution(payload); err != nil {
+	if _, err := appContext.solutionDAO.CreateSolution(payload); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -38,7 +39,7 @@ func (appContext *appContext) editSolution(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if err := appContext.database.EditSolution(payload); err != nil {
+	if err := appContext.solutionDAO.EditSolution(payload); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -52,7 +53,7 @@ func (appContext *appContext) deleteSolution(w http.ResponseWriter, r *http.Requ
 	sl := vars["id"]
 	id, _ := strconv.Atoi(sl)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	if err := appContext.database.DeleteSolution(id); err != nil {
+	if err := appContext.solutionDAO.DeleteSolution(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -65,7 +66,7 @@ func (appContext *appContext) listSolution(w http.ResponseWriter, r *http.Reques
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	result := &model.SolutionResult{}
 	var err error
-	if result.List, err = appContext.database.ListSolutions(); err != nil {
+	if result.List, err = appContext.solutionDAO.ListSolutions(); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
