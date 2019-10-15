@@ -10,7 +10,7 @@
 .vscode/*
 
 # Ignore dependency httpgetter
-vendor/k8s.io/helm/pkg/getter/httpgetter.go
+#vendor/k8s.io/helm/pkg/getter/httpgetter.go
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out

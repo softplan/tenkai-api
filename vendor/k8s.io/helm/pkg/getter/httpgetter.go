@@ -17,6 +17,7 @@ package getter
 
 import (
 	"bytes"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"net/http"
@@ -91,6 +92,8 @@ func NewHTTPGetter(URL, CertFile, KeyFile, CAFile string) (*HttpGetter, error) {
 			return &client, fmt.Errorf("can't create TLS config: %s", err.Error())
 		}
 		tr.TLSClientConfig = tlsConf
+	} else {
+		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
 	client.client = &http.Client{Transport: tr}
 	return &client, nil
