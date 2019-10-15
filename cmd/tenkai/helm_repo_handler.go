@@ -5,14 +5,13 @@ import (
 	"errors"
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/dbms/model"
-	helmapi "github.com/softplan/tenkai-api/service/helm"
 	"github.com/softplan/tenkai-api/util"
 	"net/http"
 )
 
 func (appContext *appContext) repoUpdate(w http.ResponseWriter, r *http.Request) {
 
-	helmapi.RepoUpdate()
+	appContext.helmServiceAPI.RepoUpdate()
 }
 
 func (appContext *appContext) listRepositories(w http.ResponseWriter, r *http.Request) {
@@ -20,7 +19,7 @@ func (appContext *appContext) listRepositories(w http.ResponseWriter, r *http.Re
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	result := &model.RepositoryResult{}
 
-	repositories, err := helmapi.GetRepositories()
+	repositories, err := appContext.helmServiceAPI.GetRepositories()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -49,7 +48,7 @@ func (appContext *appContext) newRepository(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if err := helmapi.AddRepository(payload); err != nil {
+	if err := appContext.helmServiceAPI.AddRepository(payload); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -105,7 +104,7 @@ func (appContext *appContext) deleteRepository(w http.ResponseWriter, r *http.Re
 	vars := mux.Vars(r)
 	name := vars["name"]
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	if err := helmapi.RemoveRepository(name); err != nil {
+	if err := appContext.helmServiceAPI.RemoveRepository(name); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

@@ -274,7 +274,7 @@ func (appContext *appContext) verifyNewVersion(serviceName string, dockerImageTa
 	if !ok || imageCache == "" {
 		var err error
 
-		payload.ImageName, err = analyser.GetImageFromService(serviceName, &appContext.mutex)
+		payload.ImageName, err = analyser.GetImageFromService(appContext.helmServiceAPI, serviceName, &appContext.mutex)
 		if err != nil {
 			return "", err
 		}

@@ -104,13 +104,13 @@ func (appContext *appContext) promote(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	toPurge, err := retrieveReleasesToPurge(kubeConfig, targetEnvironment.Namespace)
+	toPurge, err := retrieveReleasesToPurge(appContext.helmServiceAPI, kubeConfig, targetEnvironment.Namespace)
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
 	}
 
-	toDeploy, err := retrieveReleasesToDeploy(kubeConfig, srcEnvironment.Namespace)
+	toDeploy, err := retrieveReleasesToDeploy(appContext.helmServiceAPI, kubeConfig, srcEnvironment.Namespace)
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
@@ -153,7 +153,7 @@ func (appContext *appContext) doIt(kubeConfig string, targetEnvironment *model.E
 
 func (appContext *appContext) purgeAll(kubeConfig string, envs []releaseToDeploy) error {
 	for _, e := range envs {
-		err := helmapi.DeleteHelmRelease(kubeConfig, e.Name, true)
+		err := appContext.helmServiceAPI.DeleteHelmRelease(kubeConfig, e.Name, true)
 		if err != nil {
 			return err
 		}
@@ -221,9 +221,9 @@ func (appContext *appContext) copyImageAndTagFromSrcToTarget(srcEnvID uint, targ
 
 }
 
-func retrieveReleasesToDeploy(kubeConfig string, srcNamespace string) ([]releaseToDeploy, error) {
+func retrieveReleasesToDeploy(hsi helmapi.HelmServiceInterface, kubeConfig string, srcNamespace string) ([]releaseToDeploy, error) {
 	result := make([]releaseToDeploy, 0)
-	list, err := helmapi.ListHelmDeployments(kubeConfig, srcNamespace)
+	list, err := hsi.ListHelmDeployments(kubeConfig, srcNamespace)
 	if err != nil {
 		return result, err
 	}
@@ -238,10 +238,10 @@ func retrieveReleasesToDeploy(kubeConfig string, srcNamespace string) ([]release
 	return result, nil
 }
 
-func retrieveReleasesToPurge(kubeConfig string, namespace string) ([]releaseToDeploy, error) {
+func retrieveReleasesToPurge(hsi helmapi.HelmServiceInterface, kubeConfig string, namespace string) ([]releaseToDeploy, error) {
 
 	result := make([]releaseToDeploy, 0)
-	list, err := helmapi.ListHelmDeployments(kubeConfig, namespace)
+	list, err := hsi.ListHelmDeployments(kubeConfig, namespace)
 
 	if err != nil {
 		return result, err

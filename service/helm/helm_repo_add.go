@@ -26,7 +26,7 @@ type repoAddCmd struct {
 }
 
 //AddRepository - Add new repository
-func AddRepository(repo model.Repository) error {
+func (svc HelmServiceImpl) AddRepository(repo model.Repository) error {
 	settings.Home = global.HelmDir
 	add := &repoAddCmd{out: os.Stdout}
 	add.name = repo.Name

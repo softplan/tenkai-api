@@ -23,7 +23,7 @@ type repoUpdateCmd struct {
 }
 
 //RepoUpdate - Update a repository
-func RepoUpdate() error {
+func (svc HelmServiceImpl) RepoUpdate() error {
 
 	settings.Home = global.HelmDir
 

@@ -17,10 +17,10 @@ type JSONObject struct {
 }
 
 //GetImageFromService Retrieve Image from Servic eChart
-func GetImageFromService(serviceName string, mutex *sync.Mutex) (string, error) {
+func GetImageFromService(hsi helmapi.HelmServiceInterface, serviceName string, mutex *sync.Mutex) (string, error) {
 
 	//Look at the chart
-	bytes, err := helmapi.GetValues(serviceName, "0")
+	bytes, err := hsi.GetValues(serviceName, "0")
 	if err != nil {
 		return "", err
 	}

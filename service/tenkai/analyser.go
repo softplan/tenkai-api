@@ -10,9 +10,9 @@ import (
 )
 
 //Analyse - Analyse dependencies
-func Analyse(dao dbms.EnvironmentDAOInterface, database dbms.Database, payload model.DepAnalyseRequest, analyse *model.DepAnalyse) error {
+func Analyse(dao dbms.EnvironmentDAOInterface, hsi helmapi.HelmServiceInterface, database dbms.Database, payload model.DepAnalyseRequest, analyse *model.DepAnalyse) error {
 	innerAnalyse(database, "", payload.ChartName, payload.Tag, analyse)
-	err := analyseIfDeployed(dao, payload, analyse)
+	err := analyseIfDeployed(dao, hsi, payload, analyse)
 	if err != nil {
 		return err
 	}
@@ -81,7 +81,7 @@ func getMatchedVersions(chartName string, tag string) []model.DepAnalyseRequest 
 	return result
 }
 
-func analyseIfDeployed(dao dbms.EnvironmentDAOInterface, payload model.DepAnalyseRequest, analyse *model.DepAnalyse) error {
+func analyseIfDeployed(dao dbms.EnvironmentDAOInterface, hsi helmapi.HelmServiceInterface, payload model.DepAnalyseRequest, analyse *model.DepAnalyse) error {
 
 	//Find environment
 	environment, _ := dao.GetByID(payload.EnvironmentID)
@@ -90,7 +90,7 @@ func analyseIfDeployed(dao dbms.EnvironmentDAOInterface, payload model.DepAnalys
 		releaseName := removeTag(removeRepo(element.ID)) + "-" + environment.Namespace
 
 		kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
-		err := identifyDeployedReleased(kubeConfig, analyse, environment.Namespace, releaseName, onlyTag(removeRepo(element.ID)), index)
+		err := identifyDeployedReleased(kubeConfig, hsi, analyse, environment.Namespace, releaseName, onlyTag(removeRepo(element.ID)), index)
 		if err != nil {
 			return err
 		}
@@ -99,8 +99,8 @@ func analyseIfDeployed(dao dbms.EnvironmentDAOInterface, payload model.DepAnalys
 
 }
 
-func identifyDeployedReleased(kubeconfig string, analyse *model.DepAnalyse, namespace, releaseName string, tag string, index int) error {
-	deployed, err := helmapi.GetReleaseHistory(kubeconfig, releaseName)
+func identifyDeployedReleased(kubeconfig string, hsi helmapi.HelmServiceInterface, analyse *model.DepAnalyse, namespace, releaseName string, tag string, index int) error {
+	deployed, err := hsi.GetReleaseHistory(kubeconfig, releaseName)
 	if err != nil {
 		deployed = false
 	}
@@ -109,7 +109,7 @@ func identifyDeployedReleased(kubeconfig string, analyse *model.DepAnalyse, name
 		analyse.Nodes[index].Svg = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0xMyA5aDlsLTE0IDE1IDMtOWgtOWwxNC0xNS0zIDl6bS04LjY5OSA1aDguMDg2bC0xLjk4NyA1Ljk2MyA5LjI5OS05Ljk2M2gtOC4wODZsMS45ODctNS45NjMtOS4yOTkgOS45NjN6Ii8+PC9zdmc+"
 	} else {
 		//Verify if version is OK.
-		versionMatched, err := helmapi.IsThereAnyPodWithThisVersion(kubeconfig, namespace, releaseName, tag)
+		versionMatched, err := hsi .IsThereAnyPodWithThisVersion(kubeconfig, namespace, releaseName, tag)
 		if err != nil {
 			return err
 		}

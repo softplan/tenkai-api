@@ -26,17 +26,17 @@ const (
 )
 
 //InitializeHelm - Initialize a Helm repository
-func InitializeHelm() {
+func (svc HelmServiceImpl) InitializeHelm() {
 	settings.TillerNamespace = "kube-system"
 	settings.TLSEnable = false
 	settings.TLSVerify = false
 	settings.TillerConnectionTimeout = 1200
-	Initialize(global.HelmDir, os.Stdout, true, settings)
+	initialize(global.HelmDir, os.Stdout, true, settings)
 }
 
 // Initialize initializes local config
 // Returns an error if the command failed.
-func Initialize(home helmpath.Home, out io.Writer, skipRefresh bool, settings helm_env.EnvSettings) error {
+func initialize(home helmpath.Home, out io.Writer, skipRefresh bool, settings helm_env.EnvSettings) error {
 	if err := ensureDirectories(home, out); err != nil {
 		return err
 	}

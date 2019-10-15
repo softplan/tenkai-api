@@ -24,7 +24,7 @@ type rollbackCmd struct {
 }
 
 //RollbackRelease - Rollback a release
-func RollbackRelease(kubeconfig string, releaseName string, revision int) error {
+func (svc HelmServiceImpl) RollbackRelease(kubeconfig string, releaseName string, revision int) error {
 
 	settings.KubeConfig = kubeconfig
 	settings.Home = global.HelmDir

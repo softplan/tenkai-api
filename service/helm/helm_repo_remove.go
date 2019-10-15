@@ -16,7 +16,7 @@ type repoRemoveCmd struct {
 }
 
 //RemoveRepository - Remove a repository
-func RemoveRepository(name string) error {
+func (svc HelmServiceImpl) RemoveRepository(name string) error {
 	remove := &repoRemoveCmd{out: os.Stdout}
 	remove.home = settings.Home
 	remove.name = name

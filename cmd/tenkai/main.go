@@ -41,9 +41,6 @@ func main() {
 
 	_ = os.Mkdir(global.KubeConfigBasePath, 0777)
 
-	if _, err := os.Stat(global.HelmDir + "/repository/repositories.yaml"); os.IsNotExist(err) {
-		helmapi.InitializeHelm()
-	}
 
 	global.Logger.Info(logFields, "carregando configurações")
 
@@ -67,6 +64,11 @@ func main() {
 	appContext.k8sConfigPath = global.KubeConfigBasePath
 	appContext.dockerServiceAPI = &dockerapi.DockerService{}
 	appContext.helmServiceAPI = &helmapi.HelmServiceImpl{}
+
+	if _, err := os.Stat(global.HelmDir + "/repository/repositories.yaml"); os.IsNotExist(err) {
+		appContext.helmServiceAPI.InitializeHelm()
+	}
+
 
 	//Init DAO
 	appContext.configDAO = &dbms.ConfigDAOImpl{Db: appContext.database.Db}

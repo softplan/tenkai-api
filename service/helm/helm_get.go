@@ -23,7 +23,7 @@ type getValuesCmd struct {
 }
 
 //Get - All
-func Get(kubeconfig string, releaseName string, revision int) (string, error) {
+func (svc HelmServiceImpl) Get(kubeconfig string, releaseName string, revision int) (string, error) {
 
 	settings.KubeConfig = kubeconfig
 	settings.Home = global.HelmDir

@@ -22,7 +22,7 @@ type deleteCmd struct {
 }
 
 //DeleteHelmRelease - Delete a Release
-func DeleteHelmRelease(kubeconfig string, releaseName string, purge bool) error {
+func (svc HelmServiceImpl) DeleteHelmRelease(kubeconfig string, releaseName string, purge bool) error {
 
 	logFields := global.AppFields{global.Function: "ListHelmDeployments", releaseName: releaseName}
 

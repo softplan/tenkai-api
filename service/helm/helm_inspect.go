@@ -34,16 +34,16 @@ type inspectCmd struct {
 }
 
 //GetTemplate - Retrieve a chart template called deployment.yaml
-func GetTemplate(mutex *sync.Mutex, chartName string, version string, kind string) ([]byte, error) {
+func (svc HelmServiceImpl) GetTemplate(mutex *sync.Mutex, chartName string, version string, kind string) ([]byte, error) {
 
 	var result []byte
 	var err error
 	mutex.Lock()
 	if kind == "values" {
-		result, err = GetValues(chartName, version)
+		result, err = svc.GetValues(chartName, version)
 	} else {
 		if kind == "deployment" {
-			result, err = GetDeployment(chartName, version)
+			result, err = svc.GetDeployment(chartName, version)
 		}
 	}
 	mutex.Unlock()
@@ -51,7 +51,7 @@ func GetTemplate(mutex *sync.Mutex, chartName string, version string, kind strin
 }
 
 //GetDeployment - Retrieve a deployment chart template
-func GetDeployment(chartName string, version string) ([]byte, error) {
+func (svc HelmServiceImpl) GetDeployment(chartName string, version string) ([]byte, error) {
 
 	logFields := global.AppFields{global.Function: "GetValues"}
 
@@ -85,7 +85,7 @@ func GetDeployment(chartName string, version string) ([]byte, error) {
 }
 
 //GetValues Method
-func GetValues(chartName string, version string) ([]byte, error) {
+func (svc HelmServiceImpl) GetValues(chartName string, version string) ([]byte, error) {
 
 	logFields := global.AppFields{global.Function: "GetValues"}
 

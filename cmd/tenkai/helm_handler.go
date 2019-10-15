@@ -17,7 +17,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/dbms/model"
 	"github.com/softplan/tenkai-api/global"
-	"github.com/softplan/tenkai-api/service/helm"
 )
 
 func (appContext *appContext) listCharts(w http.ResponseWriter, r *http.Request) {
@@ -84,7 +83,7 @@ func (appContext *appContext) deleteHelmRelease(w http.ResponseWriter, r *http.R
 	kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
 
 	purge, _ := strconv.ParseBool(purges[0])
-	err = helmapi.DeleteHelmRelease(kubeConfig, releasesName[0], purge)
+	err = appContext.helmServiceAPI.DeleteHelmRelease(kubeConfig, releasesName[0], purge)
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
@@ -121,7 +120,7 @@ func (appContext *appContext) rollback(w http.ResponseWriter, r *http.Request) {
 
 	kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
 
-	err = helmapi.RollbackRelease(kubeConfig, payload.ReleaseName, payload.Revision)
+	err = appContext.helmServiceAPI.RollbackRelease(kubeConfig, payload.ReleaseName, payload.Revision)
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
@@ -151,7 +150,7 @@ func (appContext *appContext) revision(w http.ResponseWriter, r *http.Request) {
 
 	kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
 
-	yaml, err := helmapi.Get(kubeConfig, payload.ReleaseName, payload.Revision)
+	yaml, err := appContext.helmServiceAPI.Get(kubeConfig, payload.ReleaseName, payload.Revision)
 
 	data, _ := json.Marshal(yaml)
 	w.WriteHeader(http.StatusOK)
@@ -179,7 +178,7 @@ func (appContext *appContext) listReleaseHistory(w http.ResponseWriter, r *http.
 
 	kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
 
-	history, err := helmapi.GetHelmReleaseHistory(kubeConfig, payload.ReleaseName)
+	history, err := appContext.helmServiceAPI.GetHelmReleaseHistory(kubeConfig, payload.ReleaseName)
 
 	data, _ := json.Marshal(history)
 	w.WriteHeader(http.StatusOK)
@@ -207,7 +206,7 @@ func (appContext *appContext) listHelmDeploymentsByEnvironment(w http.ResponseWr
 
 	kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
 
-	result, err := helmapi.ListHelmDeployments(kubeConfig, environment.Namespace)
+	result, err := appContext.helmServiceAPI.ListHelmDeployments(kubeConfig, environment.Namespace)
 
 	if err != nil {
 		http.Error(w, err.Error(), 501)
@@ -231,7 +230,7 @@ func (appContext *appContext) hasConfigMap(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	result, err := helmapi.GetTemplate(&appContext.mutex, payload.ChartName, payload.ChartVersion, "deployment")
+	result, err := appContext.helmServiceAPI.GetTemplate(&appContext.mutex, payload.ChartName, payload.ChartVersion, "deployment")
 
 	w.WriteHeader(http.StatusOK)
 	if err != nil {
@@ -257,7 +256,7 @@ func (appContext *appContext) getChartVariables(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	result, err := helmapi.GetTemplate(&appContext.mutex, payload.ChartName, payload.ChartVersion, "values")
+	result, err := appContext.helmServiceAPI.GetTemplate(&appContext.mutex, payload.ChartName, payload.ChartVersion, "values")
 
 	if err != nil {
 		http.Error(w, err.Error(), 501)
@@ -471,7 +470,7 @@ func (appContext *appContext) simpleInstall(environment *model.Environment, char
 		kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
 
 		if !helmCommandOnly {
-			err := helmapi.Upgrade(kubeConfig, name, chart, chartVersion, environment.Namespace, args, out, dryRun)
+			err := appContext.helmServiceAPI.Upgrade(kubeConfig, name, chart, chartVersion, environment.Namespace, args, out, dryRun)
 			if err != nil {
 				return "", err
 			}
