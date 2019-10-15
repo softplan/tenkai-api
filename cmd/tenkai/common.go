@@ -2,7 +2,7 @@ package main
 
 func (appContext *appContext) hasAccess(email string, envID int) (bool, error) {
 	result := false
-	environments, err := appContext.database.GetAllEnvironments(email)
+	environments, err := appContext.environmentDAO.GetAllEnvironments(email)
 	if err != nil {
 		return false, err
 	}

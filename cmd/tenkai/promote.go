@@ -54,13 +54,13 @@ func (appContext *appContext) promote(w http.ResponseWriter, r *http.Request) {
 	srcEnvIDi, _ := strconv.ParseInt(srcEnvID[0], 10, 64)
 	targetEnvIDi, _ := strconv.ParseInt(targetEnvID[0], 10, 64)
 
-	srcEnvironment, err := appContext.database.GetByID(int(srcEnvIDi))
+	srcEnvironment, err := appContext.environmentDAO.GetByID(int(srcEnvIDi))
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
 	}
 
-	targetEnvironment, err := appContext.database.GetByID(int(targetEnvIDi))
+	targetEnvironment, err := appContext.environmentDAO.GetByID(int(targetEnvIDi))
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return

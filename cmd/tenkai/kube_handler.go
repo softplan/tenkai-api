@@ -21,7 +21,7 @@ func (appContext *appContext) services(w http.ResponseWriter, r *http.Request) {
 
 	idI, _ := strconv.ParseInt(id, 10, 64)
 
-	environment, err := appContext.database.GetByID(int(idI))
+	environment, err := appContext.environmentDAO.GetByID(int(idI))
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
@@ -54,7 +54,7 @@ func (appContext *appContext) pods(w http.ResponseWriter, r *http.Request) {
 
 	idI, _ := strconv.ParseInt(id, 10, 64)
 
-	environment, err := appContext.database.GetByID(int(idI))
+	environment, err := appContext.environmentDAO.GetByID(int(idI))
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
@@ -103,7 +103,7 @@ func (appContext *appContext) deletePod(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	environment, err := appContext.database.GetByID(int(envID))
+	environment, err := appContext.environmentDAO.GetByID(int(envID))
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return

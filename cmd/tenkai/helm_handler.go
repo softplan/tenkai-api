@@ -75,7 +75,7 @@ func (appContext *appContext) deleteHelmRelease(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	environment, err := appContext.database.GetByID(int(envID))
+	environment, err := appContext.environmentDAO.GetByID(int(envID))
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
@@ -113,7 +113,7 @@ func (appContext *appContext) rollback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//Locate Environment
-	environment, err := appContext.database.GetByID(payload.EnvironmentID)
+	environment, err := appContext.environmentDAO.GetByID(payload.EnvironmentID)
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
@@ -143,7 +143,7 @@ func (appContext *appContext) revision(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//Locate Environment
-	environment, err := appContext.database.GetByID(payload.EnvironmentID)
+	environment, err := appContext.environmentDAO.GetByID(payload.EnvironmentID)
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
@@ -171,7 +171,7 @@ func (appContext *appContext) listReleaseHistory(w http.ResponseWriter, r *http.
 	}
 
 	//Locate Environment
-	environment, err := appContext.database.GetByID(payload.EnvironmentID)
+	environment, err := appContext.environmentDAO.GetByID(payload.EnvironmentID)
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
@@ -197,7 +197,7 @@ func (appContext *appContext) listHelmDeploymentsByEnvironment(w http.ResponseWr
 	}
 
 	//Locate Environment
-	environment, err := appContext.database.GetByID(id)
+	environment, err := appContext.environmentDAO.GetByID(id)
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
@@ -291,7 +291,7 @@ func (appContext *appContext) getHelmCommand(w http.ResponseWriter, r *http.Requ
 	for _, element := range payload.Deployables {
 
 		//Locate Environment
-		environment, err := appContext.database.GetByID(element.EnvironmentID)
+		environment, err := appContext.environmentDAO.GetByID(element.EnvironmentID)
 		if err != nil {
 			http.Error(w, err.Error(), 501)
 			return
@@ -333,7 +333,7 @@ func (appContext *appContext) multipleInstall(w http.ResponseWriter, r *http.Req
 	for _, element := range payload.Deployables {
 
 		//Locate Environment
-		environment, err := appContext.database.GetByID(element.EnvironmentID)
+		environment, err := appContext.environmentDAO.GetByID(element.EnvironmentID)
 		if err != nil {
 			http.Error(w, err.Error(), 501)
 			return
@@ -379,7 +379,7 @@ func (appContext *appContext) install(w http.ResponseWriter, r *http.Request) {
 	out := &bytes.Buffer{}
 
 	//Locate Environment
-	environment, err := appContext.database.GetByID(payload.EnvironmentID)
+	environment, err := appContext.environmentDAO.GetByID(payload.EnvironmentID)
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
@@ -410,7 +410,7 @@ func (appContext *appContext) helmDryRun(w http.ResponseWriter, r *http.Request)
 	out := &bytes.Buffer{}
 
 	//Locate Environment
-	environment, err := appContext.database.GetByID(payload.EnvironmentID)
+	environment, err := appContext.environmentDAO.GetByID(payload.EnvironmentID)
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return

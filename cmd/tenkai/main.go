@@ -21,7 +21,10 @@ const (
 )
 
 type appContext struct {
+	k8sConfigPath   string
 	configuration   *configs.Configuration
+	configDAO       dbms.ConfigDAOInterface
+	environmentDAO  dbms.EnvironmentDAOInterface
 	database        dbms.Database
 	elk             *elastic.Client
 	mutex           sync.Mutex
@@ -57,6 +60,12 @@ func main() {
 	//Dbms connection
 	appContext.database.Connect(dbmsURI, dbmsURI == "")
 	defer appContext.database.Db.Close()
+
+	appContext.k8sConfigPath = global.KubeConfigBasePath
+
+	//Init DAO
+	appContext.configDAO = &dbms.ConfigDAOImpl{Db: appContext.database.Db}
+	appContext.environmentDAO = &dbms.EnvironmentDAOImpl{Db: appContext.database.Db}
 
 	//Elk setup
 	appContext.elk, _ = audit.ElkClient(config.App.Elastic.URL, config.App.Elastic.Username, config.App.Elastic.Password)
