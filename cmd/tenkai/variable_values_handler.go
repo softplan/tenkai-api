@@ -46,7 +46,7 @@ func (appContext *appContext) saveVariableValues(w http.ResponseWriter, r *http.
 
 		var auditValues map[string]string
 		var updated bool
-		if auditValues, updated, err = appContext.database.CreateVariable(item); err != nil {
+		if auditValues, updated, err = appContext.variableDAO.CreateVariable(item); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -85,7 +85,7 @@ func (appContext *appContext) getVariablesByEnvironmentAndScope(w http.ResponseW
 	variableResult := &model.VariablesResult{}
 
 	var err error
-	if variableResult.Variables, err = appContext.database.GetAllVariablesByEnvironmentAndScope(payload.EnvironmentID, payload.Scope); err != nil {
+	if variableResult.Variables, err = appContext.variableDAO.GetAllVariablesByEnvironmentAndScope(payload.EnvironmentID, payload.Scope); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -126,7 +126,7 @@ func (appContext *appContext) getVariablesNotUsed(w http.ResponseWriter, r *http
 
 	//Retrieve all variables
 	variableResult := &model.VariablesResult{}
-	if variableResult.Variables, err = appContext.database.GetAllVariablesByEnvironment(id); err != nil {
+	if variableResult.Variables, err = appContext.variableDAO.GetAllVariablesByEnvironment(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

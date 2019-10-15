@@ -437,7 +437,7 @@ func (appContext *appContext) simpleInstall(environment *model.Environment, char
 	if strings.Index(name, "gcm") > -1 {
 		searchTerm = name
 	}
-	variables, err := appContext.database.GetAllVariablesByEnvironmentAndScope(int(environment.ID), searchTerm)
+	variables, err := appContext.variableDAO.GetAllVariablesByEnvironmentAndScope(int(environment.ID), searchTerm)
 	globalVariables := appContext.getGlobalVariables(int(environment.ID))
 
 	var args []string
@@ -514,7 +514,7 @@ func normalizeVariableName(value string) string {
 }
 
 func (appContext *appContext) getGlobalVariables(id int) []model.Variable {
-	variables, _ := appContext.database.GetAllVariablesByEnvironmentAndScope(id, "global")
+	variables, _ := appContext.variableDAO.GetAllVariablesByEnvironmentAndScope(id, "global")
 
 	for i, e := range variables {
 		if e.Secret {
