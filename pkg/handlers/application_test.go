@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"github.com/softplan/tenkai-api/configs"
+	"github.com/softplan/tenkai-api/pkg/configs"
 	"net/http"
 	"net/http/httptest"
 	"sync"

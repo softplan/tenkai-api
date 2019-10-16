@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/softplan/tenkai-api/global"
+	"github.com/softplan/tenkai-api/pkg/global"
 	"io"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/helm"

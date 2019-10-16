@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/ghodss/yaml"
 	"github.com/gosuri/uitable"
-	"github.com/softplan/tenkai-api/global"
+	"github.com/softplan/tenkai-api/pkg/global"
 	"io"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/helm/pkg/helm"

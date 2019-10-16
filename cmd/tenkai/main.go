@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/softplan/tenkai-api/configs"
-	"github.com/softplan/tenkai-api/global"
 	audit2 "github.com/softplan/tenkai-api/pkg/audit"
+	"github.com/softplan/tenkai-api/pkg/configs"
 	"github.com/softplan/tenkai-api/pkg/dbms"
 	"github.com/softplan/tenkai-api/pkg/dbms/repository"
+	"github.com/softplan/tenkai-api/pkg/global"
 	"github.com/softplan/tenkai-api/pkg/handlers"
 	dockerapi "github.com/softplan/tenkai-api/pkg/service/docker"
 	helmapi "github.com/softplan/tenkai-api/pkg/service/helm"

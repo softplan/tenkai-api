@@ -2,9 +2,9 @@ package analyser
 
 import (
 	"fmt"
-	"github.com/softplan/tenkai-api/global"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/dbms/repository"
+	"github.com/softplan/tenkai-api/pkg/global"
 	helmapi2 "github.com/softplan/tenkai-api/pkg/service/helm"
 	"strings"
 )

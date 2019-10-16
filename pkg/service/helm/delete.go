@@ -2,7 +2,7 @@ package helmapi
 
 import (
 	"fmt"
-	"github.com/softplan/tenkai-api/global"
+	"github.com/softplan/tenkai-api/pkg/global"
 	"io"
 	"os"
 

@@ -16,8 +16,8 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	"github.com/softplan/tenkai-api/global"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
+	"github.com/softplan/tenkai-api/pkg/global"
 )
 
 func (appContext *AppContext) listCharts(w http.ResponseWriter, r *http.Request) {

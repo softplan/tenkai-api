@@ -2,8 +2,8 @@ package helmapi
 
 import (
 	"errors"
-	"github.com/softplan/tenkai-api/global"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
+	"github.com/softplan/tenkai-api/pkg/global"
 	"k8s.io/helm/pkg/repo"
 )
 
