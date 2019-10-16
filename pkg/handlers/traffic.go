@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"bytes"
-	"github.com/softplan/tenkai-api/global"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
+	"github.com/softplan/tenkai-api/pkg/global"
 	"github.com/softplan/tenkai-api/pkg/util"
 	"net/http"
 	"strconv"

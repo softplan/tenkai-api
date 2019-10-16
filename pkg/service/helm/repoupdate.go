@@ -3,7 +3,7 @@ package helmapi
 import (
 	"errors"
 	"fmt"
-	"github.com/softplan/tenkai-api/global"
+	"github.com/softplan/tenkai-api/pkg/global"
 	"io"
 	"os"
 	"sync"
