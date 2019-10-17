@@ -94,7 +94,7 @@ func (appContext *AppContext) deleteHelmRelease(w http.ResponseWriter, r *http.R
 	auditValues["purge"] = strconv.FormatBool(purge)
 	auditValues["name"] = releasesName[0]
 
-	appContext.Auditory.DoAudit(r.Context(), appContext.Elk, principal.Email, "deleteHelmRelease", auditValues)
+	appContext.Auditing.DoAudit(r.Context(), appContext.Elk, principal.Email, "deleteHelmRelease", auditValues)
 
 	w.WriteHeader(http.StatusOK)
 
@@ -349,7 +349,7 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 		auditValues["chartName"] = element.Chart
 		auditValues["name"] = element.Name
 
-		appContext.Auditory.DoAudit(r.Context(), appContext.Elk, principal.Email, "deploy", auditValues)
+		appContext.Auditing.DoAudit(r.Context(), appContext.Elk, principal.Email, "deploy", auditValues)
 
 	}
 
