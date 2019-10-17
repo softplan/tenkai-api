@@ -123,7 +123,7 @@ func (appContext *AppContext) promote(w http.ResponseWriter, r *http.Request) {
 	auditValues["targetEnvironment"] = targetEnvironment.Name
 	auditValues["mode"] = mode
 
-	appContext.Auditory.DoAudit(r.Context(), appContext.Elk, principal.Email, "promote", auditValues)
+	appContext.Auditing.DoAudit(r.Context(), appContext.Elk, principal.Email, "promote", auditValues)
 
 	w.WriteHeader(http.StatusOK)
 

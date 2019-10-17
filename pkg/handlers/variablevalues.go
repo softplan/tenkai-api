@@ -53,7 +53,7 @@ func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.
 
 		if updated {
 			auditValues["environment"] = targetEnvironment.Name
-			appContext.Auditory.DoAudit(r.Context(), appContext.Elk, principal.Email, "saveVariable", auditValues)
+			appContext.Auditing.DoAudit(r.Context(), appContext.Elk, principal.Email, "saveVariable", auditValues)
 		}
 
 	}

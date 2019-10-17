@@ -36,7 +36,7 @@ type Repositories struct {
 type AppContext struct {
 	DockerServiceAPI dockerapi.DockerServiceInterface
 	HelmServiceAPI   helmapi.HelmServiceInterface
-	Auditory         audit.AuditoryInterface
+	Auditing         audit.AuditingInterface
 	K8sConfigPath    string
 	Configuration    *configs.Configuration
 	Repositories     Repositories

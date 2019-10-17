@@ -44,7 +44,7 @@ func main() {
 	appContext.Repositories = initRepository(&appContext.Database)
 
 	//Elk setup
-	appContext.Elk, _ = appContext.Auditory.ElkClient(config.App.Elastic.URL, config.App.Elastic.Username, config.App.Elastic.Password)
+	appContext.Elk, _ = appContext.Auditing.ElkClient(config.App.Elastic.URL, config.App.Elastic.Username, config.App.Elastic.Password)
 
 	global.Logger.Info(logFields, "http server started")
 	handlers.StartHTTPServer(appContext)
@@ -64,7 +64,7 @@ func initCache(appContext *handlers.AppContext) {
 func initAPIs(appContext *handlers.AppContext) {
 	appContext.DockerServiceAPI = &dockerapi.DockerService{}
 	appContext.HelmServiceAPI = &helmapi.HelmServiceImpl{}
-	appContext.Auditory = &audit2.AuditoryImpl{}
+	appContext.Auditing = &audit2.AuditingImpl{}
 }
 
 func initRepository(database *dbms.Database) handlers.Repositories {
