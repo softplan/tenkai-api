@@ -2,12 +2,18 @@ package handlers
 
 import (
 	"bytes"
-	"github.com/softplan/tenkai-api/pkg/dbms/model"
-	"github.com/softplan/tenkai-api/pkg/service/helm/mocks"
-	"github.com/stretchr/testify/mock"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"encoding/json"
+
+	mockAud "github.com/softplan/tenkai-api/pkg/audit/mocks"
+	"github.com/softplan/tenkai-api/pkg/dbms/model"
+	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
+	mockSvc "github.com/softplan/tenkai-api/pkg/service/helm/mocks"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestListCharts(t *testing.T) {
@@ -15,7 +21,7 @@ func TestListCharts(t *testing.T) {
 	appContext := AppContext{}
 	appContext.K8sConfigPath = "/tmp/"
 
-	mockObject := &mocks.HelmServiceInterface{}
+	mockObject := &mockSvc.HelmServiceInterface{}
 
 	data := make([]model.SearchResult, 1)
 	data[0].Name = "test-chart"
@@ -40,4 +46,38 @@ func TestListCharts(t *testing.T) {
 			status, http.StatusOK)
 	}
 
+	assert.Equal(t, getExpect(data), string(rr.Body.Bytes()), "Response is not correct.")
+}
+
+func TestDeleteHelmRelease(t *testing.T) {
+	appContext := AppContext{}
+	req, err := http.NewRequest("DELETE", "/deleteHelmRelease?environmentID=999&releaseName=foo&purge=false", nil)
+	assert.Nil(t, err, "Request err should be nil.")
+
+	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
+	env := model.Environment{Group: "foo", Name: "bar"}
+	mockEnvDao.On("GetByID", mock.Anything).Return(&env, nil)
+
+	mockHelmSvc := &mockSvc.HelmServiceInterface{}
+	mockHelmSvc.On("DeleteHelmRelease", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	mockAudit := mockAud.AuditingInterface{}
+	mockAudit.On("DoAudit", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything)
+
+	appContext.Repositories = Repositories{}
+	appContext.Repositories.EnvironmentDAO = mockEnvDao
+	appContext.HelmServiceAPI = mockHelmSvc
+	appContext.Auditing = &mockAudit
+
+	// TODO: mock appContext.hasAccess
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.deleteHelmRelease)
+	handler.ServeHTTP(rr, req)
+	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
+}
+
+func getExpect(sr []model.SearchResult) string {
+	j, _ := json.Marshal(sr)
+	return "{\"chart\":" + string(j) + "}"
 }
