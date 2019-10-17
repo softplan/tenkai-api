@@ -8,6 +8,14 @@ import (
 	"time"
 )
 
+type AuditoryInterface interface {
+	ElkClient(url string, username string, password string) (*elastic.Client, error)
+	DoAudit(ctx context.Context, client *elastic.Client, username string, operation string, values map[string]string)
+}
+
+type AuditoryImpl struct {
+}
+
 //Document structure
 type Document struct {
 	username  string
@@ -16,7 +24,7 @@ type Document struct {
 }
 
 //ElkClient return a new ElkClient
-func ElkClient(url string, username string, password string) (*elastic.Client, error) {
+func (a AuditoryImpl) ElkClient(url string, username string, password string) (*elastic.Client, error) {
 
 	config := &config.Config{
 		URL:      url,
@@ -35,7 +43,7 @@ func ElkClient(url string, username string, password string) (*elastic.Client, e
 }
 
 //DoAudit create new audit log into elk
-func DoAudit(ctx context.Context, client *elastic.Client, username string, operation string, values map[string]string) {
+func (a AuditoryImpl) DoAudit(ctx context.Context, client *elastic.Client, username string, operation string, values map[string]string) {
 
 	if client != nil {
 
