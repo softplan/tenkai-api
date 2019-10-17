@@ -3,7 +3,6 @@ package handlers
 import (
 	"bytes"
 	"errors"
-	audit2 "github.com/softplan/tenkai-api/pkg/audit"
 	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/global"
@@ -124,7 +123,7 @@ func (appContext *AppContext) promote(w http.ResponseWriter, r *http.Request) {
 	auditValues["targetEnvironment"] = targetEnvironment.Name
 	auditValues["mode"] = mode
 
-	audit2.DoAudit(r.Context(), appContext.Elk, principal.Email, "promote", auditValues)
+	appContext.Auditory.DoAudit(r.Context(), appContext.Elk, principal.Email, "promote", auditValues)
 
 	w.WriteHeader(http.StatusOK)
 

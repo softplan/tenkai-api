@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/gorilla/mux"
-	audit2 "github.com/softplan/tenkai-api/pkg/audit"
 	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/global"
@@ -54,7 +53,7 @@ func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.
 
 		if updated {
 			auditValues["environment"] = targetEnvironment.Name
-			audit2.DoAudit(r.Context(), appContext.Elk, principal.Email, "saveVariable", auditValues)
+			appContext.Auditory.DoAudit(r.Context(), appContext.Elk, principal.Email, "saveVariable", auditValues)
 		}
 
 	}

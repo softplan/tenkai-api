@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	audit2 "github.com/softplan/tenkai-api/pkg/audit"
 	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/util"
 	"net/http"
@@ -95,7 +94,7 @@ func (appContext *AppContext) deleteHelmRelease(w http.ResponseWriter, r *http.R
 	auditValues["purge"] = strconv.FormatBool(purge)
 	auditValues["name"] = releasesName[0]
 
-	audit2.DoAudit(r.Context(), appContext.Elk, principal.Email, "deleteHelmRelease", auditValues)
+	appContext.Auditory.DoAudit(r.Context(), appContext.Elk, principal.Email, "deleteHelmRelease", auditValues)
 
 	w.WriteHeader(http.StatusOK)
 
@@ -350,7 +349,7 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 		auditValues["chartName"] = element.Chart
 		auditValues["name"] = element.Name
 
-		audit2.DoAudit(r.Context(), appContext.Elk, principal.Email, "deploy", auditValues)
+		appContext.Auditory.DoAudit(r.Context(), appContext.Elk, principal.Email, "deploy", auditValues)
 
 	}
 

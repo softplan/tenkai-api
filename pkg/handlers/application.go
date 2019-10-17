@@ -6,6 +6,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 	"github.com/olivere/elastic"
+	"github.com/softplan/tenkai-api/pkg/audit"
 	"github.com/softplan/tenkai-api/pkg/configs"
 	"github.com/softplan/tenkai-api/pkg/dbms"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
@@ -35,6 +36,7 @@ type Repositories struct {
 type AppContext struct {
 	DockerServiceAPI dockerapi.DockerServiceInterface
 	HelmServiceAPI   helmapi.HelmServiceInterface
+	Auditory         audit.AuditoryInterface
 	K8sConfigPath    string
 	Configuration    *configs.Configuration
 	Repositories     Repositories
@@ -178,21 +180,23 @@ func commonHandler(next http.Handler) http.Handler {
 			splitToken := strings.Split(reqToken, "Bearer ")
 			reqToken = splitToken[1]
 
-			token, _, errx := new(jwt.Parser).ParseUnverified(reqToken, jwt.MapClaims{})
-			if errx == nil {
+			token, _, earl := new(jwt.Parser).ParseUnverified(reqToken, jwt.MapClaims{})
+			if earl == nil {
 
 				if claims, ok := token.Claims.(jwt.MapClaims); ok {
 
 					var principal model.Principal
 
 					in := claims["realm_access"]
-
-					realmAccessMap := in.(map[string]interface{})
-					roles := realmAccessMap["roles"]
-					elements := roles.([]interface{})
-
-					for _, element := range elements {
-						principal.Roles = append(principal.Roles, element.(string))
+					if in != nil {
+						realmAccessMap := in.(map[string]interface{})
+						roles := realmAccessMap["roles"]
+						if roles != nil {
+							elements := roles.([]interface{})
+							for _, element := range elements {
+								principal.Roles = append(principal.Roles, element.(string))
+							}
+						}
 					}
 
 					principal.Name = fmt.Sprintf("%v", claims["name"])
@@ -201,13 +205,12 @@ func commonHandler(next http.Handler) http.Handler {
 					data, _ := json.Marshal(principal)
 					r.Header.Set("principal", string(data))
 
-					//fmt.Printf("%v %v", claims["email"], claims["preferred_username"])
 				} else {
-					fmt.Println(errx)
+					fmt.Println(earl)
 				}
 
 			} else {
-				fmt.Println(errx)
+				fmt.Println(earl)
 			}
 
 		}
