@@ -1,5 +1,12 @@
 language: go
 
+addons:
+  sonarcloud:
+    organization: "softplan"
+    token:
+      secure: "jAx6zdiQx8Bo8KEmp0Yryk0mshXt2sycSmBzymZeWsvXRcT5OvcH+tkw90b+ndccdikvBsirEhIelhSD1KGfCzYrABYX65d4d0jPVHlL3GpyV0CdyTdm2btwSP3hdqshneGI8Ouq6qDvvXiZ1DiWqvYtIns6rnnI48Ma8x6eH0UJ+AyQtKIzl6/Dm90t55pWYL6od/pGr1YY3uC2AMGAXXV8QLIhkJfvAcbtuwULxQ6lEtLX2ahgeIwwWvzx4xh3I4obhjxNNTlvjohkVmPft7uvpcp8oKV2GEObC4N5Ew6V8jOqTTT8DgJlrTSBbP0d/I6xhYklbtLB+/TQ/TLhDKgJ8IP3L03MNYjXTTWS5mO9jsrY1cCwQYoM+Uze9AWUJ1Iubu1YZZPl9GIfztYFm8UoDtSOG+fPL6x6YIvnTi+l+ZlGm4B2b8yWGj060JC1+8iGbz/PZAi2ZftNhkSdV82AWkgmlYOXiINvHqRmVEgHSvlf8yki5/aM1IKWyiiQ65tusBz5K3Xv5duafyZmo+L+EVjLH42xfrWriMbDEl3zESZdemyCaOy2C5nJuoXSTGOydsNMcbZbfDbN1pNDJVqsoUW+rIc3jUgSLv5gVw9mye60G2B88ovJMamnuR1URWYw1xBLvqltACfWRpGdQyHz/fZiWyCg5Xn0O0iAQ4s="
+
+
 go:
   - "1.12"
 
@@ -23,6 +30,7 @@ before_script:
 script:
   - make build
   - make test
+  - sonar-scanner
   - make container-image
   - make tag-image
   - make publish
