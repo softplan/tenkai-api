@@ -14,6 +14,7 @@ import (
 	"time"
 )
 
+//DockerServiceBuilder DockerServiceBuilder
 func DockerServiceBuilder() *DockerService {
 	r := &DockerService{}
 	return r

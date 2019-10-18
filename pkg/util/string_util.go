@@ -30,6 +30,7 @@ func getVariableValue(value string, start int, end int) string {
 	return ""
 }
 
+//Contains Contains
 func Contains(slice []string, item string) bool {
 	set := make(map[string]struct{}, len(slice))
 	for _, s := range slice {

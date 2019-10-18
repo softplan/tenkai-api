@@ -8,11 +8,13 @@ import (
 	"time"
 )
 
+//AuditingInterface AuditingInterface
 type AuditingInterface interface {
 	ElkClient(url string, username string, password string) (*elastic.Client, error)
 	DoAudit(ctx context.Context, client *elastic.Client, username string, operation string, values map[string]string)
 }
 
+//AuditingImpl AuditingImpl
 type AuditingImpl struct {
 }
 

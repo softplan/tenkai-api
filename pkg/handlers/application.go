@@ -21,6 +21,7 @@ import (
 	"sync"
 )
 
+//Repositories  Repositories
 type Repositories struct {
 	ConfigDAO        repository.ConfigDAOInterface
 	DependencyDAO    repository.DependencyDAOInterface
@@ -34,6 +35,7 @@ type Repositories struct {
 	VariableDAO      repository.VariableDAOInterface
 }
 
+//AppContext AppContext
 type AppContext struct {
 	ConventionInterface core.ConventionInterface
 	DockerServiceAPI    dockerapi.DockerServiceInterface
@@ -49,7 +51,7 @@ type AppContext struct {
 	DockerTagsCache     sync.Map
 }
 
-//StartHTTPServer
+//StartHTTPServer StartHTTPServer
 func StartHTTPServer(appContext *AppContext) {
 
 	port := appContext.Configuration.Server.Port

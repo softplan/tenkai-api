@@ -36,6 +36,7 @@ type HelmServiceInterface interface {
 type HelmServiceImpl struct {
 }
 
+//EnsureSettings EnsureSettings
 func (svc HelmServiceImpl) EnsureSettings(kubeconfig string) {
 	settings.KubeConfig = kubeconfig
 	settings.Home = global.HelmDir
@@ -45,6 +46,7 @@ func (svc HelmServiceImpl) EnsureSettings(kubeconfig string) {
 	settings.TillerConnectionTimeout = 1200
 }
 
+//HelmServiceBuilder HelmServiceBuilder
 func HelmServiceBuilder() *HelmServiceImpl {
 	r := HelmServiceImpl{}
 	return &r
