@@ -210,6 +210,59 @@ func TestListReleaseHistory(t *testing.T) {
 	assert.Equal(t, getExpecHistory(), string(rr.Body.Bytes()), "Response is not correct.")
 }
 
+// Still broken
+// How should I pass the id in URL???
+func TestListHelmDeploymentsByEnvironment(t *testing.T) {
+
+	req, err := http.NewRequest("GET", "/listHelmDeploymentsByEnvironment/999", bytes.NewBuffer(nil))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
+	env := model.Environment{Group: "foo", Name: "bar"}
+	env.ID = 999
+	mockEnvDao.On("GetByID", mock.Anything).Return(&env, nil)
+
+	mockConvention := &mocks.ConventionInterface{}
+	mockConvention.On("GetKubeConfigFileName", mock.Anything, mock.Anything).Return("./config/foo_bar")
+
+	listReleases := []helmapi.ListRelease{}
+
+	lr := helmapi.ListRelease{
+		Name:       "",
+		Revision:   0,
+		Updated:    "",
+		Status:     "",
+		Chart:      "",
+		AppVersion: "",
+		Namespace:  "",
+	}
+	listReleases = append(listReleases, lr)
+
+	result := helmapi.HelmListResult{
+		Next:     "998",
+		Releases: listReleases,
+	}
+
+	mockHelmSvc := &mockSvc.HelmServiceInterface{}
+	mockHelmSvc.On("ListHelmDeployments", mock.Anything, mock.Anything).Return(result, nil)
+
+	appContext := AppContext{}
+	appContext.Repositories.EnvironmentDAO = mockEnvDao
+	appContext.ConventionInterface = mockConvention
+	appContext.HelmServiceAPI = mockHelmSvc
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.listHelmDeploymentsByEnvironment)
+	handler.ServeHTTP(rr, req)
+
+	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
+	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 1)
+
+	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
+	// assert.Equal(t, getExpecHistory(), string(rr.Body.Bytes()), "Response is not correct.")
+}
+
 func getExpect(sr []model.SearchResult) string {
 	j, _ := json.Marshal(sr)
 	return "{\"charts\":" + string(j) + "}"
