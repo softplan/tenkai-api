@@ -9,4 +9,6 @@ const (
 
 	//HelmDir - Path of Helm diretory
 	HelmDir = "./.helm/"
+
+	AccessDenied = "Acccess Denied"
 )

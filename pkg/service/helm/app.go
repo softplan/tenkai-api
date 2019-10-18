@@ -3,6 +3,7 @@ package helmapi
 import (
 	"bytes"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
+	"github.com/softplan/tenkai-api/pkg/global"
 	"sync"
 )
 
@@ -28,8 +29,23 @@ type HelmServiceInterface interface {
 	RepoUpdate() error
 	RollbackRelease(kubeconfig string, releaseName string, revision int) error
 	Upgrade(kubeconfig string, release string, chart string, chartVersion string, namespace string, variables []string, out *bytes.Buffer, dryrun bool) error
+	EnsureSettings(kubeconfig string)
 }
 
 //HelmServiceImpl - Concrete type
 type HelmServiceImpl struct {
+}
+
+func (svc HelmServiceImpl) EnsureSettings(kubeconfig string) {
+	settings.KubeConfig = kubeconfig
+	settings.Home = global.HelmDir
+	settings.TillerNamespace = "kube-system"
+	settings.TLSEnable = false
+	settings.TLSVerify = false
+	settings.TillerConnectionTimeout = 1200
+}
+
+func HelmServiceBuilder() *HelmServiceImpl {
+	r := HelmServiceImpl{}
+	return &r
 }

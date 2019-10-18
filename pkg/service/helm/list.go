@@ -60,12 +60,7 @@ func (svc HelmServiceImpl) ListHelmDeployments(kubeconfig string, namespace stri
 
 	logFields := global.AppFields{global.Function: "ListHelmDeployments", "namespace": namespace}
 
-	settings.KubeConfig = kubeconfig
-	settings.Home = global.HelmDir
-	settings.TillerNamespace = "kube-system"
-	settings.TLSEnable = false
-	settings.TLSVerify = false
-	settings.TillerConnectionTimeout = 1200
+	svc.EnsureSettings(kubeconfig)
 
 	list := &listCmd{out: os.Stdout}
 

@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
+	"github.com/softplan/tenkai-api/pkg/global"
 	"github.com/softplan/tenkai-api/pkg/util"
 	"net/http"
 )
@@ -37,7 +38,7 @@ func (appContext *AppContext) newRepository(w http.ResponseWriter, r *http.Reque
 
 	principal := util.GetPrincipal(r)
 	if !util.Contains(principal.Roles, constraints.TenkaiAdmin) {
-		http.Error(w, errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
+		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -99,7 +100,7 @@ func (appContext *AppContext) deleteRepository(w http.ResponseWriter, r *http.Re
 
 	principal := util.GetPrincipal(r)
 	if !util.Contains(principal.Roles, constraints.TenkaiAdmin) {
-		http.Error(w, errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
+		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
 	}
 
 	vars := mux.Vars(r)

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/softplan/tenkai-api/pkg/constraints"
+	"github.com/softplan/tenkai-api/pkg/global"
 	"log"
 	"net/http"
 	"os"
@@ -21,7 +22,7 @@ func (appContext *AppContext) deleteEnvironment(w http.ResponseWriter, r *http.R
 
 	principal := util.GetPrincipal(r)
 	if !util.Contains(principal.Roles, constraints.TenkaiAdmin) {
-		http.Error(w, errors.New("Acccess Denied").Error(), http.StatusUnauthorized)
+		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
 	}
 
 	vars := mux.Vars(r)
@@ -60,7 +61,7 @@ func (appContext *AppContext) editEnvironment(w http.ResponseWriter, r *http.Req
 
 	principal := util.GetPrincipal(r)
 	if !util.Contains(principal.Roles, constraints.TenkaiAdmin) {
-		http.Error(w, errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
+		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
 	}
 
 	var payload model.DataElement
@@ -96,7 +97,7 @@ func (appContext *AppContext) duplicateEnvironments(w http.ResponseWriter, r *ht
 
 	principal := util.GetPrincipal(r)
 	if !util.Contains(principal.Roles, constraints.TenkaiAdmin) {
-		http.Error(w, errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
+		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
 	}
 
 	vars := mux.Vars(r)
@@ -162,7 +163,7 @@ func (appContext *AppContext) addEnvironments(w http.ResponseWriter, r *http.Req
 
 	principal := util.GetPrincipal(r)
 	if !util.Contains(principal.Roles, constraints.TenkaiAdmin) {
-		http.Error(w, errors.New("Acccess Denied").Error(), http.StatusUnauthorized)
+		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
 	}
 
 	var payload model.DataElement
@@ -193,7 +194,7 @@ func (appContext *AppContext) getEnvironments(w http.ResponseWriter, r *http.Req
 	envResult := &model.EnvResult{}
 
 	if len(principal.Email) <= 0 {
-		http.Error(w, errors.New("Acccess Denied").Error(), http.StatusMethodNotAllowed)
+		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusMethodNotAllowed)
 		return
 	}
 

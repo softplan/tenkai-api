@@ -2,7 +2,6 @@ package helmapi
 
 import (
 	"fmt"
-	"github.com/softplan/tenkai-api/pkg/global"
 	"io"
 	"k8s.io/helm/pkg/helm"
 	"os"
@@ -26,12 +25,8 @@ type rollbackCmd struct {
 //RollbackRelease - Rollback a release
 func (svc HelmServiceImpl) RollbackRelease(kubeconfig string, releaseName string, revision int) error {
 
-	settings.KubeConfig = kubeconfig
-	settings.Home = global.HelmDir
-	settings.TillerNamespace = "kube-system"
-	settings.TLSEnable = false
-	settings.TLSVerify = false
-	settings.TillerConnectionTimeout = 1200
+	svc.EnsureSettings(kubeconfig)
+
 	err := setupConnection()
 	defer teardown()
 

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
-	"github.com/softplan/tenkai-api/pkg/global"
 	"github.com/softplan/tenkai-api/pkg/util"
 	"net/http"
 	"strconv"
@@ -26,7 +25,7 @@ func (appContext *AppContext) services(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
+	kubeConfig := appContext.ConventionInterface.GetKubeConfigFileName(environment.Group, environment.Name)
 
 	services, err := appContext.HelmServiceAPI.GetServices(kubeConfig, environment.Namespace)
 	if err != nil {
@@ -59,7 +58,7 @@ func (appContext *AppContext) pods(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
+	kubeConfig := appContext.ConventionInterface.GetKubeConfigFileName(environment.Group, environment.Name)
 
 	pods, err := appContext.HelmServiceAPI.GetPods(kubeConfig, environment.Namespace)
 	if err != nil {
@@ -108,7 +107,7 @@ func (appContext *AppContext) deletePod(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
+	kubeConfig := appContext.ConventionInterface.GetKubeConfigFileName(environment.Group, environment.Name)
 
 	err = appContext.HelmServiceAPI.DeletePod(kubeConfig, podName[0], environment.Namespace)
 	if err != nil {

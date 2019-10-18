@@ -3,7 +3,6 @@ package handlers
 import (
 	"bytes"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
-	"github.com/softplan/tenkai-api/pkg/global"
 	"github.com/softplan/tenkai-api/pkg/util"
 	"net/http"
 	"strconv"
@@ -30,11 +29,11 @@ func (appContext *AppContext) deployTrafficRule(w http.ResponseWriter, r *http.R
 	headerReleaseName := strings.Replace(payload.HeaderReleaseName, "${NAMESPACE}", environment.Namespace, -1)
 
 	//
-	chart := "saj6/tenkai-canary"
+	chart := "saj6/analyser-canary"
 	name := "canary-" + serviceName
 	out := &bytes.Buffer{}
 
-	kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
+	kubeConfig := appContext.ConventionInterface.GetKubeConfigFileName(environment.Group, environment.Name)
 
 	variables := make([]string, 1)
 	variables = append(variables, "istio.virtualservices.hosts[0]="+domain)

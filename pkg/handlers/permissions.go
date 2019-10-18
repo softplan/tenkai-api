@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"github.com/softplan/tenkai-api/pkg/constraints"
+	"github.com/softplan/tenkai-api/pkg/global"
 	"net/http"
 	"strconv"
 
@@ -14,7 +15,7 @@ func (appContext *AppContext) newEnvironmentPermission(w http.ResponseWriter, r 
 
 	principal := util.GetPrincipal(r)
 	if !util.Contains(principal.Roles, constraints.TenkaiAdmin) {
-		http.Error(w, errors.New("Acccess Denied").Error(), http.StatusUnauthorized)
+		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")

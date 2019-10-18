@@ -61,12 +61,9 @@ func (svc HelmServiceImpl) IsThereAnyPodWithThisVersion(kubeconfig string, names
 
 //GetReleaseHistory - Retrieve Release History
 func (svc HelmServiceImpl) GetReleaseHistory(kubeconfig string, releaseName string) (bool, error) {
-	settings.KubeConfig = kubeconfig
-	settings.Home = global.HelmDir
-	settings.TillerNamespace = "kube-system"
-	settings.TLSEnable = false
-	settings.TLSVerify = false
-	settings.TillerConnectionTimeout = 1200
+
+	svc.EnsureSettings(kubeconfig)
+
 	err := setupConnection()
 	defer teardown()
 	deployed := false

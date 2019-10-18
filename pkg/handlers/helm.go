@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/softplan/tenkai-api/pkg/constraints"
+	"github.com/softplan/tenkai-api/pkg/global"
 	"github.com/softplan/tenkai-api/pkg/util"
 	"net/http"
 	"strconv"
@@ -16,7 +17,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
-	"github.com/softplan/tenkai-api/pkg/global"
 )
 
 func (appContext *AppContext) listCharts(w http.ResponseWriter, r *http.Request) {
@@ -80,7 +80,7 @@ func (appContext *AppContext) deleteHelmRelease(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
+	kubeConfig := appContext.ConventionInterface.GetKubeConfigFileName(environment.Group, environment.Name)
 
 	purge, _ := strconv.ParseBool(purges[0])
 	err = appContext.HelmServiceAPI.DeleteHelmRelease(kubeConfig, releasesName[0], purge)
@@ -118,7 +118,7 @@ func (appContext *AppContext) rollback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
+	kubeConfig := appContext.ConventionInterface.GetKubeConfigFileName(environment.Group, environment.Name)
 
 	err = appContext.HelmServiceAPI.RollbackRelease(kubeConfig, payload.ReleaseName, payload.Revision)
 	if err != nil {
@@ -148,7 +148,7 @@ func (appContext *AppContext) revision(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
+	kubeConfig := appContext.ConventionInterface.GetKubeConfigFileName(environment.Group, environment.Name)
 
 	yaml, err := appContext.HelmServiceAPI.Get(kubeConfig, payload.ReleaseName, payload.Revision)
 
@@ -176,7 +176,7 @@ func (appContext *AppContext) listReleaseHistory(w http.ResponseWriter, r *http.
 		return
 	}
 
-	kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
+	kubeConfig := appContext.ConventionInterface.GetKubeConfigFileName(environment.Group, environment.Name)
 
 	history, err := appContext.HelmServiceAPI.GetHelmReleaseHistory(kubeConfig, payload.ReleaseName)
 
@@ -204,7 +204,7 @@ func (appContext *AppContext) listHelmDeploymentsByEnvironment(w http.ResponseWr
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
-	kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
+	kubeConfig := appContext.ConventionInterface.GetKubeConfigFileName(environment.Group, environment.Name)
 
 	result, err := appContext.HelmServiceAPI.ListHelmDeployments(kubeConfig, environment.Namespace)
 
@@ -272,7 +272,7 @@ func (appContext *AppContext) getHelmCommand(w http.ResponseWriter, r *http.Requ
 
 	principal := util.GetPrincipal(r)
 	if !util.Contains(principal.Roles, constraints.TenkaiHelmUpgrade) {
-		http.Error(w, errors.New("Access Denied").Error(), http.StatusUnauthorized)
+		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
 		return
 	}
 
@@ -315,7 +315,7 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 
 	principal := util.GetPrincipal(r)
 	if !util.Contains(principal.Roles, constraints.TenkaiHelmUpgrade) {
-		http.Error(w, errors.New("Access Denied").Error(), http.StatusUnauthorized)
+		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
 		return
 	}
 
@@ -363,7 +363,7 @@ func (appContext *AppContext) install(w http.ResponseWriter, r *http.Request) {
 
 	principal := util.GetPrincipal(r)
 	if !util.Contains(principal.Roles, constraints.TenkaiHelmUpgrade) {
-		http.Error(w, errors.New("Access Denied").Error(), http.StatusUnauthorized)
+		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
 		return
 	}
 
@@ -467,7 +467,7 @@ func (appContext *AppContext) simpleInstall(environment *model.Environment, char
 
 	if err == nil {
 		name := name + "-" + environment.Namespace
-		kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
+		kubeConfig := appContext.ConventionInterface.GetKubeConfigFileName(environment.Group, environment.Name)
 
 		if !helmCommandOnly {
 			err := appContext.HelmServiceAPI.Upgrade(kubeConfig, name, chart, chartVersion, environment.Namespace, args, out, dryRun)

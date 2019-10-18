@@ -39,7 +39,7 @@ func TestAddEnvironments(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	roles := []string{"tenkai-admin"}
+	roles := []string{"analyser-admin"}
 	principal := model.Principal{Name: "alfa", Email: "beta", Roles: roles}
 
 	pSe, _ := json.Marshal(principal)

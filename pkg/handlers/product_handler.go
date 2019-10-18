@@ -11,7 +11,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
-	analyser "github.com/softplan/tenkai-api/pkg/service/tenkai"
+	analyser "github.com/softplan/tenkai-api/pkg/service/analyser"
 	"github.com/softplan/tenkai-api/pkg/util"
 )
 

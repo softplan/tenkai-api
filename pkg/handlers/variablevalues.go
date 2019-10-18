@@ -7,7 +7,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
-	"github.com/softplan/tenkai-api/pkg/global"
 	helmapi "github.com/softplan/tenkai-api/pkg/service/helm"
 	"github.com/softplan/tenkai-api/pkg/util"
 	"net/http"
@@ -138,7 +137,7 @@ func (appContext *AppContext) getVariablesNotUsed(w http.ResponseWriter, r *http
 		http.Error(w, err.Error(), 501)
 		return
 	}
-	kubeConfig := global.KubeConfigBasePath + environment.Group + "_" + environment.Name
+	kubeConfig := appContext.ConventionInterface.GetKubeConfigFileName(environment.Group, environment.Name)
 	helmReleases, err := appContext.HelmServiceAPI.ListHelmDeployments(kubeConfig, environment.Namespace)
 
 	result := make([]responseResult, 0)
