@@ -39,6 +39,8 @@ func TestListCharts(t *testing.T) {
 	handler := http.HandlerFunc(appContext.listCharts)
 	handler.ServeHTTP(rr, req)
 
+	mockObject.AssertNumberOfCalls(t, "SearchCharts", 1)
+
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 	assert.Equal(t, getExpect(data), string(rr.Body.Bytes()), "Response is not correct.")
 }
@@ -74,16 +76,18 @@ func TestDeleteHelmRelease(t *testing.T) {
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.deleteHelmRelease)
 	handler.ServeHTTP(rr, req)
+
+	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
+	mockEnvDao.AssertNumberOfCalls(t, "GetAllEnvironments", 1)
+	mockHelmSvc.AssertNumberOfCalls(t, "DeleteHelmRelease", 1)
+	mockAudit.AssertNumberOfCalls(t, "DoAudit", 1)
+
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 }
 
 func TestRollback(t *testing.T) {
 
-	var payload model.GetRevisionRequest
-	payload.EnvironmentID = 999
-	payload.ReleaseName = "foo"
-	payload.Revision = 800
-	payloadStr, _ := json.Marshal(payload)
+	payloadStr, _ := json.Marshal(getRevision())
 
 	req, err := http.NewRequest("POST", "/rollback", bytes.NewBuffer(payloadStr))
 	assert.NoError(t, err)
@@ -104,10 +108,51 @@ func TestRollback(t *testing.T) {
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.rollback)
 	handler.ServeHTTP(rr, req)
+
+	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
+	mockHelmSvc.AssertNumberOfCalls(t, "RollbackRelease", 1)
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
+}
+
+func TestRevision(t *testing.T) {
+	payloadStr, _ := json.Marshal(getRevision())
+
+	req, err := http.NewRequest("POST", "/revision", bytes.NewBuffer(payloadStr))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
+	env := model.Environment{Group: "foo", Name: "bar"}
+	env.ID = 999
+	mockEnvDao.On("GetByID", mock.Anything).Return(&env, nil)
+
+	mockHelmSvc := &mockSvc.HelmServiceInterface{}
+	yaml := "foo: bar"
+	mockHelmSvc.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(yaml, nil)
+
+	appContext := AppContext{}
+	appContext.Repositories.EnvironmentDAO = mockEnvDao
+	appContext.HelmServiceAPI = mockHelmSvc
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.revision)
+	handler.ServeHTTP(rr, req)
+
+	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
+	mockHelmSvc.AssertNumberOfCalls(t, "Get", 1)
+	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
+	assert.Equal(t, "\"foo: bar\"", string(rr.Body.Bytes()), "Response is not correct.")
 }
 
 func getExpect(sr []model.SearchResult) string {
 	j, _ := json.Marshal(sr)
 	return "{\"charts\":" + string(j) + "}"
+}
+
+func getRevision() *model.GetRevisionRequest {
+	var revision model.GetRevisionRequest
+	revision.EnvironmentID = 999
+	revision.ReleaseName = "foo"
+	revision.Revision = 800
+	return &revision
 }
