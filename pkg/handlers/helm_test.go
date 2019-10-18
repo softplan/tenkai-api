@@ -11,6 +11,7 @@ import (
 	mockAud "github.com/softplan/tenkai-api/pkg/audit/mocks"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
+	"github.com/softplan/tenkai-api/pkg/service/core/mocks"
 	helmapi "github.com/softplan/tenkai-api/pkg/service/helm"
 	mockSvc "github.com/softplan/tenkai-api/pkg/service/helm/mocks"
 	"github.com/stretchr/testify/assert"
@@ -61,13 +62,17 @@ func TestDeleteHelmRelease(t *testing.T) {
 	mockHelmSvc := &mockSvc.HelmServiceInterface{}
 	mockHelmSvc.On("DeleteHelmRelease", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-	mockAudit := mockAud.AuditingInterface{}
+	mockAudit := &mockAud.AuditingInterface{}
 	mockAudit.On("DoAudit", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything)
+
+	mockConvention := &mocks.ConventionInterface{}
+	mockConvention.On("GetKubeConfigFileName", mock.Anything, mock.Anything).Return("./config/foo_bar")
 
 	appContext.Repositories = Repositories{}
 	appContext.Repositories.EnvironmentDAO = mockEnvDao
 	appContext.HelmServiceAPI = mockHelmSvc
-	appContext.Auditing = &mockAudit
+	appContext.Auditing = mockAudit
+	appContext.ConventionInterface = mockConvention
 
 	roles := []string{"tenkai-user"}
 	principal := model.Principal{Name: "alfa", Email: "beta", Roles: roles}
@@ -80,7 +85,8 @@ func TestDeleteHelmRelease(t *testing.T) {
 
 	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
 	mockEnvDao.AssertNumberOfCalls(t, "GetAllEnvironments", 1)
-	mockHelmSvc.AssertNumberOfCalls(t, "DeleteHelmRelease", 1)
+	mockEnvDao.AssertNumberOfCalls(t, "GetAllEnvironments", 1)
+	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 1)
 	mockAudit.AssertNumberOfCalls(t, "DoAudit", 1)
 
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
@@ -102,9 +108,13 @@ func TestRollback(t *testing.T) {
 	mockHelmSvc := &mockSvc.HelmServiceInterface{}
 	mockHelmSvc.On("RollbackRelease", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
+	mockConvention := &mocks.ConventionInterface{}
+	mockConvention.On("GetKubeConfigFileName", mock.Anything, mock.Anything).Return("./config/foo_bar")
+
 	appContext := AppContext{}
 	appContext.Repositories.EnvironmentDAO = mockEnvDao
 	appContext.HelmServiceAPI = mockHelmSvc
+	appContext.ConventionInterface = mockConvention
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.rollback)
@@ -112,6 +122,8 @@ func TestRollback(t *testing.T) {
 
 	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
 	mockHelmSvc.AssertNumberOfCalls(t, "RollbackRelease", 1)
+	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 1)
+
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 }
 
@@ -131,9 +143,13 @@ func TestRevision(t *testing.T) {
 	yaml := "foo: bar"
 	mockHelmSvc.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(yaml, nil)
 
+	mockConvention := &mocks.ConventionInterface{}
+	mockConvention.On("GetKubeConfigFileName", mock.Anything, mock.Anything).Return("./config/foo_bar")
+
 	appContext := AppContext{}
 	appContext.Repositories.EnvironmentDAO = mockEnvDao
 	appContext.HelmServiceAPI = mockHelmSvc
+	appContext.ConventionInterface = mockConvention
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.revision)
@@ -141,6 +157,8 @@ func TestRevision(t *testing.T) {
 
 	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
 	mockHelmSvc.AssertNumberOfCalls(t, "Get", 1)
+	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 1)
+
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 	assert.Equal(t, "\"foo: bar\"", string(rr.Body.Bytes()), "Response is not correct.")
 }
@@ -160,6 +178,9 @@ func TestListReleaseHistory(t *testing.T) {
 	env.ID = 999
 	mockEnvDao.On("GetByID", mock.Anything).Return(&env, nil)
 
+	mockConvention := &mocks.ConventionInterface{}
+	mockConvention.On("GetKubeConfigFileName", mock.Anything, mock.Anything).Return("./config/foo_bar")
+
 	var info helmapi.ReleaseInfo
 	info.Revision = 987
 	info.Status = "DEPLOYED"
@@ -175,6 +196,7 @@ func TestListReleaseHistory(t *testing.T) {
 	appContext := AppContext{}
 	appContext.Repositories.EnvironmentDAO = mockEnvDao
 	appContext.HelmServiceAPI = mockHelmSvc
+	appContext.ConventionInterface = mockConvention
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.listReleaseHistory)
@@ -182,6 +204,8 @@ func TestListReleaseHistory(t *testing.T) {
 
 	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
 	mockHelmSvc.AssertNumberOfCalls(t, "GetHelmReleaseHistory", 1)
+	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 1)
+
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 	assert.Equal(t, getExpecHistory(), string(rr.Body.Bytes()), "Response is not correct.")
 }
