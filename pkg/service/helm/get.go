@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/softplan/tenkai-api/pkg/global"
 	"io"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/helm"
@@ -25,12 +24,8 @@ type getValuesCmd struct {
 //Get - All
 func (svc HelmServiceImpl) Get(kubeconfig string, releaseName string, revision int) (string, error) {
 
-	settings.KubeConfig = kubeconfig
-	settings.Home = global.HelmDir
-	settings.TillerNamespace = "kube-system"
-	settings.TLSEnable = false
-	settings.TLSVerify = false
-	settings.TillerConnectionTimeout = 1200
+	svc.EnsureSettings(kubeconfig)
+
 	err := setupConnection()
 	defer teardown()
 

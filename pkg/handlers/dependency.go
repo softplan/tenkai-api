@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
-	service_tenkai "github.com/softplan/tenkai-api/pkg/service/tenkai"
+	service_tenkai "github.com/softplan/tenkai-api/pkg/service/analyser"
 	"github.com/softplan/tenkai-api/pkg/util"
 	"log"
 	"net/http"

@@ -12,6 +12,7 @@ import (
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/dbms/repository"
 	"github.com/softplan/tenkai-api/pkg/global"
+	"github.com/softplan/tenkai-api/pkg/service/core"
 	dockerapi "github.com/softplan/tenkai-api/pkg/service/docker"
 	helmapi "github.com/softplan/tenkai-api/pkg/service/helm"
 	"log"
@@ -34,17 +35,18 @@ type Repositories struct {
 }
 
 type AppContext struct {
-	DockerServiceAPI dockerapi.DockerServiceInterface
-	HelmServiceAPI   helmapi.HelmServiceInterface
-	Auditing         audit.AuditingInterface
-	K8sConfigPath    string
-	Configuration    *configs.Configuration
-	Repositories     Repositories
-	Database         dbms.Database
-	Elk              *elastic.Client
-	Mutex            sync.Mutex
-	ChartImageCache  sync.Map
-	DockerTagsCache  sync.Map
+	ConventionInterface core.ConventionInterface
+	DockerServiceAPI    dockerapi.DockerServiceInterface
+	HelmServiceAPI      helmapi.HelmServiceInterface
+	Auditing            audit.AuditingInterface
+	K8sConfigPath       string
+	Configuration       *configs.Configuration
+	Repositories        Repositories
+	Database            dbms.Database
+	Elk                 *elastic.Client
+	Mutex               sync.Mutex
+	ChartImageCache     sync.Map
+	DockerTagsCache     sync.Map
 }
 
 //StartHTTPServer

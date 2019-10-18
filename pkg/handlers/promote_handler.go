@@ -78,7 +78,7 @@ func (appContext *AppContext) promote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kubeConfig := global.KubeConfigBasePath + srcEnvironment.Group + "_" + srcEnvironment.Name
+	kubeConfig := appContext.ConventionInterface.GetKubeConfigFileName(srcEnvironment.Group, srcEnvironment.Name)
 
 	if mode == "full" {
 

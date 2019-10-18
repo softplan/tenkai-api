@@ -3,7 +3,6 @@ package helmapi
 import (
 	"bytes"
 	"fmt"
-	"github.com/softplan/tenkai-api/pkg/global"
 	"io"
 	"strings"
 
@@ -56,12 +55,8 @@ type upgradeCmd struct {
 //Upgrade Method
 func (svc HelmServiceImpl) Upgrade(kubeconfig string, release string, chart string, chartVersion string, namespace string, variables []string, out *bytes.Buffer, dryrun bool) error {
 
-	settings.KubeConfig = kubeconfig
-	settings.Home = global.HelmDir
-	settings.TillerNamespace = "kube-system"
-	settings.TLSEnable = false
-	settings.TLSVerify = false
-	settings.TillerConnectionTimeout = 1200
+	svc.EnsureSettings(kubeconfig)
+
 	if dryrun {
 		settings.Debug = true
 	}

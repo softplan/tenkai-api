@@ -7,6 +7,7 @@ import (
 	"github.com/softplan/tenkai-api/pkg/dbms/repository"
 	"github.com/softplan/tenkai-api/pkg/global"
 	"github.com/softplan/tenkai-api/pkg/handlers"
+	"github.com/softplan/tenkai-api/pkg/service/core"
 	dockerapi "github.com/softplan/tenkai-api/pkg/service/docker"
 	helmapi "github.com/softplan/tenkai-api/pkg/service/helm"
 	"log"
@@ -62,9 +63,12 @@ func initCache(appContext *handlers.AppContext) {
 }
 
 func initAPIs(appContext *handlers.AppContext) {
-	appContext.DockerServiceAPI = &dockerapi.DockerService{}
-	appContext.HelmServiceAPI = &helmapi.HelmServiceImpl{}
+
+	appContext.DockerServiceAPI = dockerapi.DockerServiceBuilder()
+	appContext.HelmServiceAPI = helmapi.HelmServiceBuilder()
+
 	appContext.Auditing = &audit2.AuditingImpl{}
+	appContext.ConventionInterface = &core.ConventionImpl{}
 }
 
 func initRepository(database *dbms.Database) handlers.Repositories {

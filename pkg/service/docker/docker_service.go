@@ -14,6 +14,15 @@ import (
 	"time"
 )
 
+func DockerServiceBuilder() *DockerService {
+	r := &DockerService{}
+	return r
+}
+
+// DockerService is used to concretize DockerServiceInterface
+type DockerService struct {
+}
+
 // DockerServiceInterface can be used to interact with a remote Docker repo
 type DockerServiceInterface interface {
 	GetDockerTagsWithDate(payload model.ListDockerTagsRequest, dao repository.DockerDAOInterface, globalCache *sync.Map) (*model.ListDockerTagsResult, error)
@@ -120,10 +129,6 @@ func (docker DockerService) GetDockerTagsWithDate(payload model.ListDockerTagsRe
 
 	return result, nil
 
-}
-
-// DockerService is used to concretize DockerServiceInterface
-type DockerService struct {
 }
 
 // GetDate fetches the docker image creation from a remote repo
