@@ -85,5 +85,5 @@ func TestDeleteHelmRelease(t *testing.T) {
 
 func getExpect(sr []model.SearchResult) string {
 	j, _ := json.Marshal(sr)
-	return "{\"chart\":" + string(j) + "}"
+	return "{\"charts\":" + string(j) + "}"
 }
