@@ -33,26 +33,20 @@ func TestListCharts(t *testing.T) {
 	appContext.HelmServiceAPI = mockObject
 
 	req, err := http.NewRequest("GET", "/listCharts", bytes.NewBuffer(nil))
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.listCharts)
 	handler.ServeHTTP(rr, req)
 
-	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusOK)
-	}
-
+	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 	assert.Equal(t, getExpect(data), string(rr.Body.Bytes()), "Response is not correct.")
 }
 
 func TestDeleteHelmRelease(t *testing.T) {
 	appContext := AppContext{}
 	req, err := http.NewRequest("DELETE", "/deleteHelmRelease?environmentID=999&releaseName=foo&purge=false", nil)
-	assert.Nil(t, err, "Request err should be nil.")
+	assert.NoError(t, err)
 
 	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
 	env := model.Environment{Group: "foo", Name: "bar"}
@@ -79,6 +73,36 @@ func TestDeleteHelmRelease(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.deleteHelmRelease)
+	handler.ServeHTTP(rr, req)
+	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
+}
+
+func TestRollback(t *testing.T) {
+
+	var payload model.GetRevisionRequest
+	payload.EnvironmentID = 999
+	payload.ReleaseName = "foo"
+	payload.Revision = 800
+	payloadStr, _ := json.Marshal(payload)
+
+	req, err := http.NewRequest("POST", "/rollback", bytes.NewBuffer(payloadStr))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
+	env := model.Environment{Group: "foo", Name: "bar"}
+	env.ID = 999
+	mockEnvDao.On("GetByID", mock.Anything).Return(&env, nil)
+
+	mockHelmSvc := &mockSvc.HelmServiceInterface{}
+	mockHelmSvc.On("RollbackRelease", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	appContext := AppContext{}
+	appContext.Repositories.EnvironmentDAO = mockEnvDao
+	appContext.HelmServiceAPI = mockHelmSvc
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.rollback)
 	handler.ServeHTTP(rr, req)
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 }
