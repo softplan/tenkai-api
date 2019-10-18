@@ -11,6 +11,7 @@ import (
 	mockAud "github.com/softplan/tenkai-api/pkg/audit/mocks"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
+	helmapi "github.com/softplan/tenkai-api/pkg/service/helm"
 	mockSvc "github.com/softplan/tenkai-api/pkg/service/helm/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -144,9 +145,54 @@ func TestRevision(t *testing.T) {
 	assert.Equal(t, "\"foo: bar\"", string(rr.Body.Bytes()), "Response is not correct.")
 }
 
+func TestListReleaseHistory(t *testing.T) {
+	var payload model.HistoryRequest
+	payload.EnvironmentID = 999
+	payload.ReleaseName = "foo"
+	payloadStr, _ := json.Marshal(payload)
+
+	req, err := http.NewRequest("POST", "/listReleaseHistory", bytes.NewBuffer(payloadStr))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
+	env := model.Environment{Group: "foo", Name: "bar"}
+	env.ID = 999
+	mockEnvDao.On("GetByID", mock.Anything).Return(&env, nil)
+
+	var info helmapi.ReleaseInfo
+	info.Revision = 987
+	info.Status = "DEPLOYED"
+	info.Chart = "my-helm-chart"
+	info.Description = "Install completed"
+
+	var history helmapi.ReleaseHistory
+	history = append(history, info)
+
+	mockHelmSvc := &mockSvc.HelmServiceInterface{}
+	mockHelmSvc.On("GetHelmReleaseHistory", mock.Anything, mock.Anything).Return(history, nil)
+
+	appContext := AppContext{}
+	appContext.Repositories.EnvironmentDAO = mockEnvDao
+	appContext.HelmServiceAPI = mockHelmSvc
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.listReleaseHistory)
+	handler.ServeHTTP(rr, req)
+
+	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
+	mockHelmSvc.AssertNumberOfCalls(t, "GetHelmReleaseHistory", 1)
+	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
+	assert.Equal(t, getExpecHistory(), string(rr.Body.Bytes()), "Response is not correct.")
+}
+
 func getExpect(sr []model.SearchResult) string {
 	j, _ := json.Marshal(sr)
 	return "{\"charts\":" + string(j) + "}"
+}
+
+func getExpecHistory() string {
+	return "[{\"revision\":987,\"updated\":\"\",\"status\":\"DEPLOYED\",\"chart\":\"my-helm-chart\",\"description\":\"Install completed\"}]"
 }
 
 func getRevision() *model.GetRevisionRequest {
