@@ -56,7 +56,10 @@ func TestDeleteHelmRelease(t *testing.T) {
 
 	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
 	env := model.Environment{Group: "foo", Name: "bar"}
+	env.ID = 999
 	mockEnvDao.On("GetByID", mock.Anything).Return(&env, nil)
+	envs := []model.Environment{env}
+	mockEnvDao.On("GetAllEnvironments", mock.Anything).Return(envs, nil)
 
 	mockHelmSvc := &mockSvc.HelmServiceInterface{}
 	mockHelmSvc.On("DeleteHelmRelease", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -69,7 +72,10 @@ func TestDeleteHelmRelease(t *testing.T) {
 	appContext.HelmServiceAPI = mockHelmSvc
 	appContext.Auditing = &mockAudit
 
-	// TODO: mock appContext.hasAccess
+	roles := []string{"tenkai-user"}
+	principal := model.Principal{Name: "alfa", Email: "beta", Roles: roles}
+	pSe, _ := json.Marshal(principal)
+	req.Header.Set("principal", string(pSe))
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.deleteHelmRelease)
