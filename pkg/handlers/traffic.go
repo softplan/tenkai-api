@@ -29,7 +29,7 @@ func (appContext *AppContext) deployTrafficRule(w http.ResponseWriter, r *http.R
 	headerReleaseName := strings.Replace(payload.HeaderReleaseName, "${NAMESPACE}", environment.Namespace, -1)
 
 	//
-	chart := "saj6/analyser-canary"
+	chart := "saj6/tenkai-canary"
 	name := "canary-" + serviceName
 	out := &bytes.Buffer{}
 
