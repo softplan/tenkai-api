@@ -3,20 +3,22 @@ package helmapi
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"os"
+	"strings"
+
 	"github.com/ghodss/yaml"
 	"github.com/gosuri/uitable"
 	"github.com/softplan/tenkai-api/pkg/global"
-	"io"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/helm/pkg/helm"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 	"k8s.io/helm/pkg/proto/hapi/release"
 	"k8s.io/helm/pkg/timeconv"
-	"os"
-	"strings"
 )
 
-type releaseInfo struct {
+//ReleaseInfo ReleaseInfo
+type ReleaseInfo struct {
 	Revision    int32  `json:"revision"`
 	Updated     string `json:"updated"`
 	Status      string `json:"status"`
@@ -25,7 +27,7 @@ type releaseInfo struct {
 }
 
 //ReleaseHistory Structure
-type ReleaseHistory []releaseInfo
+type ReleaseHistory []ReleaseInfo
 
 type historyCmd struct {
 	max          int32
@@ -175,7 +177,7 @@ func getReleaseHistory(rls []*release.Release) (history ReleaseHistory) {
 		v := r.Version
 		d := r.Info.Description
 
-		rInfo := releaseInfo{
+		rInfo := ReleaseInfo{
 			Revision:    v,
 			Updated:     t,
 			Status:      s,
