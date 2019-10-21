@@ -19,7 +19,8 @@ func (appContext *AppContext) deleteVariable(w http.ResponseWriter, r *http.Requ
 
 	principal := util.GetPrincipal(r)
 	if !util.Contains(principal.Roles, constraints.TenkaiVariablesDelete) {
-		http.Error(w, errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
+		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
+		return
 	}
 
 	vars := mux.Vars(r)
