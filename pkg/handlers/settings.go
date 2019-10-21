@@ -10,7 +10,7 @@ import (
 
 func (appContext *AppContext) addSettings(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 	var payload model.SettingsList
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
@@ -31,7 +31,7 @@ func (appContext *AppContext) addSettings(w http.ResponseWriter, r *http.Request
 
 func (appContext *AppContext) getSettingList(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 
 	var payload model.GetSettingsListRequest
 

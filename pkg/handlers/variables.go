@@ -25,7 +25,7 @@ func (appContext *AppContext) deleteVariable(w http.ResponseWriter, r *http.Requ
 	vars := mux.Vars(r)
 	sl := vars["id"]
 	id, _ := strconv.Atoi(sl)
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 	if err := appContext.Repositories.VariableDAO.DeleteVariable(id); err != nil {
 		log.Println("Error deleting variable: ", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -123,7 +123,7 @@ func (appContext *AppContext) getVariables(w http.ResponseWriter, r *http.Reques
 	}
 
 	data, _ := json.Marshal(variableResult)
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 

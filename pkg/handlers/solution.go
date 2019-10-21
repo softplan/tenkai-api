@@ -13,7 +13,7 @@ import (
 
 func (appContext *AppContext) newSolution(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 
 	var payload model.Solution
 
@@ -53,7 +53,7 @@ func (appContext *AppContext) deleteSolution(w http.ResponseWriter, r *http.Requ
 	vars := mux.Vars(r)
 	sl := vars["id"]
 	id, _ := strconv.Atoi(sl)
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 	if err := appContext.Repositories.SolutionDAO.DeleteSolution(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -64,7 +64,7 @@ func (appContext *AppContext) deleteSolution(w http.ResponseWriter, r *http.Requ
 
 func (appContext *AppContext) listSolution(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 	result := &model.SolutionResult{}
 	var err error
 	if result.List, err = appContext.Repositories.SolutionDAO.ListSolutions(); err != nil {

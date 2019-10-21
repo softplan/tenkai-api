@@ -21,7 +21,7 @@ import (
 
 func (appContext *AppContext) listCharts(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 
 	vars := mux.Vars(r)
 	repo := vars["repo"]
@@ -102,7 +102,7 @@ func (appContext *AppContext) deleteHelmRelease(w http.ResponseWriter, r *http.R
 
 func (appContext *AppContext) rollback(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 
 	var payload model.GetRevisionRequest
 
@@ -132,7 +132,7 @@ func (appContext *AppContext) rollback(w http.ResponseWriter, r *http.Request) {
 
 func (appContext *AppContext) revision(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 
 	var payload model.GetRevisionRequest
 
@@ -160,7 +160,7 @@ func (appContext *AppContext) revision(w http.ResponseWriter, r *http.Request) {
 
 func (appContext *AppContext) listReleaseHistory(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 
 	var payload model.HistoryRequest
 
@@ -202,7 +202,7 @@ func (appContext *AppContext) listHelmDeploymentsByEnvironment(w http.ResponseWr
 		return
 	}
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 
 	kubeConfig := appContext.ConventionInterface.GetKubeConfigFileName(environment.Group, environment.Name)
 
@@ -221,7 +221,7 @@ func (appContext *AppContext) listHelmDeploymentsByEnvironment(w http.ResponseWr
 
 func (appContext *AppContext) hasConfigMap(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 
 	var payload model.GetChartRequest
 
@@ -248,7 +248,7 @@ func (appContext *AppContext) hasConfigMap(w http.ResponseWriter, r *http.Reques
 
 func (appContext *AppContext) getChartVariables(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 	var payload model.GetChartRequest
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
@@ -276,7 +276,7 @@ func (appContext *AppContext) getHelmCommand(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 	var payload model.MultipleInstallPayload
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
@@ -319,7 +319,7 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 	var payload model.MultipleInstallPayload
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
@@ -367,7 +367,7 @@ func (appContext *AppContext) install(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 	var payload model.InstallPayload
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
@@ -398,7 +398,7 @@ func (appContext *AppContext) install(w http.ResponseWriter, r *http.Request) {
 
 func (appContext *AppContext) helmDryRun(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 	var payload model.InstallPayload
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {

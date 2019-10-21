@@ -12,7 +12,7 @@ import (
 
 func (appContext *AppContext) deployTrafficRule(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 
 	var payload model.TrafficRequest
 
