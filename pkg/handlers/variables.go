@@ -39,35 +39,7 @@ func (appContext *AppContext) editVariable(w http.ResponseWriter, r *http.Reques
 
 	principal := util.GetPrincipal(r)
 	if !util.Contains(principal.Roles, constraints.TenkaiVariablesSave) {
-		http.Error(w, errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
-	}
-
-	var payload model.DataVariableElement
-
-	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if payload.Data.Secret {
-		secret := util.Encrypt([]byte(payload.Data.Value), appContext.Configuration.App.Passkey)
-		payload.Data.Value = hex.EncodeToString(secret)
-	}
-
-	if err := appContext.Repositories.VariableDAO.EditVariable(payload.Data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusCreated)
-
-}
-
-func (appContext *AppContext) addVariables(w http.ResponseWriter, r *http.Request) {
-
-	principal := util.GetPrincipal(r)
-	if !util.Contains(principal.Roles, constraints.TenkaiVariablesSave) {
-		http.Error(w, errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
+		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
 	}
 
 	var payload model.DataVariableElement

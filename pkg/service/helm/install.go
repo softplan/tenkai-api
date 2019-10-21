@@ -375,8 +375,6 @@ func defaultNamespace() string {
 func readFile(filePath, CertFile, KeyFile, CAFile string) ([]byte, error) {
 	u, _ := url.Parse(filePath)
 	p := getter.All(settings)
-
-	// FIXME: maybe someone handle other protocols like ftp.
 	getterConstructor, err := p.ByScheme(u.Scheme)
 
 	if err != nil {
