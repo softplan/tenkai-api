@@ -30,7 +30,7 @@ func (appContext *AppContext) deleteEnvironment(w http.ResponseWriter, r *http.R
 
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		log.Println(global.ParameterIdError, err)
+		log.Println(global.ParameterIDError, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -105,7 +105,7 @@ func (appContext *AppContext) duplicateEnvironments(w http.ResponseWriter, r *ht
 
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		log.Println(global.ParameterIdError, err)
+		log.Println(global.ParameterIDError, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -220,7 +220,7 @@ func (appContext *AppContext) export(w http.ResponseWriter, r *http.Request) {
 
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		log.Println(global.ParameterIdError, err)
+		log.Println(global.ParameterIDError, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -244,7 +244,7 @@ func (appContext *AppContext) export(w http.ResponseWriter, r *http.Request) {
 
 func (appContext *AppContext) getAllEnvironments(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 
 	//principal := util.GetPrincipal(r)
 

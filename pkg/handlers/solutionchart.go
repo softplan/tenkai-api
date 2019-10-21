@@ -12,7 +12,7 @@ import (
 
 func (appContext *AppContext) newSolutionChart(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 
 	var payload model.SolutionChart
 
@@ -36,7 +36,7 @@ func (appContext *AppContext) deleteSolutionChart(w http.ResponseWriter, r *http
 	sl := vars["id"]
 	id, _ := strconv.Atoi(sl)
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 
 	if err := appContext.Repositories.SolutionChartDAO.DeleteSolutionChart(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -49,7 +49,7 @@ func (appContext *AppContext) deleteSolutionChart(w http.ResponseWriter, r *http
 
 func (appContext *AppContext) listSolutionCharts(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 
 	ids, ok := r.URL.Query()["solutionId"]
 	if !ok {

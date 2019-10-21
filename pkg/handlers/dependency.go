@@ -14,7 +14,7 @@ import (
 
 func (appContext *AppContext) newDependency(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 
 	var payload model.Dependency
 
@@ -38,7 +38,7 @@ func (appContext *AppContext) deleteDependency(w http.ResponseWriter, r *http.Re
 	sl := vars["id"]
 	id, _ := strconv.Atoi(sl)
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 
 	if err := appContext.Repositories.DependencyDAO.DeleteDependency(id); err != nil {
 		log.Println("Error deleting environment: ", err)
@@ -52,7 +52,7 @@ func (appContext *AppContext) deleteDependency(w http.ResponseWriter, r *http.Re
 
 func (appContext *AppContext) listDependencies(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 
 	releaseID, ok := r.URL.Query()["releaseId"]
 	if !ok {
@@ -76,7 +76,7 @@ func (appContext *AppContext) listDependencies(w http.ResponseWriter, r *http.Re
 
 func (appContext *AppContext) analyse(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 
 	var payload model.DepAnalyseRequest
 	if err := util.UnmarshalPayload(r, &payload); err != nil {

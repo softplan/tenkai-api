@@ -13,7 +13,7 @@ import (
 
 func (appContext *AppContext) newRelease(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 
 	var payload model.Release
 
@@ -37,7 +37,7 @@ func (appContext *AppContext) deleteRelease(w http.ResponseWriter, r *http.Reque
 	sl := vars["id"]
 	id, _ := strconv.Atoi(sl)
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 
 	if err := appContext.Repositories.ReleaseDAO.DeleteRelease(id); err != nil {
 		log.Println("Error deleting environment: ", err)
@@ -65,7 +65,7 @@ func (appContext *AppContext) listReleases(w http.ResponseWriter, r *http.Reques
 	}
 
 	data, _ := json.Marshal(releaseResult)
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 

@@ -101,7 +101,7 @@ func (appContext *AppContext) getVariablesByEnvironmentAndScope(w http.ResponseW
 	}
 
 	data, _ := json.Marshal(variableResult)
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 
@@ -151,7 +151,7 @@ func (appContext *AppContext) getVariablesNotUsed(w http.ResponseWriter, r *http
 	}
 
 	data, _ := json.Marshal(result)
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 

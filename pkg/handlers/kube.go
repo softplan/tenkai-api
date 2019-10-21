@@ -13,7 +13,7 @@ import (
 
 func (appContext *AppContext) services(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -46,7 +46,7 @@ func (appContext *AppContext) services(w http.ResponseWriter, r *http.Request) {
 
 func (appContext *AppContext) pods(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 
 	vars := mux.Vars(r)
 	id := vars["id"]

@@ -21,7 +21,7 @@ func (appContext *AppContext) newUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
 	}
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 
 	var payload model.User
 
@@ -41,7 +41,7 @@ func (appContext *AppContext) newUser(w http.ResponseWriter, r *http.Request) {
 
 func (appContext *AppContext) createOrUpdateUser(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 
 	var payload model.User
 
@@ -85,7 +85,7 @@ func (appContext *AppContext) deleteUser(w http.ResponseWriter, r *http.Request)
 	vars := mux.Vars(r)
 	sl := vars["id"]
 	id, _ := strconv.Atoi(sl)
-	w.Header().Set(global.ContentType, global.JsonContentType)
+	w.Header().Set(global.ContentType, global.JSONContentType)
 	if err := appContext.Repositories.UserDAO.DeleteUser(id); err != nil {
 		log.Println("Error deleting variable: ", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
