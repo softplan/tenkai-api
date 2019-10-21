@@ -75,7 +75,7 @@ func (dao EnvironmentDAOImpl) GetByID(envID int) (*model2.Environment, error) {
 func checkNotFound(err error) ([]model2.Environment, error) {
 	if err == gorm.ErrRecordNotFound {
 		return make([]model2.Environment, 0), nil
-	} else {
-		return nil, err
 	}
+	return nil, err
+
 }
