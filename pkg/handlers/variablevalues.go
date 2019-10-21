@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
+	"github.com/softplan/tenkai-api/pkg/global"
 	helmapi "github.com/softplan/tenkai-api/pkg/service/helm"
 	"github.com/softplan/tenkai-api/pkg/util"
 	"net/http"
@@ -100,7 +101,7 @@ func (appContext *AppContext) getVariablesByEnvironmentAndScope(w http.ResponseW
 	}
 
 	data, _ := json.Marshal(variableResult)
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 
@@ -150,7 +151,7 @@ func (appContext *AppContext) getVariablesNotUsed(w http.ResponseWriter, r *http
 	}
 
 	data, _ := json.Marshal(result)
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 

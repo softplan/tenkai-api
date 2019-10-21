@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"github.com/softplan/tenkai-api/pkg/global"
 	"net/http"
 	"strconv"
 
@@ -12,7 +13,7 @@ import (
 
 func (appContext *AppContext) newSolution(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 
 	var payload model.Solution
 
@@ -52,7 +53,7 @@ func (appContext *AppContext) deleteSolution(w http.ResponseWriter, r *http.Requ
 	vars := mux.Vars(r)
 	sl := vars["id"]
 	id, _ := strconv.Atoi(sl)
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 	if err := appContext.Repositories.SolutionDAO.DeleteSolution(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -63,7 +64,7 @@ func (appContext *AppContext) deleteSolution(w http.ResponseWriter, r *http.Requ
 
 func (appContext *AppContext) listSolution(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 	result := &model.SolutionResult{}
 	var err error
 	if result.List, err = appContext.Repositories.SolutionDAO.ListSolutions(); err != nil {

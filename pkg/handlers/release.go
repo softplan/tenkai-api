@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
+	"github.com/softplan/tenkai-api/pkg/global"
 	"github.com/softplan/tenkai-api/pkg/util"
 	"log"
 	"net/http"
@@ -12,7 +13,7 @@ import (
 
 func (appContext *AppContext) newRelease(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 
 	var payload model.Release
 
@@ -36,7 +37,7 @@ func (appContext *AppContext) deleteRelease(w http.ResponseWriter, r *http.Reque
 	sl := vars["id"]
 	id, _ := strconv.Atoi(sl)
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 
 	if err := appContext.Repositories.ReleaseDAO.DeleteRelease(id); err != nil {
 		log.Println("Error deleting environment: ", err)
@@ -64,7 +65,7 @@ func (appContext *AppContext) listReleases(w http.ResponseWriter, r *http.Reques
 	}
 
 	data, _ := json.Marshal(releaseResult)
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 

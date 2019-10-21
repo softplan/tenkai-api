@@ -3,13 +3,14 @@ package handlers
 import (
 	"encoding/json"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
+	"github.com/softplan/tenkai-api/pkg/global"
 	"github.com/softplan/tenkai-api/pkg/util"
 	"net/http"
 )
 
 func (appContext *AppContext) addSettings(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 	var payload model.SettingsList
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
@@ -30,7 +31,7 @@ func (appContext *AppContext) addSettings(w http.ResponseWriter, r *http.Request
 
 func (appContext *AppContext) getSettingList(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 
 	var payload model.GetSettingsListRequest
 

@@ -30,7 +30,7 @@ func (appContext *AppContext) deleteEnvironment(w http.ResponseWriter, r *http.R
 
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		log.Println("Error processing parameter id: ", err)
+		log.Println(global.ParameterIdError, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -105,7 +105,7 @@ func (appContext *AppContext) duplicateEnvironments(w http.ResponseWriter, r *ht
 
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		log.Println("Error processing parameter id: ", err)
+		log.Println(global.ParameterIdError, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -212,7 +212,7 @@ func (appContext *AppContext) getEnvironments(w http.ResponseWriter, r *http.Req
 
 func (appContext *AppContext) export(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Content-Type", "text/plain; charset=UTF-8")
+	w.Header().Set(global.ContentType, "text/plain; charset=UTF-8")
 	w.Header().Set("Content-Disposition", "attachment; filename=environment.txt")
 
 	vars := mux.Vars(r)
@@ -220,7 +220,7 @@ func (appContext *AppContext) export(w http.ResponseWriter, r *http.Request) {
 
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		log.Println("Error processing parameter id: ", err)
+		log.Println(global.ParameterIdError, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -244,7 +244,7 @@ func (appContext *AppContext) export(w http.ResponseWriter, r *http.Request) {
 
 func (appContext *AppContext) getAllEnvironments(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 
 	//principal := util.GetPrincipal(r)
 

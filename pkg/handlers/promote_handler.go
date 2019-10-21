@@ -21,7 +21,7 @@ type releaseToDeploy struct {
 
 func (appContext *AppContext) promote(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 
 	principal := util.GetPrincipal(r)
 

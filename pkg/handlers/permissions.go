@@ -18,7 +18,7 @@ func (appContext *AppContext) newEnvironmentPermission(w http.ResponseWriter, r 
 		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
 	}
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 
 	vars := mux.Vars(r)
 	userID, err := strconv.Atoi(vars["userID"])
