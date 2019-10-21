@@ -226,7 +226,7 @@ func TestListHelmDeploymentsByEnvironment(t *testing.T) {
 	mockConvention := &mocks.ConventionInterface{}
 	mockConvention.On("GetKubeConfigFileName", mock.Anything, mock.Anything).Return("./config/foo_bar")
 
-	listReleases := []helmapi.ListRelease{}
+	var listReleases []helmapi.ListRelease
 
 	lr := helmapi.ListRelease{
 		Name:       "",
@@ -261,6 +261,35 @@ func TestListHelmDeploymentsByEnvironment(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 	// assert.Equal(t, getExpecHistory(), string(rr.Body.Bytes()), "Response is not correct.")
+}
+
+func TestHasConfigMap(t *testing.T) {
+	var payload model.GetChartRequest
+	payload.ChartName = "foo"
+	payload.ChartVersion = "0.1.0"
+	payloadStr, _ := json.Marshal(payload)
+
+	req, err := http.NewRequest("POST", "/hasConfigMap", bytes.NewBuffer(payloadStr))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockHelmSvc := &mockSvc.HelmServiceInterface{}
+
+	partialDeploymentYaml := "...name: {{ template \"foo.name\" . }}-gcm-{{ .Release.Namespace }}..."
+	result := []byte(partialDeploymentYaml)
+	mockHelmSvc.On("GetTemplate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(result, nil)
+
+	appContext := AppContext{}
+	appContext.HelmServiceAPI = mockHelmSvc
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.hasConfigMap)
+	handler.ServeHTTP(rr, req)
+
+	mockHelmSvc.AssertNumberOfCalls(t, "GetTemplate", 1)
+
+	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
+	assert.Equal(t, "{\"result\":\"true\"}", string(rr.Body.Bytes()), "Response is not correct.")
 }
 
 func getExpect(sr []model.SearchResult) string {
