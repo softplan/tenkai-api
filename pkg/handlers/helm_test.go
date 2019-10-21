@@ -265,12 +265,7 @@ func TestListHelmDeploymentsByEnvironment(t *testing.T) {
 }
 
 func TestHasConfigMap(t *testing.T) {
-	var payload model.GetChartRequest
-	payload.ChartName = "foo"
-	payload.ChartVersion = "0.1.0"
-	payloadStr, _ := json.Marshal(payload)
-
-	req, err := http.NewRequest("POST", "/hasConfigMap", bytes.NewBuffer(payloadStr))
+	req, err := http.NewRequest("POST", "/hasConfigMap", getPayloadChartRequest())
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
@@ -291,6 +286,37 @@ func TestHasConfigMap(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 	assert.Equal(t, "{\"result\":\"true\"}", string(rr.Body.Bytes()), "Response is not correct.")
+}
+
+func TestGetChartVariables(t *testing.T) {
+	req, err := http.NewRequest("POST", "/getChartVariables", getPayloadChartRequest())
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockHelmSvc := &mockSvc.HelmServiceInterface{}
+
+	partialResult := "{\"app\": {\"dateHour\": 0,\"pullSecret\": \"foo\"} }"
+	mockHelmSvc.On("GetTemplate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]byte(partialResult), nil)
+
+	appContext := AppContext{}
+	appContext.HelmServiceAPI = mockHelmSvc
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.getChartVariables)
+	handler.ServeHTTP(rr, req)
+
+	mockHelmSvc.AssertNumberOfCalls(t, "GetTemplate", 1)
+
+	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
+	assert.Equal(t, partialResult, string(rr.Body.Bytes()), "Response is not correct.")
+}
+
+func getPayloadChartRequest() *bytes.Buffer {
+	var p model.GetChartRequest
+	p.ChartName = "foo"
+	p.ChartVersion = "0.1.0"
+	pStr, _ := json.Marshal(p)
+	return bytes.NewBuffer(pStr)
 }
 
 func getExpect(sr []model.SearchResult) string {
