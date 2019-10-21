@@ -40,6 +40,7 @@ func (appContext *AppContext) editVariable(w http.ResponseWriter, r *http.Reques
 	principal := util.GetPrincipal(r)
 	if !util.Contains(principal.Roles, constraints.TenkaiVariablesSave) {
 		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
+		return
 	}
 
 	var payload model.DataVariableElement
