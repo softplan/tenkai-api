@@ -53,11 +53,9 @@ func TestDeleteHelmRelease(t *testing.T) {
 	req, err := http.NewRequest("DELETE", "/deleteHelmRelease?environmentID=999&releaseName=foo&purge=false", nil)
 	assert.NoError(t, err)
 
-	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
-	env := model.Environment{Group: "foo", Name: "bar"}
-	env.ID = 999
-	mockEnvDao.On("GetByID", mock.Anything).Return(&env, nil)
-	envs := []model.Environment{env}
+	var envs []model.Environment
+	envs = append(envs, mockGetEnv())
+	mockEnvDao := mockGetByID(&appContext)
 	mockEnvDao.On("GetAllEnvironments", mock.Anything).Return(envs, nil)
 
 	mockHelmSvc := &mockSvc.HelmServiceInterface{}
@@ -75,10 +73,7 @@ func TestDeleteHelmRelease(t *testing.T) {
 	appContext.Auditing = mockAudit
 	appContext.ConventionInterface = mockConvention
 
-	roles := []string{"tenkai-user"}
-	principal := model.Principal{Name: "alfa", Email: "beta", Roles: roles}
-	pSe, _ := json.Marshal(principal)
-	req.Header.Set("principal", string(pSe))
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.deleteHelmRelease)
@@ -309,6 +304,93 @@ func TestGetChartVariables(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 	assert.Equal(t, partialResult, string(rr.Body.Bytes()), "Response is not correct.")
+}
+
+func TestGetHelmCommand(t *testing.T) {
+	var ip model.InstallPayload
+	ip.EnvironmentID = 999
+	ip.Chart = "foo"
+	ip.ChartVersion = "0.1.0"
+	ip.Name = "my-foo"
+
+	var payload model.MultipleInstallPayload
+	payload.Deployables = append(payload.Deployables, ip)
+	pStr, _ := json.Marshal(payload)
+
+	req, err := http.NewRequest("POST", "/getHelmCommand", bytes.NewBuffer(pStr))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	appContext := AppContext{}
+
+	mockEnvDao := mockGetByID(&appContext)
+	mockVariableDAO := &mockRepo.VariableDAOInterface{}
+
+	var variables []model.Variable
+	variables = append(variables, mockVariable())
+	mockVariableDAO.On("GetAllVariablesByEnvironmentAndScope", mock.Anything, mock.Anything).Return(variables, nil)
+
+	mockConvention := &mocks.ConventionInterface{}
+	mockConvention.On("GetKubeConfigFileName", mock.Anything, mock.Anything).Return("./config/foo_bar")
+
+	appContext.Repositories.EnvironmentDAO = mockEnvDao
+	appContext.Repositories.VariableDAO = mockVariableDAO
+	appContext.ConventionInterface = mockConvention
+
+	mockPrincipal(req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.getHelmCommand)
+	handler.ServeHTTP(rr, req)
+
+	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
+	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 1)
+	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironmentAndScope", 2)
+
+	response := string(rr.Body.Bytes())
+	assert.Contains(t, response, "helm upgrade --install my-foo-dev")
+	assert.Contains(t, response, "--set \"app.username=user")
+	assert.Contains(t, response, "istio.virtualservices.gateways[0]=my-gateway.istio-system.svc.cluster.local")
+	assert.Contains(t, response, "foo --namespace=dev")
+}
+
+func mockVariable() model.Variable {
+	var variable model.Variable
+	variable.Scope = "global"
+	variable.Name = "username"
+	variable.Value = "user"
+	variable.Secret = false
+	variable.Description = "Login username."
+	variable.EnvironmentID = 999
+	return variable
+}
+
+func mockGetEnv() model.Environment {
+	var env model.Environment
+	env.ID = 999
+	env.Group = "foo"
+	env.Name = "bar"
+	env.ClusterURI = "https://rancher-k8s-my-domain.com/k8s/clusters/c-kbfxr"
+	env.CACertificate = "my-certificate"
+	env.Token = "my-token"
+	env.Namespace = "dev"
+	env.Gateway = "my-gateway.istio-system.svc.cluster.local"
+	return env
+}
+
+func mockGetByID(appContext *AppContext) *mockRepo.EnvironmentDAOInterface {
+	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
+	env := mockGetEnv()
+	mockEnvDao.On("GetByID", mock.Anything).Return(&env, nil)
+	appContext.Repositories.EnvironmentDAO = mockEnvDao
+	return mockEnvDao
+}
+
+func mockPrincipal(req *http.Request) {
+	roles := []string{"tenkai-helm-upgrade"}
+	principal := model.Principal{Name: "alfa", Email: "beta", Roles: roles}
+	pSe, _ := json.Marshal(principal)
+	req.Header.Set("principal", string(pSe))
 }
 
 func getPayloadChartRequest() *bytes.Buffer {
