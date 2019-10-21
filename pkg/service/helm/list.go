@@ -3,10 +3,11 @@ package helmapi
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/softplan/tenkai-api/pkg/global"
 	"io"
 	"os"
 	"strings"
+
+	"github.com/softplan/tenkai-api/pkg/global"
 
 	"github.com/ghodss/yaml"
 	"github.com/gosuri/uitable"
@@ -42,10 +43,11 @@ type listCmd struct {
 //HelmListResult Structure
 type HelmListResult struct {
 	Next     string
-	Releases []listRelease
+	Releases []ListRelease
 }
 
-type listRelease struct {
+//ListRelease ListRelease
+type ListRelease struct {
 	Name       string
 	Revision   int32
 	Updated    string
@@ -201,7 +203,7 @@ func (l *listCmd) statusCodes() []release.Status_Code {
 }
 
 func getListResult(rels []*release.Release, next string) HelmListResult {
-	listReleases := []listRelease{}
+	listReleases := []ListRelease{}
 	for _, r := range rels {
 		md := r.GetChart().GetMetadata()
 		t := "-"
@@ -209,7 +211,7 @@ func getListResult(rels []*release.Release, next string) HelmListResult {
 			t = timeconv.String(tspb)
 		}
 
-		lr := listRelease{
+		lr := ListRelease{
 			Name:       r.GetName(),
 			Revision:   r.GetVersion(),
 			Updated:    t,
