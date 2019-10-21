@@ -28,7 +28,7 @@ type HelmServiceInterface interface {
 	ListHelmDeployments(kubeconfig string, namespace string) (*HelmListResult, error)
 	RepoUpdate() error
 	RollbackRelease(kubeconfig string, releaseName string, revision int) error
-	Upgrade(kubeconfig string, release string, chart string, chartVersion string, namespace string, variables []string, out *bytes.Buffer, dryrun bool) error
+	Upgrade(upgradeRequest UpgradeRequest, out *bytes.Buffer) error
 	EnsureSettings(kubeconfig string)
 }
 

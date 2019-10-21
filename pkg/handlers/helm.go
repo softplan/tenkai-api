@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/global"
+	helmapi "github.com/softplan/tenkai-api/pkg/service/helm"
 	"github.com/softplan/tenkai-api/pkg/util"
 	"net/http"
 	"strconv"
@@ -470,7 +471,17 @@ func (appContext *AppContext) simpleInstall(environment *model.Environment, char
 		kubeConfig := appContext.ConventionInterface.GetKubeConfigFileName(environment.Group, environment.Name)
 
 		if !helmCommandOnly {
-			err := appContext.HelmServiceAPI.Upgrade(kubeConfig, name, chart, chartVersion, environment.Namespace, args, out, dryRun)
+
+			upgradeRequest := helmapi.UpgradeRequest{}
+			upgradeRequest.Kubeconfig = kubeConfig
+			upgradeRequest.Namespace = environment.Namespace
+			upgradeRequest.ChartVersion = chartVersion
+			upgradeRequest.Chart = chart
+			upgradeRequest.Variables = args
+			upgradeRequest.Dryrun = dryRun
+			upgradeRequest.Release = name
+			err := appContext.HelmServiceAPI.Upgrade(upgradeRequest, out)
+
 			if err != nil {
 				return "", err
 			}

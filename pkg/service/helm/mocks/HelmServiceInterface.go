@@ -55,6 +55,11 @@ func (_m *HelmServiceInterface) DeletePod(kubeconfig string, podName string, nam
 	return r0
 }
 
+// EnsureSettings provides a mock function with given fields: kubeconfig
+func (_m *HelmServiceInterface) EnsureSettings(kubeconfig string) {
+	_m.Called(kubeconfig)
+}
+
 // Get provides a mock function with given fields: kubeconfig, releaseName, revision
 func (_m *HelmServiceInterface) Get(kubeconfig string, releaseName string, revision int) (string, error) {
 	ret := _m.Called(kubeconfig, releaseName, revision)
@@ -365,21 +370,16 @@ func (_m *HelmServiceInterface) SearchCharts(searchTerms []string, allVersions b
 	return r0
 }
 
-// Upgrade provides a mock function with given fields: kubeconfig, release, chart, chartVersion, namespace, variables, out, dryrun
-func (_m *HelmServiceInterface) Upgrade(kubeconfig string, release string, chart string, chartVersion string, namespace string, variables []string, out *bytes.Buffer, dryrun bool) error {
-	ret := _m.Called(kubeconfig, release, chart, chartVersion, namespace, variables, out, dryrun)
+// Upgrade provides a mock function with given fields: upgradeRequest, out
+func (_m *HelmServiceInterface) Upgrade(upgradeRequest helmapi.UpgradeRequest, out *bytes.Buffer) error {
+	ret := _m.Called(upgradeRequest, out)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string, string, string, string, []string, *bytes.Buffer, bool) error); ok {
-		r0 = rf(kubeconfig, release, chart, chartVersion, namespace, variables, out, dryrun)
+	if rf, ok := ret.Get(0).(func(helmapi.UpgradeRequest, *bytes.Buffer) error); ok {
+		r0 = rf(upgradeRequest, out)
 	} else {
 		r0 = ret.Error(0)
 	}
 
 	return r0
-}
-
-// ensureSettings provides a mock function with given fields: kubeconfig
-func (_m *HelmServiceInterface) EnsureSettings(kubeconfig string) {
-	_m.Called(kubeconfig)
 }
