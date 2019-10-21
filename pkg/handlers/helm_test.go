@@ -8,6 +8,7 @@ import (
 
 	"encoding/json"
 
+	"github.com/gorilla/mux"
 	mockAud "github.com/softplan/tenkai-api/pkg/audit/mocks"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
@@ -210,8 +211,6 @@ func TestListReleaseHistory(t *testing.T) {
 	assert.Equal(t, getExpecHistory(), string(rr.Body.Bytes()), "Response is not correct.")
 }
 
-// Still broken
-// How should I pass the id in URL???
 func TestListHelmDeploymentsByEnvironment(t *testing.T) {
 
 	req, err := http.NewRequest("GET", "/listHelmDeploymentsByEnvironment/999", bytes.NewBuffer(nil))
@@ -229,17 +228,17 @@ func TestListHelmDeploymentsByEnvironment(t *testing.T) {
 	var listReleases []helmapi.ListRelease
 
 	lr := helmapi.ListRelease{
-		Name:       "",
-		Revision:   0,
+		Name:       "my-foo",
+		Revision:   9999,
 		Updated:    "",
 		Status:     "",
-		Chart:      "",
-		AppVersion: "",
-		Namespace:  "",
+		Chart:      "foo",
+		AppVersion: "0.1.0",
+		Namespace:  "xpto",
 	}
 	listReleases = append(listReleases, lr)
 
-	result := helmapi.HelmListResult{
+	result := &helmapi.HelmListResult{
 		Next:     "998",
 		Releases: listReleases,
 	}
@@ -253,14 +252,16 @@ func TestListHelmDeploymentsByEnvironment(t *testing.T) {
 	appContext.HelmServiceAPI = mockHelmSvc
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(appContext.listHelmDeploymentsByEnvironment)
-	handler.ServeHTTP(rr, req)
+	r := mux.NewRouter()
+	r.HandleFunc("/listHelmDeploymentsByEnvironment/{id}", appContext.listHelmDeploymentsByEnvironment).Methods("GET")
+	r.ServeHTTP(rr, req)
 
 	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
 	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 1)
 
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
-	// assert.Equal(t, getExpecHistory(), string(rr.Body.Bytes()), "Response is not correct.")
+	j, _ := json.Marshal(result)
+	assert.Equal(t, string(j), string(rr.Body.Bytes()), "Response is not correct.")
 }
 
 func TestHasConfigMap(t *testing.T) {
