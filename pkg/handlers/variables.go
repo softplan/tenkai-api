@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/softplan/tenkai-api/pkg/constraints"
+	"github.com/softplan/tenkai-api/pkg/global"
 	"github.com/softplan/tenkai-api/pkg/util"
 	"log"
 	"net/http"
@@ -24,7 +25,7 @@ func (appContext *AppContext) deleteVariable(w http.ResponseWriter, r *http.Requ
 	vars := mux.Vars(r)
 	sl := vars["id"]
 	id, _ := strconv.Atoi(sl)
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 	if err := appContext.Repositories.VariableDAO.DeleteVariable(id); err != nil {
 		log.Println("Error deleting variable: ", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -122,7 +123,7 @@ func (appContext *AppContext) getVariables(w http.ResponseWriter, r *http.Reques
 	}
 
 	data, _ := json.Marshal(variableResult)
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 

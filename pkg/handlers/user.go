@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/softplan/tenkai-api/pkg/constraints"
+	"github.com/softplan/tenkai-api/pkg/global"
 	"log"
 	"net/http"
 	"strconv"
@@ -20,7 +21,7 @@ func (appContext *AppContext) newUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
 	}
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 
 	var payload model.User
 
@@ -40,7 +41,7 @@ func (appContext *AppContext) newUser(w http.ResponseWriter, r *http.Request) {
 
 func (appContext *AppContext) createOrUpdateUser(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 
 	var payload model.User
 
@@ -84,7 +85,7 @@ func (appContext *AppContext) deleteUser(w http.ResponseWriter, r *http.Request)
 	vars := mux.Vars(r)
 	sl := vars["id"]
 	id, _ := strconv.Atoi(sl)
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 	if err := appContext.Repositories.UserDAO.DeleteUser(id); err != nil {
 		log.Println("Error deleting variable: ", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

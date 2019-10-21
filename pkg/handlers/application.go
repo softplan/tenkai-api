@@ -248,6 +248,6 @@ func (appContext *AppContext) rootHandler(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		log.Fatal(err)
 	}
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(global.ContentType, "application/json")
 	w.Write(json)
 }

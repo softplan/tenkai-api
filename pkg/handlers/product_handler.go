@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"github.com/softplan/tenkai-api/pkg/global"
 	"net/http"
 	"sort"
 	"strconv"
@@ -17,7 +18,7 @@ import (
 
 func (appContext *AppContext) newProduct(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 
 	var payload model.Product
 
@@ -57,7 +58,7 @@ func (appContext *AppContext) deleteProduct(w http.ResponseWriter, r *http.Reque
 	vars := mux.Vars(r)
 	sl := vars["id"]
 	id, _ := strconv.Atoi(sl)
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 	if err := appContext.Repositories.ProductDAO.DeleteProduct(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -68,7 +69,7 @@ func (appContext *AppContext) deleteProduct(w http.ResponseWriter, r *http.Reque
 
 func (appContext *AppContext) listProducts(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 	result := &model.ProductRequestReponse{}
 	var err error
 	if result.List, err = appContext.Repositories.ProductDAO.ListProducts(); err != nil {
@@ -84,7 +85,7 @@ func (appContext *AppContext) listProducts(w http.ResponseWriter, r *http.Reques
 
 func (appContext *AppContext) newProductVersion(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 	var payload model.ProductVersion
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
@@ -108,7 +109,7 @@ func (appContext *AppContext) deleteProductVersion(w http.ResponseWriter, r *htt
 	vars := mux.Vars(r)
 	sl := vars["id"]
 	id, _ := strconv.Atoi(sl)
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 
 	// Deletes ProductVersionServices
 	childs := &model.ProductVersionServiceRequestReponse{}
@@ -135,7 +136,7 @@ func (appContext *AppContext) deleteProductVersion(w http.ResponseWriter, r *htt
 
 func (appContext *AppContext) newProductVersionService(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 	var payload model.ProductVersionService
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
@@ -173,7 +174,7 @@ func (appContext *AppContext) deleteProductVersionService(w http.ResponseWriter,
 	vars := mux.Vars(r)
 	sl := vars["id"]
 	id, _ := strconv.Atoi(sl)
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 	if err := appContext.Repositories.ProductDAO.DeleteProductVersionService(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -184,7 +185,7 @@ func (appContext *AppContext) deleteProductVersionService(w http.ResponseWriter,
 
 func (appContext *AppContext) listProductVersions(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 
 	ids, ok := r.URL.Query()["productId"]
 	if !ok {
@@ -208,7 +209,7 @@ func (appContext *AppContext) listProductVersions(w http.ResponseWriter, r *http
 
 func (appContext *AppContext) listProductVersionServices(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 
 	ids, ok := r.URL.Query()["productVersionId"]
 	if !ok {

@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
+	"github.com/softplan/tenkai-api/pkg/global"
 	"github.com/softplan/tenkai-api/pkg/util"
 	"net/http"
 	"strconv"
@@ -11,7 +12,7 @@ import (
 
 func (appContext *AppContext) deployTrafficRule(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 
 	var payload model.TrafficRequest
 

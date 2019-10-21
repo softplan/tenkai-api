@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
+	"github.com/softplan/tenkai-api/pkg/global"
 	service_tenkai "github.com/softplan/tenkai-api/pkg/service/analyser"
 	"github.com/softplan/tenkai-api/pkg/util"
 	"log"
@@ -13,7 +14,7 @@ import (
 
 func (appContext *AppContext) newDependency(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 
 	var payload model.Dependency
 
@@ -37,7 +38,7 @@ func (appContext *AppContext) deleteDependency(w http.ResponseWriter, r *http.Re
 	sl := vars["id"]
 	id, _ := strconv.Atoi(sl)
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 
 	if err := appContext.Repositories.DependencyDAO.DeleteDependency(id); err != nil {
 		log.Println("Error deleting environment: ", err)
@@ -51,7 +52,7 @@ func (appContext *AppContext) deleteDependency(w http.ResponseWriter, r *http.Re
 
 func (appContext *AppContext) listDependencies(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 
 	releaseID, ok := r.URL.Query()["releaseId"]
 	if !ok {
@@ -75,7 +76,7 @@ func (appContext *AppContext) listDependencies(w http.ResponseWriter, r *http.Re
 
 func (appContext *AppContext) analyse(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 
 	var payload model.DepAnalyseRequest
 	if err := util.UnmarshalPayload(r, &payload); err != nil {

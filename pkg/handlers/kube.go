@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
+	"github.com/softplan/tenkai-api/pkg/global"
 	"github.com/softplan/tenkai-api/pkg/util"
 	"net/http"
 	"strconv"
@@ -12,7 +13,7 @@ import (
 
 func (appContext *AppContext) services(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -45,7 +46,7 @@ func (appContext *AppContext) services(w http.ResponseWriter, r *http.Request) {
 
 func (appContext *AppContext) pods(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 
 	vars := mux.Vars(r)
 	id := vars["id"]

@@ -12,4 +12,13 @@ const (
 
 	//AccessDenied AccessDenied
 	AccessDenied = "Acccess Denied"
+
+	//ParameterIdError ParameterIdError
+	ParameterIdError = "Error processing parameter id: "
+
+	//ContentType ContentType
+	ContentType = "Content-Type"
+
+	//JsonContentType JsonContentType
+	JsonContentType = "application/json; charset=UTF-8"
 )

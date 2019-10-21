@@ -18,7 +18,7 @@ func (appContext *AppContext) repoUpdate(w http.ResponseWriter, r *http.Request)
 
 func (appContext *AppContext) listRepositories(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 	result := &model.RepositoryResult{}
 
 	repositories, err := appContext.HelmServiceAPI.GetRepositories()
@@ -41,7 +41,7 @@ func (appContext *AppContext) newRepository(w http.ResponseWriter, r *http.Reque
 		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
 	}
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 
 	var payload model.Repository
 
@@ -62,7 +62,7 @@ func (appContext *AppContext) setDefaultRepo(w http.ResponseWriter, r *http.Requ
 
 	principal := util.GetPrincipal(r)
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 
 	var payload model.DefaultRepoRequest
 
@@ -105,7 +105,7 @@ func (appContext *AppContext) deleteRepository(w http.ResponseWriter, r *http.Re
 
 	vars := mux.Vars(r)
 	name := vars["name"]
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 	if err := appContext.HelmServiceAPI.RemoveRepository(name); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

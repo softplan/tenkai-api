@@ -14,7 +14,7 @@ import (
 
 func (appContext *AppContext) listDockerTags(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 
 	var payload model.ListDockerTagsRequest
 
@@ -42,7 +42,7 @@ func (appContext *AppContext) listDockerRepositories(w http.ResponseWriter, r *h
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 	result := &model.ListDockerRepositoryResponse{}
 	var err error
 	if result.Repositories, err = appContext.Repositories.DockerDAO.ListDockerRepos(); err != nil {
@@ -63,7 +63,7 @@ func (appContext *AppContext) newDockerRepository(w http.ResponseWriter, r *http
 		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
 	}
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 
 	var payload model.DockerRepo
 
@@ -91,7 +91,7 @@ func (appContext *AppContext) deleteDockerRepository(w http.ResponseWriter, r *h
 	vars := mux.Vars(r)
 	sl := vars["id"]
 	id, _ := strconv.Atoi(sl)
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(global.ContentType, global.JsonContentType)
 	if err := appContext.Repositories.DockerDAO.DeleteDockerRepo(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
