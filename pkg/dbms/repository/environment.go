@@ -46,30 +46,18 @@ func (dao EnvironmentDAOImpl) DeleteEnvironment(env model2.Environment) error {
 //GetAllEnvironments - Retrieve all environments
 func (dao EnvironmentDAOImpl) GetAllEnvironments(principal string) ([]model2.Environment, error) {
 	envs := make([]model2.Environment, 0)
-
 	if len(principal) > 0 {
-		//Find User by email
 		var user model2.User
-
 		if err := dao.Db.Where(model2.User{Email: principal}).First(&user).Error; err != nil {
-			if err == gorm.ErrRecordNotFound {
-				return envs, nil
-			}
-			return nil, err
+			return checkNotFound(err)
 		}
 
 		if err := dao.Db.Model(&user).Related(&envs, "Environments").Error; err != nil {
-			if err == gorm.ErrRecordNotFound {
-				return envs, nil
-			}
-			return nil, err
+			return checkNotFound(err)
 		}
 	} else {
 		if err := dao.Db.Find(&envs).Error; err != nil {
-			if err == gorm.ErrRecordNotFound {
-				return envs, nil
-			}
-			return nil, err
+			return checkNotFound(err)
 		}
 	}
 	return envs, nil
@@ -82,4 +70,12 @@ func (dao EnvironmentDAOImpl) GetByID(envID int) (*model2.Environment, error) {
 		return nil, err
 	}
 	return &result, nil
+}
+
+func checkNotFound(err error) ([]model2.Environment, error) {
+	if err == gorm.ErrRecordNotFound {
+		return make([]model2.Environment, 0), nil
+	} else {
+		return nil, err
+	}
 }
