@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"k8s.io/helm/pkg/proto/hapi/chart"
 	"strings"
 
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/helm"
+	rls "k8s.io/helm/pkg/proto/hapi/services"
 	"k8s.io/helm/pkg/renderutil"
 	storageerrors "k8s.io/helm/pkg/storage/errors"
 )
@@ -96,7 +98,70 @@ func (svc HelmServiceImpl) Upgrade(kubeconfig string, release string, chart stri
 	return err
 }
 
+func (u *upgradeCmd) doInstall(err error, releaseHistory *rls.GetHistoryResponse, chartPath string) (bool, error) {
+
+	if err == nil {
+		if u.namespace == "" {
+			u.namespace = defaultNamespace()
+		}
+		previousReleaseNamespace := releaseHistory.Releases[0].Namespace
+		if previousReleaseNamespace != u.namespace {
+			fmt.Fprintf(u.out,
+				"WARNING: Namespace %q doesn't match with previous. Release will be deployed to %s\n",
+				u.namespace, previousReleaseNamespace,
+			)
+		}
+	}
+
+	if err != nil && strings.Contains(err.Error(), storageerrors.ErrReleaseNotFound(u.release).Error()) {
+		fmt.Fprintf(u.out, "Release %q does not exist. Installing it now.\n", u.release)
+		ic := &installCmd{
+			chartPath:    chartPath,
+			client:       u.client,
+			out:          u.out,
+			name:         u.release,
+			valueFiles:   u.valueFiles,
+			dryRun:       u.dryRun,
+			verify:       u.verify,
+			disableHooks: u.disableHooks,
+			keyring:      u.keyring,
+			values:       u.values,
+			stringValues: u.stringValues,
+			fileValues:   u.fileValues,
+			namespace:    u.namespace,
+			timeout:      u.timeout,
+			wait:         u.wait,
+			description:  u.description,
+			atomic:       u.atomic,
+		}
+		return true, ic.run()
+	}
+
+	return false, nil
+
+}
+
+func (u *upgradeCmd) checkChart(chartPath string) (*chart.Chart, error) {
+
+	ch, err := chartutil.Load(chartPath)
+	if err == nil {
+		if req, err := chartutil.LoadRequirements(ch); err == nil {
+			if err := renderutil.CheckDependencies(ch, req); err != nil {
+				return ch, err
+			}
+			return ch, nil
+		} else {
+			if err != chartutil.ErrRequirementsNotFound {
+				return nil, fmt.Errorf("cannot load requirements: %v", err)
+			}
+			return ch, nil
+		}
+	}
+	return nil, prettyError(err)
+}
+
 func (u *upgradeCmd) run() error {
+
 	chartPath, err := locateChartPath(u.repoURL, u.username, u.password, u.chart, u.version, u.verify, u.keyring, u.certFile, u.keyFile, u.caFile)
 	if err != nil {
 		return err
@@ -106,41 +171,9 @@ func (u *upgradeCmd) run() error {
 	releaseHistory, err := u.client.ReleaseHistory(u.release, helm.WithMaxHistory(1))
 
 	if u.install {
-		if err == nil {
-			if u.namespace == "" {
-				u.namespace = defaultNamespace()
-			}
-			previousReleaseNamespace := releaseHistory.Releases[0].Namespace
-			if previousReleaseNamespace != u.namespace {
-				fmt.Fprintf(u.out,
-					"WARNING: Namespace %q doesn't match with previous. Release will be deployed to %s\n",
-					u.namespace, previousReleaseNamespace,
-				)
-			}
-		}
-
-		if err != nil && strings.Contains(err.Error(), storageerrors.ErrReleaseNotFound(u.release).Error()) {
-			fmt.Fprintf(u.out, "Release %q does not exist. Installing it now.\n", u.release)
-			ic := &installCmd{
-				chartPath:    chartPath,
-				client:       u.client,
-				out:          u.out,
-				name:         u.release,
-				valueFiles:   u.valueFiles,
-				dryRun:       u.dryRun,
-				verify:       u.verify,
-				disableHooks: u.disableHooks,
-				keyring:      u.keyring,
-				values:       u.values,
-				stringValues: u.stringValues,
-				fileValues:   u.fileValues,
-				namespace:    u.namespace,
-				timeout:      u.timeout,
-				wait:         u.wait,
-				description:  u.description,
-				atomic:       u.atomic,
-			}
-			return ic.run()
+		exec, err := u.doInstall(err, releaseHistory, chartPath)
+		if exec {
+			return err
 		}
 	}
 
@@ -150,17 +183,9 @@ func (u *upgradeCmd) run() error {
 	}
 
 	// Check chart requirements to make sure all dependencies are present in /charts
-	ch, err := chartutil.Load(chartPath)
-	if err == nil {
-		if req, err := chartutil.LoadRequirements(ch); err == nil {
-			if err := renderutil.CheckDependencies(ch, req); err != nil {
-				return err
-			}
-		} else if err != chartutil.ErrRequirementsNotFound {
-			return fmt.Errorf("cannot load requirements: %v", err)
-		}
-	} else {
-		return prettyError(err)
+	ch, err := u.checkChart(chartPath)
+	if err != nil {
+		return err
 	}
 
 	_, err = u.client.UpdateReleaseFromChart(
@@ -178,8 +203,11 @@ func (u *upgradeCmd) run() error {
 		helm.UpgradeWait(u.wait),
 		helm.UpgradeDescription(u.description),
 		helm.UpgradeCleanupOnFail(u.cleanupOnFail))
+
 	if err != nil {
+
 		fmt.Fprintf(u.out, "UPGRADE FAILED\nError: %v\n", prettyError(err))
+
 		if u.atomic {
 			fmt.Fprint(u.out, "ROLLING BACK")
 			rollback := &rollbackCmd{
@@ -200,8 +228,12 @@ func (u *upgradeCmd) run() error {
 				return err
 			}
 		}
+
 		return fmt.Errorf("UPGRADE FAILED: %v", prettyError(err))
+
 	}
+
 	fmt.Fprintf(u.out, "Release %q has been upgraded.\n", u.release)
+
 	return nil
 }
