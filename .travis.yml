@@ -1,5 +1,9 @@
 language: go
 
+addons:
+  sonarcloud:
+    organization: "softplan"
+
 go:
   - "1.12"
 
