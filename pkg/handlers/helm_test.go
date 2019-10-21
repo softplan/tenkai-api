@@ -86,7 +86,7 @@ func TestDeleteHelmRelease(t *testing.T) {
 
 	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
 	mockEnvDao.AssertNumberOfCalls(t, "GetAllEnvironments", 1)
-	mockEnvDao.AssertNumberOfCalls(t, "GetAllEnvironments", 1)
+	mockHelmSvc.AssertNumberOfCalls(t, "DeleteHelmRelease", 1)
 	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 1)
 	mockAudit.AssertNumberOfCalls(t, "DoAudit", 1)
 
