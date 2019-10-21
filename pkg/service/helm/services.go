@@ -51,18 +51,17 @@ func fillService(service v1.Service) *model.Service {
 	return &result
 }
 
+func checkIps(svc *v1.Service) string {
+	if len(svc.Spec.ExternalIPs) > 0 {
+		return strings.Join(svc.Spec.ExternalIPs, ",")
+	}
+	return "<none>"
+}
+
 func getServiceExternalIP(svc *v1.Service, wide bool) string {
 	switch svc.Spec.Type {
-	case v1.ServiceTypeClusterIP:
-		if len(svc.Spec.ExternalIPs) > 0 {
-			return strings.Join(svc.Spec.ExternalIPs, ",")
-		}
-		return "<none>"
-	case v1.ServiceTypeNodePort:
-		if len(svc.Spec.ExternalIPs) > 0 {
-			return strings.Join(svc.Spec.ExternalIPs, ",")
-		}
-		return "<none>"
+	case v1.ServiceTypeClusterIP, v1.ServiceTypeNodePort:
+		return checkIps(svc)
 	case v1.ServiceTypeLoadBalancer:
 		lbIps := loadBalancerStatusStringer(svc.Status.LoadBalancer, wide)
 		if len(svc.Spec.ExternalIPs) > 0 {

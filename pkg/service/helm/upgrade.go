@@ -54,12 +54,23 @@ type upgradeCmd struct {
 	caFile   string
 }
 
+//UpgradeRequest UpgradeRequest
+type UpgradeRequest struct {
+	Kubeconfig   string
+	Release      string
+	Chart        string
+	ChartVersion string
+	Namespace    string
+	Variables    []string
+	Dryrun       bool
+}
+
 //Upgrade Method
-func (svc HelmServiceImpl) Upgrade(kubeconfig string, release string, chart string, chartVersion string, namespace string, variables []string, out *bytes.Buffer, dryrun bool) error {
+func (svc HelmServiceImpl) Upgrade(upgradeRequest UpgradeRequest, out *bytes.Buffer) error {
 
-	svc.EnsureSettings(kubeconfig)
+	svc.EnsureSettings(upgradeRequest.Kubeconfig)
 
-	if dryrun {
+	if upgradeRequest.Dryrun {
 		settings.Debug = true
 	}
 
@@ -71,12 +82,12 @@ func (svc HelmServiceImpl) Upgrade(kubeconfig string, release string, chart stri
 	if err == nil {
 		upgrade.client = newClient()
 
-		if dryrun {
+		if upgradeRequest.Dryrun {
 			upgrade.dryRun = true
 		}
 
-		if chartVersion != "" {
-			upgrade.version = chartVersion
+		if upgradeRequest.ChartVersion != "" {
+			upgrade.version = upgradeRequest.ChartVersion
 		} else {
 			upgrade.version = ">0.0.0-0"
 		}
@@ -84,12 +95,12 @@ func (svc HelmServiceImpl) Upgrade(kubeconfig string, release string, chart stri
 		upgrade.install = true
 		upgrade.recreate = false
 		upgrade.force = true
-		upgrade.release = release
-		upgrade.chart = chart
-		upgrade.values = variables
+		upgrade.release = upgradeRequest.Release
+		upgrade.chart = upgradeRequest.Chart
+		upgrade.values = upgradeRequest.Variables
 		upgrade.client = ensureHelmClient(upgrade.client)
 		upgrade.wait = upgrade.wait || upgrade.atomic
-		upgrade.namespace = namespace
+		upgrade.namespace = upgradeRequest.Namespace
 		err = upgrade.run()
 		settings.KubeConfig = ""
 	}
@@ -145,17 +156,19 @@ func (u *upgradeCmd) checkChart(chartPath string) (*chart.Chart, error) {
 
 	ch, err := chartutil.Load(chartPath)
 	if err == nil {
+
 		if req, err := chartutil.LoadRequirements(ch); err == nil {
 			if err := renderutil.CheckDependencies(ch, req); err != nil {
 				return ch, err
 			}
 			return ch, nil
-		} else {
-			if err != chartutil.ErrRequirementsNotFound {
-				return nil, fmt.Errorf("cannot load requirements: %v", err)
-			}
-			return ch, nil
 		}
+
+		if err != chartutil.ErrRequirementsNotFound {
+			return nil, fmt.Errorf("cannot load requirements: %v", err)
+		}
+		return ch, nil
+
 	}
 	return nil, prettyError(err)
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/global"
+	helmapi "github.com/softplan/tenkai-api/pkg/service/helm"
 	"github.com/softplan/tenkai-api/pkg/util"
 	"net/http"
 	"strconv"
@@ -65,9 +66,19 @@ func (appContext *AppContext) deployTrafficRule(w http.ResponseWriter, r *http.R
 
 	//Retry 2 times (First time will fail because service already exists).
 	//TODO - VERIFY HOW TO FIX IT
-	err = appContext.HelmServiceAPI.Upgrade(kubeConfig, name, chart, "", environment.Namespace, variables, out, false)
+
+	upgradeRequest := helmapi.UpgradeRequest{}
+	upgradeRequest.Kubeconfig = kubeConfig
+	upgradeRequest.Namespace = environment.Namespace
+	upgradeRequest.ChartVersion = ""
+	upgradeRequest.Chart = chart
+	upgradeRequest.Variables = variables
+	upgradeRequest.Dryrun = false
+	upgradeRequest.Release = name
+
+	err = appContext.HelmServiceAPI.Upgrade(upgradeRequest, out)
 	if err != nil {
-		err = appContext.HelmServiceAPI.Upgrade(kubeConfig, name, chart, "", environment.Namespace, variables, out, false)
+		err = appContext.HelmServiceAPI.Upgrade(upgradeRequest, out)
 		if err != nil {
 			http.Error(w, err.Error(), 501)
 			return
