@@ -167,6 +167,33 @@ func StartHTTPServer(appContext *AppContext) {
 
 }
 
+func extractToken(reqToken string) *model.Principal {
+	var principal model.Principal
+
+	splitToken := strings.Split(reqToken, "Bearer ")
+	reqToken = splitToken[1]
+	token, _, earl := new(jwt.Parser).ParseUnverified(reqToken, jwt.MapClaims{})
+	if earl == nil {
+		if claims, ok := token.Claims.(jwt.MapClaims); ok {
+			in := claims["realm_access"]
+			if in != nil {
+				realmAccessMap := in.(map[string]interface{})
+				roles := realmAccessMap["roles"]
+				if roles != nil {
+					elements := roles.([]interface{})
+					for _, element := range elements {
+						principal.Roles = append(principal.Roles, element.(string))
+					}
+				}
+			}
+			principal.Name = fmt.Sprintf("%v", claims["name"])
+			principal.Email = fmt.Sprintf("%v", claims["email"])
+			return &principal
+		}
+	}
+	return nil
+}
+
 func commonHandler(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -180,43 +207,11 @@ func commonHandler(next http.Handler) http.Handler {
 
 		reqToken := r.Header.Get("Authorization")
 		if len(reqToken) > 0 {
-
-			splitToken := strings.Split(reqToken, "Bearer ")
-			reqToken = splitToken[1]
-
-			token, _, earl := new(jwt.Parser).ParseUnverified(reqToken, jwt.MapClaims{})
-			if earl == nil {
-
-				if claims, ok := token.Claims.(jwt.MapClaims); ok {
-
-					var principal model.Principal
-
-					in := claims["realm_access"]
-					if in != nil {
-						realmAccessMap := in.(map[string]interface{})
-						roles := realmAccessMap["roles"]
-						if roles != nil {
-							elements := roles.([]interface{})
-							for _, element := range elements {
-								principal.Roles = append(principal.Roles, element.(string))
-							}
-						}
-					}
-
-					principal.Name = fmt.Sprintf("%v", claims["name"])
-					principal.Email = fmt.Sprintf("%v", claims["email"])
-
-					data, _ := json.Marshal(principal)
-					r.Header.Set("principal", string(data))
-
-				} else {
-					fmt.Println(earl)
-				}
-
-			} else {
-				fmt.Println(earl)
+			principal := extractToken(reqToken)
+			if principal != nil {
+				data, _ := json.Marshal(*principal)
+				r.Header.Set("principal", string(data))
 			}
-
 		}
 
 		next.ServeHTTP(w, r)
