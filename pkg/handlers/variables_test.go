@@ -82,33 +82,3 @@ func TestDeleteVariable(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 
 }
-
-func TestGetVariables(t *testing.T) {
-
-	appContext := AppContext{}
-	appContext.K8sConfigPath = "/tmp/"
-
-	mockVariableDAO := &mocks.VariableDAOInterface{}
-	mockVariableDAO.On("DeleteVariable", mock.Anything).Return(nil)
-
-	appContext.Repositories = Repositories{}
-	appContext.Repositories.VariableDAO = mockVariableDAO
-
-	req, err := http.NewRequest("GET", "/variables/delete/1", nil)
-	assert.NoError(t, err)
-	assert.NotNil(t, req)
-
-	roles := []string{constraints.TenkaiVariablesDelete}
-	principal := model.Principal{Name: "alfa", Email: "beta@gmail.com", Roles: roles}
-	pSe, _ := json.Marshal(principal)
-	req.Header.Set("principal", string(pSe))
-
-	rr := httptest.NewRecorder()
-	r := mux.NewRouter()
-	r.HandleFunc("/variables/delete/{id}", appContext.deleteVariable).Methods("DELETE")
-	r.ServeHTTP(rr, req)
-
-	mockVariableDAO.AssertNumberOfCalls(t, "DeleteVariable", 1)
-	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
-
-}

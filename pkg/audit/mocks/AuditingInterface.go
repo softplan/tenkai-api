@@ -2,6 +2,7 @@
 
 package mocks
 
+import config "github.com/olivere/elastic/config"
 import context "context"
 import elastic "github.com/olivere/elastic"
 import mock "github.com/stretchr/testify/mock"
@@ -32,6 +33,29 @@ func (_m *AuditingInterface) ElkClient(url string, username string, password str
 	var r1 error
 	if rf, ok := ret.Get(1).(func(string, string, string) error); ok {
 		r1 = rf(url, username, password)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// newClient provides a mock function with given fields: _a0
+func (_m *AuditingInterface) newClient(_a0 *config.Config) (*elastic.Client, error) {
+	ret := _m.Called(_a0)
+
+	var r0 *elastic.Client
+	if rf, ok := ret.Get(0).(func(*config.Config) *elastic.Client); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*elastic.Client)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*config.Config) error); ok {
+		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
 	}

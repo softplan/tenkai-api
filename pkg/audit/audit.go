@@ -14,8 +14,18 @@ type AuditingInterface interface {
 	DoAudit(ctx context.Context, client *elastic.Client, username string, operation string, values map[string]string)
 }
 
+//ElkInterface ElkInterface
+type ElkInterface interface {
+	NewClient(config *config.Config) (*elastic.Client, error)
+}
+
+//ElkImpl ElkImpl
+type ElkImpl struct {
+}
+
 //AuditingImpl AuditingImpl
 type AuditingImpl struct {
+	Elk ElkInterface
 }
 
 //Document structure
@@ -23,6 +33,22 @@ type Document struct {
 	username  string
 	operation string
 	CreatedAt time.Time
+}
+
+//AuditingBuilder AuditingBuilder
+func AuditingBuilder() AuditingInterface {
+	result := &AuditingImpl{}
+	result.Elk = &ElkImpl{}
+	return result
+}
+
+//NewClient NewClient
+func (a ElkImpl) NewClient(config *config.Config) (*elastic.Client, error) {
+	elasticClient, err := elastic.NewClientFromConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	return elasticClient, nil
 }
 
 //ElkClient return a new ElkClient
@@ -35,7 +61,7 @@ func (a AuditingImpl) ElkClient(url string, username string, password string) (*
 		Index:    "tenkai1audit",
 	}
 
-	elasticClient, err := elastic.NewClientFromConfig(config)
+	elasticClient, err := a.Elk.NewClient(config)
 	if err != nil {
 		return nil, err
 	}
