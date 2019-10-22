@@ -20,7 +20,6 @@ import (
 )
 
 func TestListCharts(t *testing.T) {
-
 	appContext := AppContext{}
 	appContext.K8sConfigPath = "/tmp/"
 
@@ -61,17 +60,17 @@ func TestDeleteHelmRelease(t *testing.T) {
 	mockHelmSvc := &mockSvc.HelmServiceInterface{}
 	mockHelmSvc.On("DeleteHelmRelease", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-	mockAudit := &mockAud.AuditingInterface{}
-	mockAudit.On("DoAudit", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything)
+	auditValues := make(map[string]string)
+	auditValues["environment"] = "bar"
+	auditValues["purge"] = "false"
+	auditValues["name"] = "foo"
+	mockAudit := mockDoAudit(&appContext, "deleteHelmRelease", auditValues)
 
-	mockConvention := &mocks.ConventionInterface{}
-	mockConvention.On("GetKubeConfigFileName", mock.Anything, mock.Anything).Return("./config/foo_bar")
+	mockConvention := mockConventionInterface(&appContext)
 
 	appContext.Repositories = Repositories{}
 	appContext.Repositories.EnvironmentDAO = mockEnvDao
 	appContext.HelmServiceAPI = mockHelmSvc
-	appContext.Auditing = mockAudit
-	appContext.ConventionInterface = mockConvention
 
 	mockPrincipal(req)
 
@@ -84,33 +83,26 @@ func TestDeleteHelmRelease(t *testing.T) {
 	mockHelmSvc.AssertNumberOfCalls(t, "DeleteHelmRelease", 1)
 	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 1)
 	mockAudit.AssertNumberOfCalls(t, "DoAudit", 1)
+	mockAudit.AssertExpectations(t)
 
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 }
 
 func TestRollback(t *testing.T) {
-
 	payloadStr, _ := json.Marshal(getRevision())
-
 	req, err := http.NewRequest("POST", "/rollback", bytes.NewBuffer(payloadStr))
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
-	env := model.Environment{Group: "foo", Name: "bar"}
-	env.ID = 999
-	mockEnvDao.On("GetByID", mock.Anything).Return(&env, nil)
+	appContext := AppContext{}
+	mockEnvDao := mockGetByID(&appContext)
 
 	mockHelmSvc := &mockSvc.HelmServiceInterface{}
 	mockHelmSvc.On("RollbackRelease", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-	mockConvention := &mocks.ConventionInterface{}
-	mockConvention.On("GetKubeConfigFileName", mock.Anything, mock.Anything).Return("./config/foo_bar")
+	mockConvention := mockConventionInterface(&appContext)
 
-	appContext := AppContext{}
-	appContext.Repositories.EnvironmentDAO = mockEnvDao
 	appContext.HelmServiceAPI = mockHelmSvc
-	appContext.ConventionInterface = mockConvention
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.rollback)
@@ -125,27 +117,20 @@ func TestRollback(t *testing.T) {
 
 func TestRevision(t *testing.T) {
 	payloadStr, _ := json.Marshal(getRevision())
-
 	req, err := http.NewRequest("POST", "/revision", bytes.NewBuffer(payloadStr))
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
-	env := model.Environment{Group: "foo", Name: "bar"}
-	env.ID = 999
-	mockEnvDao.On("GetByID", mock.Anything).Return(&env, nil)
+	appContext := AppContext{}
+	mockEnvDao := mockGetByID(&appContext)
 
 	mockHelmSvc := &mockSvc.HelmServiceInterface{}
 	yaml := "foo: bar"
 	mockHelmSvc.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(yaml, nil)
 
-	mockConvention := &mocks.ConventionInterface{}
-	mockConvention.On("GetKubeConfigFileName", mock.Anything, mock.Anything).Return("./config/foo_bar")
+	mockConvention := mockConventionInterface(&appContext)
 
-	appContext := AppContext{}
-	appContext.Repositories.EnvironmentDAO = mockEnvDao
 	appContext.HelmServiceAPI = mockHelmSvc
-	appContext.ConventionInterface = mockConvention
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.revision)
@@ -169,13 +154,9 @@ func TestListReleaseHistory(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
-	env := model.Environment{Group: "foo", Name: "bar"}
-	env.ID = 999
-	mockEnvDao.On("GetByID", mock.Anything).Return(&env, nil)
-
-	mockConvention := &mocks.ConventionInterface{}
-	mockConvention.On("GetKubeConfigFileName", mock.Anything, mock.Anything).Return("./config/foo_bar")
+	appContext := AppContext{}
+	mockEnvDao := mockGetByID(&appContext)
+	mockConvention := mockConventionInterface(&appContext)
 
 	var info helmapi.ReleaseInfo
 	info.Revision = 987
@@ -189,10 +170,7 @@ func TestListReleaseHistory(t *testing.T) {
 	mockHelmSvc := &mockSvc.HelmServiceInterface{}
 	mockHelmSvc.On("GetHelmReleaseHistory", mock.Anything, mock.Anything).Return(history, nil)
 
-	appContext := AppContext{}
-	appContext.Repositories.EnvironmentDAO = mockEnvDao
 	appContext.HelmServiceAPI = mockHelmSvc
-	appContext.ConventionInterface = mockConvention
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.listReleaseHistory)
@@ -212,13 +190,9 @@ func TestListHelmDeploymentsByEnvironment(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
-	env := model.Environment{Group: "foo", Name: "bar"}
-	env.ID = 999
-	mockEnvDao.On("GetByID", mock.Anything).Return(&env, nil)
-
-	mockConvention := &mocks.ConventionInterface{}
-	mockConvention.On("GetKubeConfigFileName", mock.Anything, mock.Anything).Return("./config/foo_bar")
+	appContext := AppContext{}
+	mockEnvDao := mockGetByID(&appContext)
+	mockConvention := mockConventionInterface(&appContext)
 
 	var listReleases []helmapi.ListRelease
 
@@ -241,9 +215,6 @@ func TestListHelmDeploymentsByEnvironment(t *testing.T) {
 	mockHelmSvc := &mockSvc.HelmServiceInterface{}
 	mockHelmSvc.On("ListHelmDeployments", mock.Anything, mock.Anything).Return(result, nil)
 
-	appContext := AppContext{}
-	appContext.Repositories.EnvironmentDAO = mockEnvDao
-	appContext.ConventionInterface = mockConvention
 	appContext.HelmServiceAPI = mockHelmSvc
 
 	rr := httptest.NewRecorder()
@@ -307,35 +278,14 @@ func TestGetChartVariables(t *testing.T) {
 }
 
 func TestGetHelmCommand(t *testing.T) {
-	var ip model.InstallPayload
-	ip.EnvironmentID = 999
-	ip.Chart = "foo"
-	ip.ChartVersion = "0.1.0"
-	ip.Name = "my-foo"
-
-	var payload model.MultipleInstallPayload
-	payload.Deployables = append(payload.Deployables, ip)
-	pStr, _ := json.Marshal(payload)
-
-	req, err := http.NewRequest("POST", "/getHelmCommand", bytes.NewBuffer(pStr))
+	req, err := http.NewRequest("POST", "/getHelmCommand", getMultipleInstallPayload())
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
 	appContext := AppContext{}
-
 	mockEnvDao := mockGetByID(&appContext)
-	mockVariableDAO := &mockRepo.VariableDAOInterface{}
-
-	var variables []model.Variable
-	variables = append(variables, mockVariable())
-	mockVariableDAO.On("GetAllVariablesByEnvironmentAndScope", mock.Anything, mock.Anything).Return(variables, nil)
-
-	mockConvention := &mocks.ConventionInterface{}
-	mockConvention.On("GetKubeConfigFileName", mock.Anything, mock.Anything).Return("./config/foo_bar")
-
-	appContext.Repositories.EnvironmentDAO = mockEnvDao
-	appContext.Repositories.VariableDAO = mockVariableDAO
-	appContext.ConventionInterface = mockConvention
+	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
+	mockConvention := mockConventionInterface(&appContext)
 
 	mockPrincipal(req)
 
@@ -352,6 +302,85 @@ func TestGetHelmCommand(t *testing.T) {
 	assert.Contains(t, response, "--set \"app.username=user")
 	assert.Contains(t, response, "istio.virtualservices.gateways[0]=my-gateway.istio-system.svc.cluster.local")
 	assert.Contains(t, response, "foo --namespace=dev")
+}
+
+func TestMultipleInstall(t *testing.T) {
+	req, err := http.NewRequest("POST", "/multipleInstall", getMultipleInstallPayload())
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req)
+
+	appContext := AppContext{}
+	mockEnvDao := mockGetByID(&appContext)
+	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
+	mockConvention := mockConventionInterface(&appContext)
+	mockHelmSvc := mockUpgrade(&appContext)
+
+	auditValues := make(map[string]string)
+	auditValues["environment"] = "bar"
+	auditValues["chartName"] = "foo"
+	auditValues["name"] = "my-foo"
+	mockAudit := mockDoAudit(&appContext, "deploy", auditValues)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.multipleInstall)
+	handler.ServeHTTP(rr, req)
+
+	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
+	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 1)
+	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironmentAndScope", 2)
+	mockHelmSvc.AssertNumberOfCalls(t, "Upgrade", 1)
+	mockAudit.AssertNumberOfCalls(t, "DoAudit", 1)
+	mockAudit.AssertExpectations(t)
+
+	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
+}
+
+func mockDoAudit(appContext *AppContext, operation string, auditValues map[string]string) *mockAud.AuditingInterface {
+	mockAudit := &mockAud.AuditingInterface{}
+	mockAudit.On("DoAudit", mock.Anything, mock.Anything, "beta@alfa.com", operation, auditValues)
+	appContext.Auditing = mockAudit
+
+	return mockAudit
+}
+
+func mockUpgrade(appContext *AppContext) *mockSvc.HelmServiceInterface {
+	mockHelmSvc := &mockSvc.HelmServiceInterface{}
+	mockHelmSvc.On("Upgrade", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	appContext.HelmServiceAPI = mockHelmSvc
+	return mockHelmSvc
+}
+
+func mockConventionInterface(appContext *AppContext) *mocks.ConventionInterface {
+	mockConvention := &mocks.ConventionInterface{}
+	mockConvention.On("GetKubeConfigFileName", mock.Anything, mock.Anything).Return("./config/foo_bar")
+	appContext.ConventionInterface = mockConvention
+	return mockConvention
+}
+
+func mockGetAllVariablesByEnvironmentAndScope(appContext *AppContext) *mockRepo.VariableDAOInterface {
+	mockVariableDAO := &mockRepo.VariableDAOInterface{}
+	var variables []model.Variable
+	variables = append(variables, mockVariable())
+	mockVariableDAO.On("GetAllVariablesByEnvironmentAndScope", mock.Anything, mock.Anything).Return(variables, nil)
+
+	appContext.Repositories.VariableDAO = mockVariableDAO
+
+	return mockVariableDAO
+}
+
+func getMultipleInstallPayload() *bytes.Buffer {
+	var ip model.InstallPayload
+	ip.EnvironmentID = 999
+	ip.Chart = "foo"
+	ip.ChartVersion = "0.1.0"
+	ip.Name = "my-foo"
+
+	var payload model.MultipleInstallPayload
+	payload.Deployables = append(payload.Deployables, ip)
+	pStr, _ := json.Marshal(payload)
+	return bytes.NewBuffer(pStr)
 }
 
 func mockVariable() model.Variable {
@@ -388,7 +417,7 @@ func mockGetByID(appContext *AppContext) *mockRepo.EnvironmentDAOInterface {
 
 func mockPrincipal(req *http.Request) {
 	roles := []string{"tenkai-helm-upgrade"}
-	principal := model.Principal{Name: "alfa", Email: "beta", Roles: roles}
+	principal := model.Principal{Name: "alfa", Email: "beta@alfa.com", Roles: roles}
 	pSe, _ := json.Marshal(principal)
 	req.Header.Set("principal", string(pSe))
 }
