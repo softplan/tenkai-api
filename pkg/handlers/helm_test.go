@@ -337,6 +337,42 @@ func TestMultipleInstall(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 }
 
+func TestInstall(t *testing.T) {
+	req, err := http.NewRequest("POST", "/install", getInstallPayload())
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req)
+
+	appContext := AppContext{}
+	mockEnvDao := mockGetByID(&appContext)
+	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
+	mockConvention := mockConventionInterface(&appContext)
+	mockHelmSvc := mockUpgrade(&appContext)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.install)
+	handler.ServeHTTP(rr, req)
+
+	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
+	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 1)
+	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironmentAndScope", 2)
+	mockHelmSvc.AssertNumberOfCalls(t, "Upgrade", 1)
+
+	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
+}
+
+func getInstallPayload() *bytes.Buffer {
+	var payload model.InstallPayload
+	payload.EnvironmentID = 999
+	payload.Chart = "foo"
+	payload.ChartVersion = "0.1.0"
+	payload.Name = "my-foo"
+
+	pStr, _ := json.Marshal(payload)
+	return bytes.NewBuffer(pStr)
+}
+
 func mockDoAudit(appContext *AppContext, operation string, auditValues map[string]string) *mockAud.AuditingInterface {
 	mockAudit := &mockAud.AuditingInterface{}
 	mockAudit.On("DoAudit", mock.Anything, mock.Anything, "beta@alfa.com", operation, auditValues)
