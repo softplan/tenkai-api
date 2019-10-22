@@ -2,13 +2,14 @@ package handlers
 
 import (
 	"encoding/json"
-	"github.com/softplan/tenkai-api/pkg/global"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/softplan/tenkai-api/pkg/global"
 
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
@@ -238,6 +239,7 @@ func (appContext *AppContext) listProductVersionServices(w http.ResponseWriter, 
 
 			wg.Add(1)
 			go func(wg *sync.WaitGroup, serviceName string, tag string, index int) {
+				serviceName = splitSrvNameIfNeeded(serviceName)
 				defer wg.Done()
 				version, _ := appContext.verifyNewVersion(serviceName, tag)
 				result.List[index].LatestVersion = version
@@ -256,6 +258,14 @@ func (appContext *AppContext) listProductVersionServices(w http.ResponseWriter, 
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 
+}
+
+func splitSrvNameIfNeeded(serviceName string) string {
+	svcName := strings.Split(serviceName, " - ")
+	if len(svcName) == 2 {
+		serviceName = svcName[0]
+	}
+	return serviceName
 }
 
 func (appContext *AppContext) verifyNewVersion(serviceName string, dockerImageTag string) (string, error) {
