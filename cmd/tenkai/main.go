@@ -67,7 +67,7 @@ func initAPIs(appContext *handlers.AppContext) {
 	appContext.DockerServiceAPI = dockerapi.DockerServiceBuilder()
 	appContext.HelmServiceAPI = helmapi.HelmServiceBuilder()
 
-	appContext.Auditing = &audit2.AuditingImpl{}
+	appContext.Auditing = audit2.AuditingBuilder()
 	appContext.ConventionInterface = &core.ConventionImpl{}
 }
 
