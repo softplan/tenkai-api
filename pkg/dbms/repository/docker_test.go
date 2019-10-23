@@ -52,3 +52,32 @@ func TestCreateDockerRepo(t *testing.T) {
 	mock.ExpectationsWereMet()
 
 }
+
+func TestGetDockerRepositoryByHost(t *testing.T) {
+
+	db, mock, err := sqlmock.New()
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	assert.Nil(t, err)
+
+	dockerDAO := DockerDAOImpl{}
+	dockerDAO.Db = gormDB
+
+	mock.MatchExpectationsInOrder(false)
+
+	item := getTestData()
+
+	rows := sqlmock.NewRows([]string{"ID", "HOST"}).AddRow(1, item.Host)
+
+	mock.ExpectQuery(`SELECT (.+) FROM "docker_repos"`).
+		WithArgs(item.Host).
+		WillReturnRows(rows)
+
+	_, err = dockerDAO.GetDockerRepositoryByHost(item.Host)
+	assert.Nil(t, err)
+
+	mock.ExpectationsWereMet()
+
+}
