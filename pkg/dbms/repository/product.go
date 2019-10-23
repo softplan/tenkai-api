@@ -81,50 +81,32 @@ func (dao ProductDAOImpl) CreateProductVersionService(e model2.ProductVersionSer
 
 //EditProduct - Updates an existing product
 func (dao ProductDAOImpl) EditProduct(e model2.Product) error {
-	if err := dao.Db.Save(&e).Error; err != nil {
-		return err
-	}
-	return nil
+	return dao.Db.Save(&e).Error
 }
 
 //EditProductVersion - Updates an existing product version
 func (dao ProductDAOImpl) EditProductVersion(e model2.ProductVersion) error {
-	if err := dao.Db.Save(&e).Error; err != nil {
-		return err
-	}
-	return nil
+	return dao.Db.Save(&e).Error
 }
 
 //EditProductVersionService - Updates an existing product version
 func (dao ProductDAOImpl) EditProductVersionService(e model2.ProductVersionService) error {
-	if err := dao.Db.Save(&e).Error; err != nil {
-		return err
-	}
-	return nil
+	return dao.Db.Save(&e).Error
 }
 
 //DeleteProduct - Deletes a product
 func (dao ProductDAOImpl) DeleteProduct(id int) error {
-	if err := dao.Db.Unscoped().Delete(model2.Product{}, id).Error; err != nil {
-		return err
-	}
-	return nil
+	return dao.Db.Unscoped().Delete(model2.Product{}, id).Error
 }
 
 //DeleteProductVersion - Deletes a productVersion
 func (dao ProductDAOImpl) DeleteProductVersion(id int) error {
-	if err := dao.Db.Unscoped().Delete(model2.ProductVersion{}, id).Error; err != nil {
-		return err
-	}
-	return nil
+	return dao.Db.Unscoped().Delete(model2.ProductVersion{}, id).Error
 }
 
 //DeleteProductVersionService - Deletes a productVersionService
 func (dao ProductDAOImpl) DeleteProductVersionService(id int) error {
-	if err := dao.Db.Unscoped().Delete(model2.ProductVersionService{}, id).Error; err != nil {
-		return err
-	}
-	return nil
+	return dao.Db.Unscoped().Delete(model2.ProductVersionService{}, id).Error
 }
 
 //ListProducts - List products

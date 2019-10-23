@@ -33,18 +33,12 @@ func (dao DependencyDAOImpl) GetDependencies(chartName string, tag string) ([]mo
 
 //CreateDependency - Creates a new dependency
 func (dao DependencyDAOImpl) CreateDependency(dependency model2.Dependency) error {
-	if err := dao.Db.Create(&dependency).Error; err != nil {
-		return err
-	}
-	return nil
+	return dao.Db.Create(&dependency).Error
 }
 
 //DeleteDependency - Deletes a dependency
 func (dao DependencyDAOImpl) DeleteDependency(id int) error {
-	if err := dao.Db.Unscoped().Delete(model2.Dependency{}, id).Error; err != nil {
-		return err
-	}
-	return nil
+	return dao.Db.Unscoped().Delete(model2.Dependency{}, id).Error
 }
 
 //ListDependencies - List dependencies

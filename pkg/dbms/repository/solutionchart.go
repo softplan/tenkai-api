@@ -19,31 +19,22 @@ type SolutionChartDAOImpl struct {
 
 //CreateSolutionChart - Create a Solution Chart
 func (dao SolutionChartDAOImpl) CreateSolutionChart(element model2.SolutionChart) error {
-	if err := dao.Db.Create(&element).Error; err != nil {
-		return err
-	}
-	return nil
+	return dao.Db.Create(&element).Error
 }
 
 //DeleteSolutionChart - Delete a solution chart
 func (dao SolutionChartDAOImpl) DeleteSolutionChart(id int) error {
-	if err := dao.Db.Unscoped().Delete(model2.SolutionChart{}, id).Error; err != nil {
-		return err
-	}
-	return nil
+	return dao.Db.Unscoped().Delete(model2.SolutionChart{}, id).Error
 }
 
 //ListSolutionChart - List a Solution Chart
 func (dao SolutionChartDAOImpl) ListSolutionChart(id int) ([]model2.SolutionChart, error) {
 	list := make([]model2.SolutionChart, 0)
 	if err := dao.Db.Where(&model2.SolutionChart{SolutionID: id}).Find(&list).Error; err != nil {
-
 		if gorm.IsRecordNotFoundError(err) {
 			return make([]model2.SolutionChart, 0), nil
 		}
-
 		return nil, err
-
 	}
 	return list, nil
 }

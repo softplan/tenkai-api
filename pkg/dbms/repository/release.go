@@ -19,18 +19,12 @@ type ReleaseDAOImpl struct {
 
 //CreateRelease - Create a new Release
 func (dao ReleaseDAOImpl) CreateRelease(release model2.Release) error {
-	if err := dao.Db.Create(&release).Error; err != nil {
-		return err
-	}
-	return nil
+	return dao.Db.Create(&release).Error
 }
 
 //DeleteRelease - Delete a new Release
 func (dao ReleaseDAOImpl) DeleteRelease(id int) error {
-	if err := dao.Db.Unscoped().Delete(model2.Release{}, id).Error; err != nil {
-		return err
-	}
-	return nil
+	return dao.Db.Unscoped().Delete(model2.Release{}, id).Error
 }
 
 //ListRelease - List releases

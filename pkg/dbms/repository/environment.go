@@ -29,18 +29,12 @@ func (dao EnvironmentDAOImpl) CreateEnvironment(env model2.Environment) (int, er
 
 // EditEnvironment - Updates an existing environment
 func (dao EnvironmentDAOImpl) EditEnvironment(env model2.Environment) error {
-	if err := dao.Db.Save(&env).Error; err != nil {
-		return err
-	}
-	return nil
+	return dao.Db.Save(&env).Error
 }
 
 // DeleteEnvironment - Deletes an environment
 func (dao EnvironmentDAOImpl) DeleteEnvironment(env model2.Environment) error {
-	if err := dao.Db.Unscoped().Delete(&env).Error; err != nil {
-		return err
-	}
-	return nil
+	return dao.Db.Unscoped().Delete(&env).Error
 }
 
 //GetAllEnvironments - Retrieve all environments

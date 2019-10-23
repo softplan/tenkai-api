@@ -21,10 +21,7 @@ type UserDAOImpl struct {
 
 //CreateUser - Creates a new user
 func (dao UserDAOImpl) CreateUser(user model2.User) error {
-	if err := dao.Db.Create(&user).Error; err != nil {
-		return err
-	}
-	return nil
+	return dao.Db.Create(&user).Error
 }
 
 //DeleteUser - Delete user

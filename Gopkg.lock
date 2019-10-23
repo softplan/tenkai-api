@@ -42,6 +42,12 @@
   version = "v0.3.1"
 
 [[projects]]
+  name = "github.com/DATA-DOG/go-sqlmock"
+  packages = ["."]
+  revision = "3f9954f6f6697845b082ca57995849ddf614f450"
+  version = "v1.3.3"
+
+[[projects]]
   branch = "master"
   name = "github.com/MakeNowJust/heredoc"
   packages = ["."]
@@ -1318,6 +1324,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1767b5d878257804f3fdb4ed7011895cc251a74477613ca8d8d0bbebad9ffadf"
+  inputs-digest = "5368b9407549a2d19163c7e417661dac06c5df2a4419179a9e59f9cc05421d50"
   solver-name = "gps-cdcl"
   solver-version = 1
