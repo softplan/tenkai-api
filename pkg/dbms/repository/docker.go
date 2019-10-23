@@ -37,10 +37,7 @@ func (dao DockerDAOImpl) GetDockerRepositoryByHost(host string) (model2.DockerRe
 
 //DeleteDockerRepo - Deletes a docker repo
 func (dao DockerDAOImpl) DeleteDockerRepo(id int) error {
-	if err := dao.Db.Unscoped().Delete(model2.DockerRepo{}, id).Error; err != nil {
-		return err
-	}
-	return nil
+	return dao.Db.Unscoped().Delete(model2.DockerRepo{}, id).Error
 }
 
 //ListDockerRepos - List docker repos

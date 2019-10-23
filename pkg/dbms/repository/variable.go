@@ -22,10 +22,7 @@ type VariableDAOImpl struct {
 
 // EditVariable - Edit an existent variable
 func (dao VariableDAOImpl) EditVariable(data model2.Variable) error {
-	if err := dao.Db.Save(&data).Error; err != nil {
-		return err
-	}
-	return nil
+	return dao.Db.Save(&data).Error
 }
 
 //CreateVariable - Create a new environment
@@ -103,16 +100,10 @@ func (dao VariableDAOImpl) GetAllVariablesByEnvironmentAndScope(envID int, scope
 
 //DeleteVariable - Delete environment
 func (dao VariableDAOImpl) DeleteVariable(id int) error {
-	if err := dao.Db.Unscoped().Delete(model2.Variable{}, id).Error; err != nil {
-		return err
-	}
-	return nil
+	return dao.Db.Unscoped().Delete(model2.Variable{}, id).Error
 }
 
 //DeleteVariableByEnvironmentID - Delete environment
 func (dao VariableDAOImpl) DeleteVariableByEnvironmentID(envID int) error {
-	if err := dao.Db.Unscoped().Where(model2.Variable{EnvironmentID: envID}).Delete(model2.Variable{}).Error; err != nil {
-		return err
-	}
-	return nil
+	return dao.Db.Unscoped().Where(model2.Variable{EnvironmentID: envID}).Delete(model2.Variable{}).Error
 }

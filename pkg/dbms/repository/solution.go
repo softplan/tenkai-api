@@ -28,18 +28,12 @@ func (dao SolutionDAOImpl) CreateSolution(solution model2.Solution) (int, error)
 
 //EditSolution - Updates an existing solution
 func (dao SolutionDAOImpl) EditSolution(solution model2.Solution) error {
-	if err := dao.Db.Save(&solution).Error; err != nil {
-		return err
-	}
-	return nil
+	return dao.Db.Save(&solution).Error
 }
 
 //DeleteSolution - Deletes a solution
 func (dao SolutionDAOImpl) DeleteSolution(id int) error {
-	if err := dao.Db.Unscoped().Delete(model2.Solution{}, id).Error; err != nil {
-		return err
-	}
-	return nil
+	return dao.Db.Unscoped().Delete(model2.Solution{}, id).Error
 }
 
 //ListSolutions - List solutions
