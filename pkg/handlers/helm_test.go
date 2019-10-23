@@ -31,7 +31,7 @@ func TestListCharts(t *testing.T) {
 	data[0].Description = "Test only"
 	data[0].AppVersion = "1.0"
 
-	mockObject.On("SearchCharts", mock.Anything, mock.Anything).Return(&data)
+	mockObject.On("SearchCharts", mock.Anything, true).Return(&data)
 	appContext.HelmServiceAPI = mockObject
 
 	req, err := http.NewRequest("GET", "/listCharts", bytes.NewBuffer(nil))
@@ -55,10 +55,10 @@ func TestDeleteHelmRelease(t *testing.T) {
 	var envs []model.Environment
 	envs = append(envs, mockGetEnv())
 	mockEnvDao := mockGetByID(&appContext)
-	mockEnvDao.On("GetAllEnvironments", mock.Anything).Return(envs, nil)
+	mockEnvDao.On("GetAllEnvironments", "beta@alfa.com").Return(envs, nil)
 
 	mockHelmSvc := &mockSvc.HelmServiceInterface{}
-	mockHelmSvc.On("DeleteHelmRelease", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mockHelmSvc.On("DeleteHelmRelease", "./config/foo_bar", "foo", false).Return(nil)
 
 	auditValues := make(map[string]string)
 	auditValues["environment"] = "bar"
@@ -83,7 +83,6 @@ func TestDeleteHelmRelease(t *testing.T) {
 	mockHelmSvc.AssertNumberOfCalls(t, "DeleteHelmRelease", 1)
 	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 1)
 	mockAudit.AssertNumberOfCalls(t, "DoAudit", 1)
-	mockAudit.AssertExpectations(t)
 
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 }
@@ -98,7 +97,7 @@ func TestRollback(t *testing.T) {
 	mockEnvDao := mockGetByID(&appContext)
 
 	mockHelmSvc := &mockSvc.HelmServiceInterface{}
-	mockHelmSvc.On("RollbackRelease", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mockHelmSvc.On("RollbackRelease", "./config/foo_bar", "foo", 800).Return(nil)
 
 	mockConvention := mockConventionInterface(&appContext)
 
@@ -126,7 +125,7 @@ func TestRevision(t *testing.T) {
 
 	mockHelmSvc := &mockSvc.HelmServiceInterface{}
 	yaml := "foo: bar"
-	mockHelmSvc.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(yaml, nil)
+	mockHelmSvc.On("Get", "./config/foo_bar", "foo", 800).Return(yaml, nil)
 
 	mockConvention := mockConventionInterface(&appContext)
 
@@ -168,7 +167,7 @@ func TestListReleaseHistory(t *testing.T) {
 	history = append(history, info)
 
 	mockHelmSvc := &mockSvc.HelmServiceInterface{}
-	mockHelmSvc.On("GetHelmReleaseHistory", mock.Anything, mock.Anything).Return(history, nil)
+	mockHelmSvc.On("GetHelmReleaseHistory", "./config/foo_bar", "foo").Return(history, nil)
 
 	appContext.HelmServiceAPI = mockHelmSvc
 
@@ -203,7 +202,7 @@ func TestListHelmDeploymentsByEnvironment(t *testing.T) {
 		Status:     "",
 		Chart:      "foo",
 		AppVersion: "0.1.0",
-		Namespace:  "xpto",
+		Namespace:  "dev",
 	}
 	listReleases = append(listReleases, lr)
 
@@ -213,7 +212,7 @@ func TestListHelmDeploymentsByEnvironment(t *testing.T) {
 	}
 
 	mockHelmSvc := &mockSvc.HelmServiceInterface{}
-	mockHelmSvc.On("ListHelmDeployments", mock.Anything, mock.Anything).Return(result, nil)
+	mockHelmSvc.On("ListHelmDeployments", mock.Anything, "dev").Return(result, nil)
 
 	appContext.HelmServiceAPI = mockHelmSvc
 
@@ -222,6 +221,7 @@ func TestListHelmDeploymentsByEnvironment(t *testing.T) {
 	r.HandleFunc("/listHelmDeploymentsByEnvironment/{id}", appContext.listHelmDeploymentsByEnvironment).Methods("GET")
 	r.ServeHTTP(rr, req)
 
+	mockHelmSvc.AssertNumberOfCalls(t, "ListHelmDeployments", 1)
 	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
 	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 1)
 
@@ -239,7 +239,7 @@ func TestHasConfigMap(t *testing.T) {
 
 	partialDeploymentYaml := "...name: {{ template \"foo.name\" . }}-gcm-{{ .Release.Namespace }}..."
 	result := []byte(partialDeploymentYaml)
-	mockHelmSvc.On("GetTemplate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(result, nil)
+	mockHelmSvc.On("GetTemplate", mock.Anything, "foo", "0.1.0", "deployment").Return(result, nil)
 
 	appContext := AppContext{}
 	appContext.HelmServiceAPI = mockHelmSvc
@@ -262,7 +262,7 @@ func TestGetChartVariables(t *testing.T) {
 	mockHelmSvc := &mockSvc.HelmServiceInterface{}
 
 	partialResult := "{\"app\": {\"dateHour\": 0,\"pullSecret\": \"foo\"} }"
-	mockHelmSvc.On("GetTemplate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]byte(partialResult), nil)
+	mockHelmSvc.On("GetTemplate", mock.Anything, "foo", "0.1.0", "values").Return([]byte(partialResult), nil)
 
 	appContext := AppContext{}
 	appContext.HelmServiceAPI = mockHelmSvc
@@ -332,7 +332,6 @@ func TestMultipleInstall(t *testing.T) {
 	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironmentAndScope", 2)
 	mockHelmSvc.AssertNumberOfCalls(t, "Upgrade", 1)
 	mockAudit.AssertNumberOfCalls(t, "DoAudit", 1)
-	mockAudit.AssertExpectations(t)
 
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 }
@@ -352,6 +351,29 @@ func TestInstall(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.install)
+	handler.ServeHTTP(rr, req)
+
+	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
+	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 1)
+	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironmentAndScope", 2)
+	mockHelmSvc.AssertNumberOfCalls(t, "Upgrade", 1)
+
+	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
+}
+
+func TestDryRun(t *testing.T) {
+	req, err := http.NewRequest("POST", "/helmDryRun", getInstallPayload())
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	appContext := AppContext{}
+	mockEnvDao := mockGetByID(&appContext)
+	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
+	mockConvention := mockConventionInterface(&appContext)
+	mockHelmSvc := mockUpgrade(&appContext)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.helmDryRun)
 	handler.ServeHTTP(rr, req)
 
 	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
@@ -383,14 +405,14 @@ func mockDoAudit(appContext *AppContext, operation string, auditValues map[strin
 
 func mockUpgrade(appContext *AppContext) *mockSvc.HelmServiceInterface {
 	mockHelmSvc := &mockSvc.HelmServiceInterface{}
-	mockHelmSvc.On("Upgrade", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mockHelmSvc.On("Upgrade", mock.Anything, mock.Anything).Return(nil)
 	appContext.HelmServiceAPI = mockHelmSvc
 	return mockHelmSvc
 }
 
 func mockConventionInterface(appContext *AppContext) *mocks.ConventionInterface {
 	mockConvention := &mocks.ConventionInterface{}
-	mockConvention.On("GetKubeConfigFileName", mock.Anything, mock.Anything).Return("./config/foo_bar")
+	mockConvention.On("GetKubeConfigFileName", "foo", "bar").Return("./config/foo_bar")
 	appContext.ConventionInterface = mockConvention
 	return mockConvention
 }
@@ -398,8 +420,9 @@ func mockConventionInterface(appContext *AppContext) *mocks.ConventionInterface 
 func mockGetAllVariablesByEnvironmentAndScope(appContext *AppContext) *mockRepo.VariableDAOInterface {
 	mockVariableDAO := &mockRepo.VariableDAOInterface{}
 	var variables []model.Variable
-	variables = append(variables, mockVariable())
-	mockVariableDAO.On("GetAllVariablesByEnvironmentAndScope", mock.Anything, mock.Anything).Return(variables, nil)
+	variable := mockVariable()
+	variables = append(variables, variable)
+	mockVariableDAO.On("GetAllVariablesByEnvironmentAndScope", int(variable.EnvironmentID), mock.Anything).Return(variables, nil)
 
 	appContext.Repositories.VariableDAO = mockVariableDAO
 
@@ -446,7 +469,7 @@ func mockGetEnv() model.Environment {
 func mockGetByID(appContext *AppContext) *mockRepo.EnvironmentDAOInterface {
 	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
 	env := mockGetEnv()
-	mockEnvDao.On("GetByID", mock.Anything).Return(&env, nil)
+	mockEnvDao.On("GetByID", int(env.ID)).Return(&env, nil)
 	appContext.Repositories.EnvironmentDAO = mockEnvDao
 	return mockEnvDao
 }
