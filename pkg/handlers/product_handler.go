@@ -229,22 +229,28 @@ func (appContext *AppContext) listProductVersionServices(w http.ResponseWriter, 
 
 	wg := new(sync.WaitGroup)
 
+	helmCharts := make(map[string][]model.SearchResult)
+
 	for i, e := range result.List {
 
 		if e.ServiceName != "" && e.DockerImageTag != "" {
 
 			var serviceName = e.ServiceName
 			var tag = e.DockerImageTag
+			var helmRepo = splitChartRepo(serviceName)
 			index := i
 
-			wg.Add(1)
-			go func(wg *sync.WaitGroup, serviceName string, tag string, index int) {
-				serviceName = splitSrvNameIfNeeded(serviceName)
-				defer wg.Done()
-				version, _ := appContext.verifyNewVersion(serviceName, tag)
-				result.List[index].LatestVersion = version
+			if helmCharts[helmRepo] == nil {
+				helmCharts[helmRepo] = *appContext.HelmServiceAPI.SearchCharts([]string{helmRepo}, false)
+			}
 
-			}(wg, serviceName, tag, index)
+			wg.Add(1)
+			go func(wg *sync.WaitGroup, serviceName string, tag string, index int, searchResult []model.SearchResult) {
+				defer wg.Done()
+				version, _ := appContext.verifyNewVersion(splitSrvNameIfNeeded(serviceName), tag)
+				result.List[index].LatestVersion = version
+				result.List[index].ChartLatestVersion = appContext.getChartLatestVersion(serviceName, searchResult)
+			}(wg, serviceName, tag, index, helmCharts[helmRepo])
 		}
 	}
 
@@ -266,6 +272,34 @@ func splitSrvNameIfNeeded(serviceName string) string {
 		serviceName = svcName[0]
 	}
 	return serviceName
+}
+
+func splitChartVersion(serviceName string) string {
+	svcName := strings.Split(serviceName, " - ")
+	if len(svcName) == 2 {
+		return svcName[1]
+	}
+	return serviceName
+}
+
+func splitChartRepo(serviceName string) string {
+	repo := strings.Split(serviceName, "/")
+	if len(repo) == 2 {
+		return repo[0]
+	}
+	return ""
+}
+
+func (appContext *AppContext) getChartLatestVersion(serviceName string, charts []model.SearchResult) string {
+	var currentChartVersion = splitChartVersion(serviceName)
+	serviceName = splitSrvNameIfNeeded(serviceName)
+	for _, sr := range charts {
+		if sr.Name == serviceName && sr.ChartVersion != currentChartVersion {
+			return sr.ChartVersion
+		}
+	}
+
+	return ""
 }
 
 func (appContext *AppContext) verifyNewVersion(serviceName string, dockerImageTag string) (string, error) {

@@ -1,8 +1,9 @@
 package model
 
 import (
-	"github.com/jinzhu/gorm"
 	"time"
+
+	"github.com/jinzhu/gorm"
 )
 
 //Product struct
@@ -23,10 +24,11 @@ type ProductVersion struct {
 //ProductVersionService struct
 type ProductVersionService struct {
 	gorm.Model
-	ProductVersionID int    `json:"productVersionId"`
-	ServiceName      string `json:"serviceName"`
-	DockerImageTag   string `json:"dockerImageTag"`
-	LatestVersion    string `gorm:"-" json:"latestVersion"`
+	ProductVersionID   int    `json:"productVersionId"`
+	ServiceName        string `json:"serviceName"`
+	DockerImageTag     string `json:"dockerImageTag"`
+	LatestVersion      string `gorm:"-" json:"latestVersion"`
+	ChartLatestVersion string `gorm:"-" json:"chartLatestVersion"`
 }
 
 //ProductRequestReponse struct
