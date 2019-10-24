@@ -44,13 +44,11 @@ func TestCreateEnvironment(t *testing.T) {
 
 	item := getEnvironmentTestData()
 
-	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO "environments"`).
 		WithArgs(item.CreatedAt, item.DeletedAt, item.UpdatedAt, item.Group,
 			item.Name, item.Name, item.ClusterURI, item.CACertificate, item.Token,
 			item.Namespace, item.Gateway).
 		WillReturnRows(rows)
-	mock.ExpectCommit()
 
 	_, e := envDAO.CreateEnvironment(item)
 	assert.Nil(t, e)
