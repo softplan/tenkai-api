@@ -8,18 +8,18 @@ import (
 )
 
 func TestSplitSrvNameIfNeeded(t *testing.T) {
-	assert.Equal(t, "repo/my-chart", SplitSrvNameIfNeeded("repo/my-chart - 0.1.0"))
-	assert.Equal(t, "repo/my-chart", SplitSrvNameIfNeeded("repo/my-chart"))
+	assert.Equal(t, "repo/my-chart", splitSrvNameIfNeeded("repo/my-chart - 0.1.0"))
+	assert.Equal(t, "repo/my-chart", splitSrvNameIfNeeded("repo/my-chart"))
 }
 
 func TestSplitChartVersion(t *testing.T) {
-	assert.Equal(t, "0.1.0", SplitChartVersion("repo/my-chart - 0.1.0"))
-	assert.Equal(t, "", SplitChartVersion("repo/my-chart"))
+	assert.Equal(t, "0.1.0", splitChartVersion("repo/my-chart - 0.1.0"))
+	assert.Equal(t, "", splitChartVersion("repo/my-chart"))
 }
 
 func TestSplitChartRepo(t *testing.T) {
-	assert.Equal(t, "repo", SplitChartRepo("repo/my-chart - 0.1.0"))
-	assert.Equal(t, "", SplitChartRepo("my-chart"))
+	assert.Equal(t, "repo", splitChartRepo("repo/my-chart - 0.1.0"))
+	assert.Equal(t, "", splitChartRepo("my-chart"))
 }
 
 func TestGetChartLatestVersion(t *testing.T) {

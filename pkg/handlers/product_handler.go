@@ -237,7 +237,7 @@ func (appContext *AppContext) listProductVersionServices(w http.ResponseWriter, 
 
 			var serviceName = e.ServiceName
 			var tag = e.DockerImageTag
-			var helmRepo = SplitChartRepo(serviceName)
+			var helmRepo = splitChartRepo(serviceName)
 			index := i
 
 			if helmCharts[helmRepo] == nil {
@@ -247,7 +247,7 @@ func (appContext *AppContext) listProductVersionServices(w http.ResponseWriter, 
 			wg.Add(1)
 			go func(wg *sync.WaitGroup, serviceName string, tag string, index int, searchResult []model.SearchResult) {
 				defer wg.Done()
-				version, _ := appContext.verifyNewVersion(SplitSrvNameIfNeeded(serviceName), tag)
+				version, _ := appContext.verifyNewVersion(splitSrvNameIfNeeded(serviceName), tag)
 				result.List[index].LatestVersion = version
 				result.List[index].ChartLatestVersion = appContext.getChartLatestVersion(serviceName, searchResult)
 			}(wg, serviceName, tag, index, helmCharts[helmRepo])
@@ -266,8 +266,8 @@ func (appContext *AppContext) listProductVersionServices(w http.ResponseWriter, 
 
 }
 
-//SplitSrvNameIfNeeded Returns service name removing chart version
-func SplitSrvNameIfNeeded(serviceName string) string {
+//splitSrvNameIfNeeded Returns service name removing chart version
+func splitSrvNameIfNeeded(serviceName string) string {
 	svcName := strings.Split(serviceName, " - ")
 	if len(svcName) == 2 {
 		serviceName = svcName[0]
@@ -275,8 +275,8 @@ func SplitSrvNameIfNeeded(serviceName string) string {
 	return serviceName
 }
 
-//SplitChartVersion Returns chart version removing service name
-func SplitChartVersion(serviceName string) string {
+//splitChartVersion Returns chart version removing service name
+func splitChartVersion(serviceName string) string {
 	splited := strings.Split(serviceName, " - ")
 	if len(splited) == 2 {
 		return splited[1]
@@ -284,8 +284,8 @@ func SplitChartVersion(serviceName string) string {
 	return ""
 }
 
-//SplitChartRepo Return chart repo removing service name
-func SplitChartRepo(serviceName string) string {
+//splitChartRepo Return chart repo removing service name
+func splitChartRepo(serviceName string) string {
 	repo := strings.Split(serviceName, "/")
 	if len(repo) == 2 {
 		return repo[0]
@@ -294,8 +294,8 @@ func SplitChartRepo(serviceName string) string {
 }
 
 func (appContext *AppContext) getChartLatestVersion(serviceName string, charts []model.SearchResult) string {
-	var currentChartVersion = SplitChartVersion(serviceName)
-	serviceName = SplitSrvNameIfNeeded(serviceName)
+	var currentChartVersion = splitChartVersion(serviceName)
+	serviceName = splitSrvNameIfNeeded(serviceName)
 	for _, sr := range charts {
 		if sr.Name == serviceName && sr.ChartVersion != currentChartVersion {
 			return sr.ChartVersion
