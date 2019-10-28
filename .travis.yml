@@ -11,7 +11,7 @@ branches:
   only:
   - dev
   - master
-  - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
+  - /^\d{2}\.\d\.\d+(-\d+)?$/
 
 services:
   - docker
