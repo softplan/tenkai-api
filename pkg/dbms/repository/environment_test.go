@@ -45,8 +45,8 @@ func TestCreateEnvironment(t *testing.T) {
 	item := getEnvironmentTestData()
 
 	mock.ExpectQuery(`INSERT INTO "environments"`).
-		WithArgs(item.CreatedAt, item.DeletedAt, item.UpdatedAt, item.Group,
-			item.Name, item.Name, item.ClusterURI, item.CACertificate, item.Token,
+		WithArgs(item.CreatedAt, item.UpdatedAt, item.DeletedAt, item.Group,
+			item.Name, item.ClusterURI, item.CACertificate, item.Token,
 			item.Namespace, item.Gateway).
 		WillReturnRows(rows)
 
