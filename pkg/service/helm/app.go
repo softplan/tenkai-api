@@ -60,7 +60,7 @@ type HelmCommand interface {
 //HelmExecutorFunc HelmExecutorFunc
 type HelmExecutorFunc func(kubeconfig string, cmd HelmCommand) error
 
-//HelmExecutorDecorator HelmExecutorDecorator
+//HelmCommandExecutor HelmCommandExecutor
 func (svc HelmServiceImpl) HelmCommandExecutor(fn HelmExecutorFunc) HelmExecutorFunc {
 	return func(kubeconfig string, cmd HelmCommand) error {
 		tillerHost, tunnel, err := svc.GetHelmConnection().SetupConnection(kubeconfig)
@@ -74,10 +74,12 @@ func (svc HelmServiceImpl) HelmCommandExecutor(fn HelmExecutorFunc) HelmExecutor
 	}
 }
 
+//HelmExecutorFunc HelmExecutorFunc
 func (svc HelmServiceImpl) HelmExecutorFunc(kubeconfig string, cmd HelmCommand) error {
 	return cmd.run()
 }
 
+//GetHelmConnection GetHelmConnection
 func (svc HelmServiceImpl) GetHelmConnection() HelmConnection {
 	if svc.HelmConnection == nil {
 		svc.HelmConnection = HelmConnectionImpl{}
