@@ -55,11 +55,6 @@ func (_m *HelmServiceInterface) DeletePod(kubeconfig string, podName string, nam
 	return r0
 }
 
-// EnsureSettings provides a mock function with given fields: kubeconfig
-func (_m *HelmServiceInterface) EnsureSettings(kubeconfig string) {
-	_m.Called(kubeconfig)
-}
-
 // Get provides a mock function with given fields: kubeconfig, releaseName, revision
 func (_m *HelmServiceInterface) Get(kubeconfig string, releaseName string, revision int) (string, error) {
 	ret := _m.Called(kubeconfig, releaseName, revision)
@@ -102,6 +97,22 @@ func (_m *HelmServiceInterface) GetDeployment(chartName string, version string) 
 	}
 
 	return r0, r1
+}
+
+// GetHelmConnection provides a mock function with given fields:
+func (_m *HelmServiceInterface) GetHelmConnection() helmapi.HelmConnection {
+	ret := _m.Called()
+
+	var r0 helmapi.HelmConnection
+	if rf, ok := ret.Get(0).(func() helmapi.HelmConnection); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(helmapi.HelmConnection)
+		}
+	}
+
+	return r0
 }
 
 // GetHelmReleaseHistory provides a mock function with given fields: kubeconfig, releaseName
@@ -261,6 +272,36 @@ func (_m *HelmServiceInterface) GetValues(chartName string, version string) ([]b
 	}
 
 	return r0, r1
+}
+
+// HelmCommandExecutor provides a mock function with given fields: fn
+func (_m *HelmServiceInterface) HelmCommandExecutor(fn helmapi.HelmExecutorFunc) helmapi.HelmExecutorFunc {
+	ret := _m.Called(fn)
+
+	var r0 helmapi.HelmExecutorFunc
+	if rf, ok := ret.Get(0).(func(helmapi.HelmExecutorFunc) helmapi.HelmExecutorFunc); ok {
+		r0 = rf(fn)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(helmapi.HelmExecutorFunc)
+		}
+	}
+
+	return r0
+}
+
+// HelmExecutorFunc provides a mock function with given fields: kubeconfig, cmd
+func (_m *HelmServiceInterface) HelmExecutorFunc(kubeconfig string, cmd helmapi.HelmCommand) error {
+	ret := _m.Called(kubeconfig, cmd)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, helmapi.HelmCommand) error); ok {
+		r0 = rf(kubeconfig, cmd)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // InitializeHelm provides a mock function with given fields:

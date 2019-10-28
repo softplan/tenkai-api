@@ -24,13 +24,9 @@ type getValuesCmd struct {
 //Get - All
 func (svc HelmServiceImpl) Get(kubeconfig string, releaseName string, revision int) (string, error) {
 
-	svc.EnsureSettings(kubeconfig)
-
-	err := setupConnection()
-	defer teardown()
-
+	tillerHost, tunnel, err := svc.GetHelmConnection().SetupConnection(kubeconfig)
+	defer svc.GetHelmConnection().Teardown(tunnel)
 	if err != nil {
-		settings.TillerHost = ""
 		return "", err
 	}
 
@@ -38,29 +34,23 @@ func (svc HelmServiceImpl) Get(kubeconfig string, releaseName string, revision i
 	cmd.allValues = false
 	cmd.release = releaseName
 	cmd.version = int32(revision)
-	cmd.client = newClient()
+	cmd.client = svc.GetHelmConnection().NewClient(tillerHost)
 
 	res, err := cmd.client.ReleaseContent(cmd.release, helm.ContentReleaseVersion(cmd.version))
 	if err != nil {
-		settings.TillerHost = ""
 		return "", err
 	}
 
 	values, err := chartutil.ReadValues([]byte(res.Release.Config.Raw))
 	if err != nil {
-		settings.TillerHost = ""
 		return "", err
 	}
 
 	result, err := formatValues(cmd.output, values)
 	if err != nil {
-		settings.TillerHost = ""
 		return "", err
 	}
-
-	settings.TillerHost = ""
 	return result, nil
-
 }
 
 func formatValues(format string, values chartutil.Values) (string, error) {

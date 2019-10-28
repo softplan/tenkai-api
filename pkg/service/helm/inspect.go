@@ -63,8 +63,6 @@ func (svc HelmServiceImpl) GetDeployment(chartName string, version string) ([]by
 		insp.version = version
 	}
 
-	settings.Home = global.HelmDir
-
 	global.Logger.Info(logFields, "insp.prepare()")
 	if err := insp.prepare(chartName); err != nil {
 		return nil, err
@@ -96,8 +94,6 @@ func (svc HelmServiceImpl) GetValues(chartName string, version string) ([]byte, 
 	if len(version) > 0 {
 		insp.version = version
 	}
-
-	settings.Home = global.HelmDir
 
 	global.Logger.Info(logFields, "insp.prepare()")
 	if err := insp.prepare(chartName); err != nil {
@@ -189,6 +185,8 @@ func locateChartPath(repoURL, username, password, name, version string, verify b
 	if filepath.IsAbs(name) || strings.HasPrefix(name, ".") {
 		return name, fmt.Errorf("path %q not found", name)
 	}
+
+	settings := GetSettings()
 
 	crepo := filepath.Join(settings.Home.Repository(), name)
 	if _, err := os.Stat(crepo); err == nil {

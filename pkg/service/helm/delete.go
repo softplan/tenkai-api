@@ -8,10 +8,6 @@ import (
 	"k8s.io/helm/pkg/helm"
 )
 
-type deleteCmdInterface interface {
-	run() error
-}
-
 type deleteCmd struct {
 	name         string
 	dryRun       bool
@@ -24,38 +20,23 @@ type deleteCmd struct {
 	client helm.Interface
 }
 
-func deleteCmdBuilder(releaseName string, purge bool) *deleteCmd {
-	cmd := &deleteCmd{out: os.Stdout}
-	cmd.client = newClient()
-	cmd.purge = purge
-	cmd.name = releaseName
-	return cmd
-}
-
 //DeleteHelmRelease - Delete a Release
 func (svc HelmServiceImpl) DeleteHelmRelease(kubeconfig string, releaseName string, purge bool) error {
-	svc.EnsureSettings(kubeconfig)
-	cmd := deleteCmdBuilder(releaseName, purge)
-	return doDeleteHelmRelease(*cmd)
+
+	cmd := &deleteCmd{out: os.Stdout}
+	cmd.purge = purge
+	cmd.name = releaseName
+
+	return svc.HelmCommandExecutor(svc.HelmExecutorFunc)(kubeconfig, cmd)
+
 }
 
-func doDeleteHelmRelease(cmd deleteCmd) error {
-	err := setupConnection()
-	defer teardown()
-	if err != nil {
-		settings.TillerHost = ""
-		return err
-	}
-	err = cmd.run()
-	if err != nil {
-		settings.TillerHost = ""
-		return err
-	}
-	settings.TillerHost = ""
-	return nil
+func (d *deleteCmd) SetNewClient(helmConnection HelmConnection, tillerHost string) {
+	d.client = helmConnection.NewClient(tillerHost)
 }
 
 func (d *deleteCmd) run() error {
+
 	opts := []helm.DeleteOption{
 		helm.DeleteDryRun(d.dryRun),
 		helm.DeleteDisableHooks(d.disableHooks),

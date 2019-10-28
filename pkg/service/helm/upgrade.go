@@ -10,11 +10,8 @@ import (
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/helm"
 	rls "k8s.io/helm/pkg/proto/hapi/services"
-	"k8s.io/helm/pkg/renderutil"
 	storageerrors "k8s.io/helm/pkg/storage/errors"
 )
-
-const upgradeDesc = ``
 
 type valueFiles []string
 
@@ -52,6 +49,8 @@ type upgradeCmd struct {
 	certFile string
 	keyFile  string
 	caFile   string
+
+	Debug bool
 }
 
 //UpgradeRequest UpgradeRequest
@@ -68,48 +67,46 @@ type UpgradeRequest struct {
 //Upgrade Method
 func (svc HelmServiceImpl) Upgrade(upgradeRequest UpgradeRequest, out *bytes.Buffer) error {
 
-	svc.EnsureSettings(upgradeRequest.Kubeconfig)
+	upgrade := &upgradeCmd{out: out}
+	if upgradeRequest.Dryrun {
+		upgrade.Debug = true
+	} else {
+		upgrade.Debug = false
+	}
+
+	tillerHost, tunnel, err := svc.GetHelmConnection().SetupConnection(upgradeRequest.Kubeconfig)
+	if err != nil {
+		return err
+	}
+	defer svc.GetHelmConnection().Teardown(tunnel)
+
+	upgrade.client = svc.GetHelmConnection().NewClient(tillerHost)
 
 	if upgradeRequest.Dryrun {
-		settings.Debug = true
+		upgrade.dryRun = true
 	}
 
-	upgrade := &upgradeCmd{out: out}
-
-	err := setupConnection()
-	defer teardown()
-
-	if err == nil {
-		upgrade.client = newClient()
-
-		if upgradeRequest.Dryrun {
-			upgrade.dryRun = true
-		}
-
-		if upgradeRequest.ChartVersion != "" {
-			upgrade.version = upgradeRequest.ChartVersion
-		} else {
-			upgrade.version = ">0.0.0-0"
-		}
-
-		upgrade.install = true
-		upgrade.recreate = false
-		upgrade.force = true
-		upgrade.release = upgradeRequest.Release
-		upgrade.chart = upgradeRequest.Chart
-		upgrade.values = upgradeRequest.Variables
-		upgrade.client = ensureHelmClient(upgrade.client)
-		upgrade.wait = upgrade.wait || upgrade.atomic
-		upgrade.namespace = upgradeRequest.Namespace
-		err = upgrade.run()
-		settings.KubeConfig = ""
+	if upgradeRequest.ChartVersion != "" {
+		upgrade.version = upgradeRequest.ChartVersion
+	} else {
+		upgrade.version = ">0.0.0-0"
 	}
-	settings.TillerHost = ""
-	settings.Debug = false
+
+	upgrade.install = true
+	upgrade.recreate = false
+	upgrade.force = true
+	upgrade.release = upgradeRequest.Release
+	upgrade.chart = upgradeRequest.Chart
+	upgrade.values = upgradeRequest.Variables
+	upgrade.wait = upgrade.wait || upgrade.atomic
+	upgrade.namespace = upgradeRequest.Namespace
+
+	err = upgrade.run()
 	return err
+
 }
 
-func (u *upgradeCmd) doInstall(err error, releaseHistory *rls.GetHistoryResponse, chartPath string) (bool, error) {
+func (u *upgradeCmd) doInstall(err error, releaseHistory *rls.GetHistoryResponse, chartPath string, debug bool) (bool, error) {
 
 	if err == nil {
 		if u.namespace == "" {
@@ -144,6 +141,7 @@ func (u *upgradeCmd) doInstall(err error, releaseHistory *rls.GetHistoryResponse
 			wait:         u.wait,
 			description:  u.description,
 			atomic:       u.atomic,
+			Debug:        debug,
 		}
 		return true, ic.run()
 	}
@@ -153,24 +151,8 @@ func (u *upgradeCmd) doInstall(err error, releaseHistory *rls.GetHistoryResponse
 }
 
 func (u *upgradeCmd) checkChart(chartPath string) (*chart.Chart, error) {
-
 	ch, err := chartutil.Load(chartPath)
-	if err == nil {
-
-		if req, err := chartutil.LoadRequirements(ch); err == nil {
-			if err := renderutil.CheckDependencies(ch, req); err != nil {
-				return ch, err
-			}
-			return ch, nil
-		}
-
-		if err != chartutil.ErrRequirementsNotFound {
-			return nil, fmt.Errorf("cannot load requirements: %v", err)
-		}
-		return ch, nil
-
-	}
-	return nil, prettyError(err)
+	return ch, err
 }
 
 func (u *upgradeCmd) run() error {
@@ -184,7 +166,7 @@ func (u *upgradeCmd) run() error {
 	releaseHistory, err := u.client.ReleaseHistory(u.release, helm.WithMaxHistory(1))
 
 	if u.install {
-		exec, err := u.doInstall(err, releaseHistory, chartPath)
+		exec, err := u.doInstall(err, releaseHistory, chartPath, u.Debug)
 		if exec {
 			return err
 		}

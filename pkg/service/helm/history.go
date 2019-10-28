@@ -9,7 +9,6 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/gosuri/uitable"
-	"github.com/softplan/tenkai-api/pkg/global"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/helm/pkg/helm"
 	"k8s.io/helm/pkg/proto/hapi/chart"
@@ -41,7 +40,7 @@ type historyCmd struct {
 //IsThereAnyPodWithThisVersion - Verify if is there a pod with a specific version deployed
 func (svc HelmServiceImpl) IsThereAnyPodWithThisVersion(kubeconfig string, namespace string, releaseName string, tag string) (bool, error) {
 
-	_, client, err := getKubeClient(settings.KubeContext, kubeconfig)
+	_, client, err := svc.GetHelmConnection().GetKubeClient("", kubeconfig)
 	if err != nil {
 		return false, err
 	}
@@ -64,18 +63,17 @@ func (svc HelmServiceImpl) IsThereAnyPodWithThisVersion(kubeconfig string, names
 //GetReleaseHistory - Retrieve Release History
 func (svc HelmServiceImpl) GetReleaseHistory(kubeconfig string, releaseName string) (bool, error) {
 
-	svc.EnsureSettings(kubeconfig)
+	tillerHost, tunnel, err := svc.GetHelmConnection().SetupConnection(kubeconfig)
+	defer svc.GetHelmConnection().Teardown(tunnel)
 
-	err := setupConnection()
-	defer teardown()
 	deployed := false
 	if err == nil {
-		his := &historyCmd{out: os.Stdout, helmc: newClient()}
+		his := &historyCmd{out: os.Stdout, helmc: svc.GetHelmConnection().NewClient(tillerHost)}
+
 		his.rls = releaseName
 		his.max = 1
 		deployed, err = his.verifyItDeployed()
 	}
-	settings.TillerHost = ""
 	return deployed, err
 }
 
@@ -83,17 +81,11 @@ func (svc HelmServiceImpl) GetReleaseHistory(kubeconfig string, releaseName stri
 func (svc HelmServiceImpl) GetHelmReleaseHistory(kubeconfig string, releaseName string) (ReleaseHistory, error) {
 
 	var result ReleaseHistory
-	settings.KubeConfig = kubeconfig
-	settings.Home = global.HelmDir
-	settings.TillerNamespace = "kube-system"
-	settings.TLSEnable = false
-	settings.TLSVerify = false
-	settings.TillerConnectionTimeout = 1200
-	err := setupConnection()
-	defer teardown()
+	tillerHost, tunnel, err := svc.GetHelmConnection().SetupConnection(kubeconfig)
+	defer svc.GetHelmConnection().Teardown(tunnel)
 
 	if err == nil {
-		his := &historyCmd{out: os.Stdout, helmc: newClient()}
+		his := &historyCmd{out: os.Stdout, helmc: svc.GetHelmConnection().NewClient(tillerHost)}
 		his.rls = releaseName
 		r, err := his.helmc.ReleaseHistory(his.rls, helm.WithMaxHistory(256))
 		if err != nil {
@@ -104,7 +96,6 @@ func (svc HelmServiceImpl) GetHelmReleaseHistory(kubeconfig string, releaseName 
 		}
 		result = getReleaseHistory(r.Releases)
 	}
-	settings.TillerHost = ""
 	return result, err
 }
 

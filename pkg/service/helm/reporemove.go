@@ -2,6 +2,7 @@ package helmapi
 
 import (
 	"fmt"
+	"github.com/softplan/tenkai-api/pkg/global"
 	"io"
 	"os"
 
@@ -18,7 +19,7 @@ type repoRemoveCmd struct {
 //RemoveRepository - Remove a repository
 func (svc HelmServiceImpl) RemoveRepository(name string) error {
 	remove := &repoRemoveCmd{out: os.Stdout}
-	remove.home = settings.Home
+	remove.home = global.HelmDir
 	remove.name = name
 	if err := remove.run(); err != nil {
 		return err

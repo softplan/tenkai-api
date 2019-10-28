@@ -25,14 +25,12 @@ type repoUpdateCmd struct {
 //RepoUpdate - Update a repository
 func (svc HelmServiceImpl) RepoUpdate() error {
 
-	settings.Home = global.HelmDir
-
 	u := &repoUpdateCmd{
 		out:    os.Stdout,
 		update: updateCharts,
 	}
 
-	u.home = settings.Home
+	u.home = global.HelmDir
 
 	return u.run()
 
@@ -47,6 +45,9 @@ func (u *repoUpdateCmd) run() error {
 	if len(f.Repositories) == 0 {
 		return errNoRepositories
 	}
+
+	settings := GetSettings()
+
 	var repos []*repo.ChartRepository
 	for _, cfg := range f.Repositories {
 		r, err := repo.NewChartRepository(cfg, getter.All(settings))
