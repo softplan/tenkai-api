@@ -62,34 +62,23 @@ func (svc HelmServiceImpl) ListHelmDeployments(kubeconfig string, namespace stri
 
 	logFields := global.AppFields{global.Function: "ListHelmDeployments", "namespace": namespace}
 
-	svc.EnsureSettings(kubeconfig)
-
 	list := &listCmd{out: os.Stdout}
 
-	global.Logger.Info(logFields, "setupConnection")
-
-	err := setupConnection()
-	defer teardown()
-
+	tillerHost, tunnel, err := svc.GetHelmConnection().SetupConnection(kubeconfig)
+	defer svc.GetHelmConnection().Teardown(tunnel)
 	if err != nil {
-		settings.TillerHost = ""
 		return nil, err
 	}
-
-	list.client = newClient()
-
+	list.client = svc.GetHelmConnection().NewClient(tillerHost)
 	if len(namespace) > 0 {
 		list.namespace = namespace
 	}
-
 	global.Logger.Info(logFields, "list.run()")
+
 	resultListResult, err := list.run()
 	if err != nil {
-		settings.TillerHost = ""
 		return nil, err
 	}
-
-	settings.TillerHost = ""
 
 	global.Logger.Info(logFields, "returning successfull")
 	return resultListResult, nil

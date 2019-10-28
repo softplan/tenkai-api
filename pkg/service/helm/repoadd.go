@@ -27,13 +27,12 @@ type repoAddCmd struct {
 
 //AddRepository - Add new repository
 func (svc HelmServiceImpl) AddRepository(repo model.Repository) error {
-	settings.Home = global.HelmDir
 	add := &repoAddCmd{out: os.Stdout}
 	add.name = repo.Name
 	add.url = repo.URL
 	add.username = repo.Username
 	add.password = repo.Password
-	add.home = settings.Home
+	add.home = global.HelmDir
 	add.caFile = ""
 	return add.run()
 }
@@ -73,6 +72,7 @@ func addRepository(name, url, username, password string, home helmpath.Home, cer
 		CAFile:   caFile,
 	}
 
+	settings := GetSettings()
 	r, err := repo.NewChartRepository(&c, getter.All(settings))
 	if err != nil {
 		return err

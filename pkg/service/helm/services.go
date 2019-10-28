@@ -14,7 +14,7 @@ const loadBalancerWidth = 16
 //GetServices - Get Service information
 func (svc HelmServiceImpl) GetServices(kubeconfig string, namespace string) ([]model.Service, error) {
 	services := make([]model.Service, 0)
-	_, client, err := getKubeClient(settings.KubeContext, kubeconfig)
+	_, client, err := svc.GetHelmConnection().GetKubeClient("", kubeconfig)
 	if err != nil {
 		return services, err
 	}

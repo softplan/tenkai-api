@@ -25,13 +25,20 @@ const (
 	LocalRepositoryIndexFile = "index.yaml"
 )
 
-//InitializeHelm - Initialize a Helm repository
-func (svc HelmServiceImpl) InitializeHelm() {
+//GetSettings GetSettings
+func GetSettings() helm_env.EnvSettings {
+	var settings helm_env.EnvSettings
 	settings.TillerNamespace = "kube-system"
+	settings.Home = global.HelmDir
 	settings.TLSEnable = false
 	settings.TLSVerify = false
 	settings.TillerConnectionTimeout = 1200
-	initialize(global.HelmDir, os.Stdout, true, settings)
+	return settings
+}
+
+//InitializeHelm - Initialize a Helm repository
+func (svc HelmServiceImpl) InitializeHelm() {
+	initialize(global.HelmDir, os.Stdout, true, GetSettings())
 }
 
 // Initialize initializes local config

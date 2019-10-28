@@ -25,26 +25,17 @@ type rollbackCmd struct {
 //RollbackRelease - Rollback a release
 func (svc HelmServiceImpl) RollbackRelease(kubeconfig string, releaseName string, revision int) error {
 
-	svc.EnsureSettings(kubeconfig)
-
-	err := setupConnection()
-	defer teardown()
-
-	if err != nil {
-		settings.TillerHost = ""
-		return err
-	}
-
 	cmd := &rollbackCmd{out: os.Stdout}
-	cmd.client = newClient()
 	cmd.name = releaseName
 	cmd.revision = int32(revision)
 
-	err = cmd.run()
+	exec := svc.HelmCommandExecutor(svc.HelmExecutorFunc)
+	return exec(kubeconfig, cmd)
 
-	settings.TillerHost = ""
-	return err
+}
 
+func (r *rollbackCmd) SetNewClient(helmConnection HelmConnection, tillerHost string) {
+	r.client = helmConnection.NewClient(tillerHost)
 }
 
 func (r *rollbackCmd) run() error {

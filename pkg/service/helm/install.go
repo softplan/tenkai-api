@@ -59,6 +59,7 @@ type installCmd struct {
 	certFile string
 	keyFile  string
 	caFile   string
+	Debug    bool
 }
 
 func (v *valueFiles) String() string {
@@ -106,6 +107,8 @@ func (i *installCmd) run() error {
 	if err != nil {
 		return prettyError(err)
 	}
+
+	settings := GetSettings()
 
 	if req, err := chartutil.LoadRequirements(chartRequested); err == nil {
 		// If checkDependencies returns an error, we have unfulfilled dependencies.
@@ -293,7 +296,7 @@ func (i *installCmd) printRelease(rel *release.Release) {
 
 	fmt.Fprintf(i.out, "NAME:   %s\n", rel.Name)
 
-	if settings.Debug {
+	if i.Debug {
 		printRelease(i.out, rel)
 	}
 
@@ -347,6 +350,8 @@ func tpl(t string, vals interface{}, out io.Writer) error {
 }
 
 func debug(format string, args ...interface{}) {
+	settings := GetSettings()
+
 	if settings.Debug {
 		format = fmt.Sprintf("[debug] %s\n", format)
 		fmt.Printf(format, args...)
@@ -367,6 +372,7 @@ func generateName(nameTemplate string) (string, error) {
 }
 
 func defaultNamespace() string {
+	settings := GetSettings()
 	if ns, _, err := kube.GetConfig(settings.KubeContext, settings.KubeConfig).Namespace(); err == nil {
 		return ns
 	}
@@ -375,6 +381,7 @@ func defaultNamespace() string {
 
 //readFile load a file from the local directory or a remote file with a url.
 func readFile(filePath, CertFile, KeyFile, CAFile string) ([]byte, error) {
+	settings := GetSettings()
 	u, _ := url.Parse(filePath)
 	p := getter.All(settings)
 	getterConstructor, err := p.ByScheme(u.Scheme)

@@ -10,7 +10,7 @@ import (
 //GetRepositories - Returns a repository list
 func (svc HelmServiceImpl) GetRepositories() ([]model.Repository, error) {
 
-	settings.Home = global.HelmDir
+	settings := GetSettings()
 
 	logFields := global.AppFields{global.Function: "GetRepositories"}
 
