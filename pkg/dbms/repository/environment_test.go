@@ -56,3 +56,31 @@ func TestCreateEnvironment(t *testing.T) {
 	mock.ExpectationsWereMet()
 
 }
+
+func TestEditEnvironment(t *testing.T) {
+
+	db, mock, err := sqlmock.New()
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	assert.Nil(t, err)
+
+	envDAO := EnvironmentDAOImpl{}
+	envDAO.Db = gormDB
+
+	mock.MatchExpectationsInOrder(false)
+
+	item := getEnvironmentTestData()
+	item.ID = 999
+
+	mock.ExpectExec(`UPDATE "environments" SET (.*) WHERE (.*)`).
+		WithArgs(item.CreatedAt, sqlmock.AnyArg(), item.DeletedAt, item.Group,
+			item.Name, item.ClusterURI, item.CACertificate, item.Token,
+			item.Namespace, item.Gateway, item.ID).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	e := envDAO.EditEnvironment(item)
+	assert.Nil(t, e)
+
+}
