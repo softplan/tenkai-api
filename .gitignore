@@ -8,6 +8,7 @@
 .vscode
 .idea/*
 .vscode/*
+cmd/tenkai/config
 
 # Ignore dependency httpgetter
 #vendor/k8s.io/helm/pkg/getter/httpgetter.go
