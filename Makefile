@@ -7,7 +7,7 @@ TAG=$(TRAVIS_BRANCH)
 #Build the binary
 build: pre-build
 	@echo "Building tenkai-api"
-	GOOS_VAL=$(shell go env GOOS) GOARCH_VAL=$(shell go env GOARCH) go build -a -installsuffix cgo -o ./build/tenkai-api cmd/tenkai/*.go
+	GOOS_VAL=$(shell go env GOOS) GOARCH_VAL=$(shell go env GOARCH) go build -v -a -installsuffix cgo -o ./build/tenkai-api cmd/tenkai/*.go
 
 test:
 	@echo "Testing tenkai-api"
@@ -36,3 +36,10 @@ publish:
 	@echo "Pushing docker image to repository"
 	@docker login -u $(DOCKER_USERNAME) -p $(DOCKER_PASSWORD)
 	@docker push $(IMAGE_REPO):$(TAG)
+
+lint:
+	@echo 'GoLang source checks'
+	./srccheck/update-gofmt.sh
+	./srccheck/verify-gofmt.sh
+	./srccheck/verify-golint.sh
+	./srccheck/verify-govet.sh
