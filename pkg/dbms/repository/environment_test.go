@@ -84,3 +84,29 @@ func TestEditEnvironment(t *testing.T) {
 	assert.Nil(t, e)
 
 }
+
+func TestDeleteEnvironment(t *testing.T) {
+
+	db, mock, err := sqlmock.New()
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	assert.Nil(t, err)
+
+	envDAO := EnvironmentDAOImpl{}
+	envDAO.Db = gormDB
+
+	mock.MatchExpectationsInOrder(false)
+
+	item := getEnvironmentTestData()
+	item.ID = 999
+
+	mock.ExpectExec(`DELETE FROM "environments" WHERE "environments"."id" = (.*)`).
+		WithArgs(item.ID).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	e := envDAO.DeleteEnvironment(item)
+	assert.Nil(t, e)
+
+}
