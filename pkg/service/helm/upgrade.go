@@ -162,7 +162,7 @@ func (u *upgradeCmd) run() error {
 		return err
 	}
 
-	//TODO - VERIFY IF CONFIG FILE EXISTS !!! This is the cause of  u.client.ReleaseHistory fail sometimes.
+	//WARNING - VERIFY IF CONFIG FILE EXISTS !!! This is the cause of  u.client.ReleaseHistory fail sometimes.
 	releaseHistory, err := u.client.ReleaseHistory(u.release, helm.WithMaxHistory(1))
 
 	if u.install {
