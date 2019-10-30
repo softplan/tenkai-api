@@ -64,9 +64,9 @@ func TestCreateEnvironment(t *testing.T) {
 			item.Namespace, item.Gateway).
 		WillReturnRows(rows)
 
-	id, e := envDAO.CreateEnvironment(item)
+	result, e := envDAO.CreateEnvironment(item)
 	assert.Nil(t, e)
-	assert.Equal(t, 1, id)
+	assert.Equal(t, 1, result)
 
 	mock.ExpectationsWereMet()
 
@@ -95,8 +95,8 @@ func TestEditEnvironment(t *testing.T) {
 			item.Namespace, item.Gateway, item.ID).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
-	e := envDAO.EditEnvironment(item)
-	assert.Nil(t, e)
+	result := envDAO.EditEnvironment(item)
+	assert.Nil(t, result)
 
 }
 
@@ -121,8 +121,8 @@ func TestDeleteEnvironment(t *testing.T) {
 		WithArgs(item.ID).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
-	e := envDAO.DeleteEnvironment(item)
-	assert.Nil(t, e)
+	result := envDAO.DeleteEnvironment(item)
+	assert.Nil(t, result)
 
 }
 
@@ -160,10 +160,10 @@ func TestGetAllEnvironments(t *testing.T) {
 		WHERE "environments"."deleted_at" IS NULL AND \(\("user_environment"."user_id" IN (.*)\)\)`).
 		WillReturnRows(row2)
 
-	env, err := envDAO.GetAllEnvironments(user.Email)
+	result, err := envDAO.GetAllEnvironments(user.Email)
 	assert.Nil(t, err)
-	assert.NotNil(t, env)
-	assert.Equal(t, e.ID, env[0].ID)
+	assert.NotNil(t, result)
+	assert.Equal(t, e.ID, result[0].ID)
 
 	mock.ExpectationsWereMet()
 }
@@ -188,10 +188,39 @@ func TestGetAllEnvironmentsWithoutPrincipal(t *testing.T) {
 	mock.ExpectQuery(`SELECT (.*) FROM "environments" WHERE "environments"."deleted_at" IS NULL`).
 		WillReturnRows(row)
 
-	env, err := envDAO.GetAllEnvironments("")
+	result, err := envDAO.GetAllEnvironments("")
 	assert.Nil(t, err)
-	assert.NotNil(t, env)
-	assert.Equal(t, e.ID, env[0].ID)
+	assert.NotNil(t, result)
+	assert.Equal(t, e.ID, result[0].ID)
+
+	mock.ExpectationsWereMet()
+}
+
+func TestGetByID(t *testing.T) {
+	db, mock, err := sqlmock.New()
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	assert.Nil(t, err)
+
+	envDAO := EnvironmentDAOImpl{}
+	envDAO.Db = gormDB
+
+	mock.MatchExpectationsInOrder(false)
+
+	e := getEnvironmentTestData()
+	e.ID = 999
+	row := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "deleted_at", "group", "name", "cluster_uri", "ca_certificate", "token", "namespace", "gateway"}).
+		AddRow(e.ID, e.CreatedAt, e.UpdatedAt, e.DeletedAt, e.Group, e.Name, e.ClusterURI, e.CACertificate, e.Token, e.Namespace, e.Gateway)
+
+	mock.ExpectQuery(`SELECT (.*) FROM "environments" WHERE "environments"."deleted_at" IS NULL
+		AND \(\("environments"."id" = 999\)\) ORDER BY "environments"."id" ASC LIMIT 1`).
+		WillReturnRows(row)
+
+	result, err := envDAO.GetByID(999)
+	assert.Nil(t, err)
+	assert.Equal(t, e.ID, result.ID)
 
 	mock.ExpectationsWereMet()
 }
