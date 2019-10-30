@@ -167,3 +167,31 @@ func TestGetAllEnvironments(t *testing.T) {
 
 	mock.ExpectationsWereMet()
 }
+
+func TestGetAllEnvironmentsWithoutPrincipal(t *testing.T) {
+	db, mock, err := sqlmock.New()
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	assert.Nil(t, err)
+
+	envDAO := EnvironmentDAOImpl{}
+	envDAO.Db = gormDB
+
+	mock.MatchExpectationsInOrder(false)
+	e := getEnvironmentTestData()
+	e.ID = 999
+	row := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "deleted_at", "group", "name", "cluster_uri", "ca_certificate", "token", "namespace", "gateway"}).
+		AddRow(e.ID, e.CreatedAt, e.UpdatedAt, e.DeletedAt, e.Group, e.Name, e.ClusterURI, e.CACertificate, e.Token, e.Namespace, e.Gateway)
+
+	mock.ExpectQuery(`SELECT (.*) FROM "environments" WHERE "environments"."deleted_at" IS NULL`).
+		WillReturnRows(row)
+
+	env, err := envDAO.GetAllEnvironments("")
+	assert.Nil(t, err)
+	assert.NotNil(t, env)
+	assert.Equal(t, e.ID, env[0].ID)
+
+	mock.ExpectationsWereMet()
+}
