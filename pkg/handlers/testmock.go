@@ -2,10 +2,13 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
+	mockAud "github.com/softplan/tenkai-api/pkg/audit/mocks"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
+	"github.com/stretchr/testify/mock"
 )
 
 //MockPrincipal injects a http header with the specified role to be used only for testing.
@@ -20,6 +23,14 @@ func MockGetByID(appContext *AppContext) *mockRepo.EnvironmentDAOInterface {
 	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
 	env := MockGetEnv()
 	mockEnvDao.On("GetByID", int(env.ID)).Return(&env, nil)
+	appContext.Repositories.EnvironmentDAO = mockEnvDao
+	return mockEnvDao
+}
+
+//MockGetByIDError mocks a call to GetByID function returning an error to be used only for testing.
+func MockGetByIDError(appContext *AppContext) *mockRepo.EnvironmentDAOInterface {
+	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
+	mockEnvDao.On("GetByID", mock.Anything).Return(nil, errors.New("Some error"))
 	appContext.Repositories.EnvironmentDAO = mockEnvDao
 	return mockEnvDao
 }
@@ -48,4 +59,13 @@ func MockVariable() model.Variable {
 	variable.Description = "Login username."
 	variable.EnvironmentID = 999
 	return variable
+}
+
+//MockDoAudit mocks a call to DoAudit function to be used only for testing.
+func MockDoAudit(appContext *AppContext, operation string, auditValues map[string]string) *mockAud.AuditingInterface {
+	mockAudit := &mockAud.AuditingInterface{}
+	mockAudit.On("DoAudit", mock.Anything, mock.Anything, "beta@alfa.com", operation, auditValues)
+	appContext.Auditing = mockAudit
+
+	return mockAudit
 }

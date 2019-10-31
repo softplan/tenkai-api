@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 
 	"github.com/gorilla/mux"
-	mockAud "github.com/softplan/tenkai-api/pkg/audit/mocks"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
 	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
@@ -64,7 +63,7 @@ func TestDeleteHelmRelease(t *testing.T) {
 	auditValues["environment"] = "bar"
 	auditValues["purge"] = "false"
 	auditValues["name"] = "foo"
-	mockAudit := mockDoAudit(&appContext, "deleteHelmRelease", auditValues)
+	mockAudit := MockDoAudit(&appContext, "deleteHelmRelease", auditValues)
 
 	mockConvention := mockConventionInterface(&appContext)
 
@@ -321,7 +320,7 @@ func TestMultipleInstall(t *testing.T) {
 	auditValues["environment"] = "bar"
 	auditValues["chartName"] = "foo"
 	auditValues["name"] = "my-foo"
-	mockAudit := mockDoAudit(&appContext, "deploy", auditValues)
+	mockAudit := MockDoAudit(&appContext, "deploy", auditValues)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.multipleInstall)
@@ -393,14 +392,6 @@ func getInstallPayload() *bytes.Buffer {
 
 	pStr, _ := json.Marshal(payload)
 	return bytes.NewBuffer(pStr)
-}
-
-func mockDoAudit(appContext *AppContext, operation string, auditValues map[string]string) *mockAud.AuditingInterface {
-	mockAudit := &mockAud.AuditingInterface{}
-	mockAudit.On("DoAudit", mock.Anything, mock.Anything, "beta@alfa.com", operation, auditValues)
-	appContext.Auditing = mockAudit
-
-	return mockAudit
 }
 
 func mockUpgrade(appContext *AppContext) *mockSvc.HelmServiceInterface {
