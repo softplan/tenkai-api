@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -16,10 +17,11 @@ import (
 func TestSaveVariableValues(t *testing.T) {
 	appContext := AppContext{}
 
-	var vd model.VariableData
-	vd.Data = append(vd.Data, MockVariable())
+	variable := MockVariable()
+	var varData model.VariableData
+	varData.Data = append(varData.Data, variable)
 
-	payloadStr, _ := json.Marshal(vd)
+	payloadStr, _ := json.Marshal(varData)
 	req, err := http.NewRequest("POST", "/saveVariableValues", bytes.NewBuffer(payloadStr))
 	assert.NoError(t, err)
 
@@ -30,8 +32,97 @@ func TestSaveVariableValues(t *testing.T) {
 	mockEnvDao := MockGetByID(&appContext)
 	mockEnvDao.On("GetAllEnvironments", "beta@alfa.com").Return(envs, nil)
 
+	auditValues := make(map[string]string)
+	auditValues["variable_name"] = variable.Name
+	auditValues["variable_old_value"] = ""
+	auditValues["variable_new_value"] = variable.Value
+	auditValues["scope"] = variable.Scope
+
 	mockVariableDAO := &mockRepo.VariableDAOInterface{}
-	mockVariableDAO.On("CreateVariable", mock.Anything).Return(nil, true, nil)
+	mockVariableDAO.On("CreateVariable", mock.Anything).Return(auditValues, true, nil)
+
+	mockAudit := MockDoAudit(&appContext, "saveVariable", auditValues)
+
+	appContext.Repositories.EnvironmentDAO = mockEnvDao
+	appContext.Repositories.VariableDAO = mockVariableDAO
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.saveVariableValues)
+	handler.ServeHTTP(rr, req)
+
+	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
+	mockEnvDao.AssertNumberOfCalls(t, "GetAllEnvironments", 1)
+	mockVariableDAO.AssertNumberOfCalls(t, "CreateVariable", 1)
+	mockAudit.AssertNumberOfCalls(t, "DoAudit", 1)
+
+	assert.Equal(t, http.StatusCreated, rr.Code, "Response should be Created.")
+}
+
+func TestSaveVariableValuesUnauthorized(t *testing.T) {
+	appContext := AppContext{}
+
+	variable := MockVariable()
+	var varData model.VariableData
+	varData.Data = append(varData.Data, variable)
+
+	payloadStr, _ := json.Marshal(varData)
+	req, err := http.NewRequest("POST", "/saveVariableValues", bytes.NewBuffer(payloadStr))
+	assert.NoError(t, err)
+
+	MockPrincipal(req, []string{"role-unauthorized"})
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.saveVariableValues)
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusUnauthorized, rr.Code, "Response should be unauthorized.")
+}
+
+func TestSaveVariableValuesGetByIDError(t *testing.T) {
+	appContext := AppContext{}
+
+	variable := MockVariable()
+	var varData model.VariableData
+	varData.Data = append(varData.Data, variable)
+
+	payloadStr, _ := json.Marshal(varData)
+	req, err := http.NewRequest("POST", "/saveVariableValues", bytes.NewBuffer(payloadStr))
+	assert.NoError(t, err)
+
+	MockPrincipal(req, []string{"tenkai-variables-save"})
+
+	var envs []model.Environment
+	envs = append(envs, MockGetEnv())
+	mockEnvDao := MockGetByIDError(&appContext)
+
+	appContext.Repositories.EnvironmentDAO = mockEnvDao
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.saveVariableValues)
+	handler.ServeHTTP(rr, req)
+
+	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
+
+	assert.Equal(t, http.StatusNotImplemented, rr.Code, "Response should be 501.")
+}
+
+func TestSaveVariableValuesHasAccessError(t *testing.T) {
+	appContext := AppContext{}
+
+	variable := MockVariable()
+	var varData model.VariableData
+	varData.Data = append(varData.Data, variable)
+
+	payloadStr, _ := json.Marshal(varData)
+	req, err := http.NewRequest("POST", "/saveVariableValues", bytes.NewBuffer(payloadStr))
+	assert.NoError(t, err)
+
+	MockPrincipal(req, []string{"tenkai-variables-save"})
+
+	var envs []model.Environment
+	envs = append(envs, MockGetEnv())
+	mockEnvDao := MockGetByID(&appContext)
+	mockEnvDao.On("GetAllEnvironments", "beta@alfa.com").Return(nil, errors.New("Record not found"))
 
 	appContext.Repositories.EnvironmentDAO = mockEnvDao
 
@@ -42,5 +133,5 @@ func TestSaveVariableValues(t *testing.T) {
 	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
 	mockEnvDao.AssertNumberOfCalls(t, "GetAllEnvironments", 1)
 
-	assert.Equal(t, http.StatusCreated, rr.Code, "Response is not Created.")
+	assert.Equal(t, http.StatusUnauthorized, rr.Code, "Response should be unauthorized.")
 }
