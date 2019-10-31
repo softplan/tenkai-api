@@ -3,7 +3,7 @@
 package mocks
 
 import bytes "bytes"
-import helmapi "github.com/softplan/tenkai-api/pkg/service/helm"
+import helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 import mock "github.com/stretchr/testify/mock"
 import model "github.com/softplan/tenkai-api/pkg/dbms/model"
 import sync "sync"
