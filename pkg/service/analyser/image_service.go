@@ -2,7 +2,7 @@ package analyser
 
 import (
 	"encoding/json"
-	helmapi2 "github.com/softplan/tenkai-api/pkg/service/helm"
+	helmapi2 "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"sync"
 )
 

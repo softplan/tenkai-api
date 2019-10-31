@@ -15,4 +15,4 @@ const TenkaiVariablesSave = "tenkai-variables-save"
 const TenkaiVariablesDelete = "tenkai-variables-delete"
 
 //TenkaiHelmUpgrade - role
-const TenkaiHelmUpgrade = "tenkai-helm-upgrade"
+const TenkaiHelmUpgrade = "tenkai-_helm-upgrade"

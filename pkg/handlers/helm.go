@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/global"
-	helmapi "github.com/softplan/tenkai-api/pkg/service/helm"
+	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"github.com/softplan/tenkai-api/pkg/util"
 	"net/http"
 	"strconv"
@@ -505,7 +505,7 @@ func (appContext *AppContext) doUpgrade(upgradeRequest helmapi.UpgradeRequest, o
 
 func getHelmMessage(name string, args []string, environment *model.Environment, chart string) string {
 	var message string
-	message = "helm upgrade --install " + name + " \\\n"
+	message = "_helm upgrade --install " + name + " \\\n"
 	for _, e := range args {
 		message = message + " --set \"" + e + "\" " + " \\\n"
 	}

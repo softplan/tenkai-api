@@ -5,7 +5,7 @@ import (
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/dbms/repository"
 	"github.com/softplan/tenkai-api/pkg/global"
-	helmapi2 "github.com/softplan/tenkai-api/pkg/service/helm"
+	helmapi2 "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"strings"
 )
 

@@ -8,7 +8,7 @@ import (
 	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/global"
-	helmapi "github.com/softplan/tenkai-api/pkg/service/helm"
+	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"github.com/softplan/tenkai-api/pkg/util"
 	"net/http"
 	"strconv"
@@ -131,7 +131,7 @@ func (appContext *AppContext) getVariablesNotUsed(w http.ResponseWriter, r *http
 		return
 	}
 
-	//Retrieve all helm release in environment
+	//Retrieve all _helm release in environment
 	//Locate Environment
 	environment, err := appContext.Repositories.EnvironmentDAO.GetByID(id)
 	if err != nil {

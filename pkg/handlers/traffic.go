@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/global"
-	helmapi "github.com/softplan/tenkai-api/pkg/service/helm"
+	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"github.com/softplan/tenkai-api/pkg/util"
 	"net/http"
 	"strconv"
