@@ -189,3 +189,46 @@ func TestSaveVariableValues_CreateVariableError(t *testing.T) {
 
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
+
+func TestGetVariablesByEnvironmentAndScope(t *testing.T) {
+	appContext := AppContext{}
+
+	type Payload struct {
+		EnvironmentID int    `json:"environmentId"`
+		Scope         string `json:"scope"`
+	}
+
+	var payload Payload
+	payload.EnvironmentID = 999
+	payload.Scope = "global"
+	payloadStr, _ := json.Marshal(payload)
+
+	req, err := http.NewRequest("POST", "/listVariables", bytes.NewBuffer(payloadStr))
+	assert.NoError(t, err)
+
+	MockPrincipal(req, []string{"tenkai-variables-save"})
+
+	var envs []model.Environment
+	envs = append(envs, MockGetEnv())
+	mockEnvDao := MockGetByID(&appContext)
+	mockEnvDao.On("GetAllEnvironments", "beta@alfa.com").Return(envs, nil)
+
+	mockVariableDAO := MockGetAllVariablesByEnvironmentAndScope(&appContext)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.getVariablesByEnvironmentAndScope)
+	handler.ServeHTTP(rr, req)
+
+	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironmentAndScope", 2)
+
+	assert.Equal(t, http.StatusOK, rr.Code, "Response should be ok.")
+	assert.Equal(t, getExpect(), string(rr.Body.Bytes()), "Response is not correct.")
+}
+
+func getExpect() string {
+	var x model.VariablesResult
+	x.Variables = append(x.Variables, MockVariable())
+
+	j, _ := json.Marshal(x)
+	return "{\"charts\":" + string(j) + "}"
+}

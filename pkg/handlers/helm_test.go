@@ -10,7 +10,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
-	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
 	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	mockSvc "github.com/softplan/tenkai-api/pkg/service/_helm/mocks"
 	"github.com/softplan/tenkai-api/pkg/service/core/mocks"
@@ -283,7 +282,7 @@ func TestGetHelmCommand(t *testing.T) {
 
 	appContext := AppContext{}
 	mockEnvDao := MockGetByID(&appContext)
-	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
+	mockVariableDAO := MockGetAllVariablesByEnvironmentAndScope(&appContext)
 	mockConvention := mockConventionInterface(&appContext)
 
 	MockPrincipal(req, []string{"tenkai-helm-upgrade"})
@@ -312,7 +311,7 @@ func TestMultipleInstall(t *testing.T) {
 
 	appContext := AppContext{}
 	mockEnvDao := MockGetByID(&appContext)
-	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
+	mockVariableDAO := MockGetAllVariablesByEnvironmentAndScope(&appContext)
 	mockConvention := mockConventionInterface(&appContext)
 	mockHelmSvc := mockUpgrade(&appContext)
 
@@ -344,7 +343,7 @@ func TestInstall(t *testing.T) {
 
 	appContext := AppContext{}
 	mockEnvDao := MockGetByID(&appContext)
-	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
+	mockVariableDAO := MockGetAllVariablesByEnvironmentAndScope(&appContext)
 	mockConvention := mockConventionInterface(&appContext)
 	mockHelmSvc := mockUpgrade(&appContext)
 
@@ -367,7 +366,7 @@ func TestDryRun(t *testing.T) {
 
 	appContext := AppContext{}
 	mockEnvDao := MockGetByID(&appContext)
-	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
+	mockVariableDAO := MockGetAllVariablesByEnvironmentAndScope(&appContext)
 	mockConvention := mockConventionInterface(&appContext)
 	mockHelmSvc := mockUpgrade(&appContext)
 
@@ -406,18 +405,6 @@ func mockConventionInterface(appContext *AppContext) *mocks.ConventionInterface 
 	mockConvention.On("GetKubeConfigFileName", "foo", "bar").Return("./config/foo_bar")
 	appContext.ConventionInterface = mockConvention
 	return mockConvention
-}
-
-func mockGetAllVariablesByEnvironmentAndScope(appContext *AppContext) *mockRepo.VariableDAOInterface {
-	mockVariableDAO := &mockRepo.VariableDAOInterface{}
-	var variables []model.Variable
-	variable := MockVariable()
-	variables = append(variables, variable)
-	mockVariableDAO.On("GetAllVariablesByEnvironmentAndScope", int(variable.EnvironmentID), mock.Anything).Return(variables, nil)
-
-	appContext.Repositories.VariableDAO = mockVariableDAO
-
-	return mockVariableDAO
 }
 
 func getMultipleInstallPayload() *bytes.Buffer {

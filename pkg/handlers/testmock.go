@@ -69,3 +69,16 @@ func MockDoAudit(appContext *AppContext, operation string, auditValues map[strin
 
 	return mockAudit
 }
+
+//MockGetAllVariablesByEnvironmentAndScope MockGetAllVariablesByEnvironmentAndScope
+func MockGetAllVariablesByEnvironmentAndScope(appContext *AppContext) *mockRepo.VariableDAOInterface {
+	mockVariableDAO := &mockRepo.VariableDAOInterface{}
+	var variables []model.Variable
+	variable := MockVariable()
+	variables = append(variables, variable)
+	mockVariableDAO.On("GetAllVariablesByEnvironmentAndScope", int(variable.EnvironmentID), mock.Anything).Return(variables, nil)
+
+	appContext.Repositories.VariableDAO = mockVariableDAO
+
+	return mockVariableDAO
+}
