@@ -67,17 +67,10 @@ func getNodeName(chartName string, version string) string {
 }
 
 func getMatchedVersions(chartName string, tag string) []model.DepAnalyseRequest {
-
 	var result []model.DepAnalyseRequest
 	result = make([]model.DepAnalyseRequest, 0)
-
 	element := &model.DepAnalyseRequest{ChartName: chartName, Tag: tag}
 	result = append(result, *element)
-
-	//TODO: https://github.com/coreos/go-semver
-	//Here we must match using version semantics
-	//https://semver.npmjs.com/
-
 	return result
 }
 

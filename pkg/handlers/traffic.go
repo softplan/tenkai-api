@@ -11,6 +11,10 @@ import (
 	"strings"
 )
 
+const (
+	namespaceInterpolateVariable string = "${NAMESPACE}"
+)
+
 func (appContext *AppContext) deployTrafficRule(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set(global.ContentType, global.JSONContentType)
@@ -24,11 +28,11 @@ func (appContext *AppContext) deployTrafficRule(w http.ResponseWriter, r *http.R
 
 	//Locate Environment
 	environment, err := appContext.Repositories.EnvironmentDAO.GetByID(payload.EnvironmentID)
-	domain := strings.Replace(payload.Domain, "${NAMESPACE}", environment.Namespace, -1)
-	serviceName := strings.Replace(payload.ServiceName, "${NAMESPACE}", environment.Namespace, -1)
+	domain := strings.Replace(payload.Domain, namespaceInterpolateVariable, environment.Namespace, -1)
+	serviceName := strings.Replace(payload.ServiceName, namespaceInterpolateVariable, environment.Namespace, -1)
 
-	defaultReleaseName := strings.Replace(payload.DefaultReleaseName, "${NAMESPACE}", environment.Namespace, -1)
-	headerReleaseName := strings.Replace(payload.HeaderReleaseName, "${NAMESPACE}", environment.Namespace, -1)
+	defaultReleaseName := strings.Replace(payload.DefaultReleaseName, namespaceInterpolateVariable, environment.Namespace, -1)
+	headerReleaseName := strings.Replace(payload.HeaderReleaseName, namespaceInterpolateVariable, environment.Namespace, -1)
 
 	//
 	chart := "saj6/tenkai-canary"
@@ -58,14 +62,14 @@ func (appContext *AppContext) deployTrafficRule(w http.ResponseWriter, r *http.R
 		variables = append(variables, "app.headerEnabled=false")
 		variables = append(variables, "app.weightEnabled=true")
 		for i, e := range payload.Releases {
-			name := strings.Replace(e.Name, "${NAMESPACE}", environment.Namespace, -1)
+			name := strings.Replace(e.Name, namespaceInterpolateVariable, environment.Namespace, -1)
 			variables = append(variables, "app.releases["+strconv.Itoa(i)+"].name="+name)
 			variables = append(variables, "app.releases["+strconv.Itoa(i)+"].value="+strconv.Itoa(e.Weight))
 		}
 	}
 
 	//Retry 2 times (First time will fail because service already exists).
-	//TODO - VERIFY HOW TO FIX IT
+	//WARNING - VERIFY HOW TO FIX IT
 
 	upgradeRequest := helmapi.UpgradeRequest{}
 	upgradeRequest.Kubeconfig = kubeConfig

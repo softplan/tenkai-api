@@ -386,6 +386,7 @@ func (appContext *AppContext) install(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//TODO Verify if chart exists
+
 	_, err = appContext.simpleInstall(environment, payload.Chart, payload.ChartVersion, payload.Name, out, false, false)
 	if err != nil {
 		fmt.Println(out.String())
