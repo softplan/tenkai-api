@@ -219,16 +219,12 @@ func TestGetVariablesByEnvironmentAndScope(t *testing.T) {
 	handler := http.HandlerFunc(appContext.getVariablesByEnvironmentAndScope)
 	handler.ServeHTTP(rr, req)
 
-	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironmentAndScope", 2)
+	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironmentAndScope", 1)
 
 	assert.Equal(t, http.StatusOK, rr.Code, "Response should be ok.")
-	assert.Equal(t, getExpect(), string(rr.Body.Bytes()), "Response is not correct.")
-}
 
-func getExpect() string {
-	var x model.VariablesResult
-	x.Variables = append(x.Variables, MockVariable())
-
-	j, _ := json.Marshal(x)
-	return "{\"charts\":" + string(j) + "}"
+	response := string(rr.Body.Bytes())
+	assert.Contains(t, response, `{"Variables":[{"ID":0,`)
+	assert.Contains(t, response, `"scope":"global","name":"username","value":"user",`)
+	assert.Contains(t, response, `"secret":false,"description":"Login username.","environmentId":999}]}`)
 }
