@@ -17,7 +17,7 @@ import (
 func TestSaveVariableValues(t *testing.T) {
 	appContext := AppContext{}
 
-	variable := MockVariable()
+	variable := mockVariable()
 	var varData model.VariableData
 	varData.Data = append(varData.Data, variable)
 
@@ -25,11 +25,11 @@ func TestSaveVariableValues(t *testing.T) {
 	req, err := http.NewRequest("POST", "/saveVariableValues", bytes.NewBuffer(payloadStr))
 	assert.NoError(t, err)
 
-	MockPrincipal(req, []string{"tenkai-variables-save"})
+	mockPrincipal(req, []string{"tenkai-variables-save"})
 
 	var envs []model.Environment
-	envs = append(envs, MockGetEnv())
-	mockEnvDao := MockGetByID(&appContext)
+	envs = append(envs, mockGetEnv())
+	mockEnvDao := mockGetByID(&appContext)
 	mockEnvDao.On("GetAllEnvironments", "beta@alfa.com").Return(envs, nil)
 
 	auditValues := make(map[string]string)
@@ -41,7 +41,7 @@ func TestSaveVariableValues(t *testing.T) {
 	mockVariableDAO := &mockRepo.VariableDAOInterface{}
 	mockVariableDAO.On("CreateVariable", mock.Anything).Return(auditValues, true, nil)
 
-	mockAudit := MockDoAudit(&appContext, "saveVariable", auditValues)
+	mockAudit := mockDoAudit(&appContext, "saveVariable", auditValues)
 
 	appContext.Repositories.EnvironmentDAO = mockEnvDao
 	appContext.Repositories.VariableDAO = mockVariableDAO
@@ -61,7 +61,7 @@ func TestSaveVariableValues(t *testing.T) {
 func TestSaveVariableValues_Unauthorized(t *testing.T) {
 	appContext := AppContext{}
 
-	variable := MockVariable()
+	variable := mockVariable()
 	var varData model.VariableData
 	varData.Data = append(varData.Data, variable)
 
@@ -69,7 +69,7 @@ func TestSaveVariableValues_Unauthorized(t *testing.T) {
 	req, err := http.NewRequest("POST", "/saveVariableValues", bytes.NewBuffer(payloadStr))
 	assert.NoError(t, err)
 
-	MockPrincipal(req, []string{"role-unauthorized"})
+	mockPrincipal(req, []string{"role-unauthorized"})
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.saveVariableValues)
@@ -81,7 +81,7 @@ func TestSaveVariableValues_Unauthorized(t *testing.T) {
 func TestSaveVariableValues_GetByIDError(t *testing.T) {
 	appContext := AppContext{}
 
-	variable := MockVariable()
+	variable := mockVariable()
 	var varData model.VariableData
 	varData.Data = append(varData.Data, variable)
 
@@ -89,11 +89,11 @@ func TestSaveVariableValues_GetByIDError(t *testing.T) {
 	req, err := http.NewRequest("POST", "/saveVariableValues", bytes.NewBuffer(payloadStr))
 	assert.NoError(t, err)
 
-	MockPrincipal(req, []string{"tenkai-variables-save"})
+	mockPrincipal(req, []string{"tenkai-variables-save"})
 
 	var envs []model.Environment
-	envs = append(envs, MockGetEnv())
-	mockEnvDao := MockGetByIDError(&appContext)
+	envs = append(envs, mockGetEnv())
+	mockEnvDao := mockGetByIDError(&appContext)
 
 	appContext.Repositories.EnvironmentDAO = mockEnvDao
 
@@ -121,7 +121,7 @@ func TestSaveVariableValues_UnmarshalPayloadError(t *testing.T) {
 func TestSaveVariableValues_CreateVariableError(t *testing.T) {
 	appContext := AppContext{}
 
-	variable := MockVariable()
+	variable := mockVariable()
 	var varData model.VariableData
 	varData.Data = append(varData.Data, variable)
 
@@ -129,11 +129,11 @@ func TestSaveVariableValues_CreateVariableError(t *testing.T) {
 	req, err := http.NewRequest("POST", "/saveVariableValues", bytes.NewBuffer(payloadStr))
 	assert.NoError(t, err)
 
-	MockPrincipal(req, []string{"tenkai-variables-save"})
+	mockPrincipal(req, []string{"tenkai-variables-save"})
 
 	var envs []model.Environment
-	envs = append(envs, MockGetEnv())
-	mockEnvDao := MockGetByID(&appContext)
+	envs = append(envs, mockGetEnv())
+	mockEnvDao := mockGetByID(&appContext)
 	mockEnvDao.On("GetAllEnvironments", "beta@alfa.com").Return(envs, nil)
 
 	mockVariableDAO := &mockRepo.VariableDAOInterface{}
@@ -169,14 +169,14 @@ func TestGetVariablesByEnvironmentAndScope(t *testing.T) {
 	req, err := http.NewRequest("POST", "/listVariables", bytes.NewBuffer(payloadStr))
 	assert.NoError(t, err)
 
-	MockPrincipal(req, []string{"tenkai-variables-save"})
+	mockPrincipal(req, []string{"tenkai-variables-save"})
 
 	var envs []model.Environment
-	envs = append(envs, MockGetEnv())
-	mockEnvDao := MockGetByID(&appContext)
+	envs = append(envs, mockGetEnv())
+	mockEnvDao := mockGetByID(&appContext)
 	mockEnvDao.On("GetAllEnvironments", "beta@alfa.com").Return(envs, nil)
 
-	mockVariableDAO := MockGetAllVariablesByEnvironmentAndScope(&appContext)
+	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.getVariablesByEnvironmentAndScope)

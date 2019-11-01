@@ -51,8 +51,8 @@ func TestDeleteHelmRelease(t *testing.T) {
 	assert.NoError(t, err)
 
 	var envs []model.Environment
-	envs = append(envs, MockGetEnv())
-	mockEnvDao := MockGetByID(&appContext)
+	envs = append(envs, mockGetEnv())
+	mockEnvDao := mockGetByID(&appContext)
 	mockEnvDao.On("GetAllEnvironments", "beta@alfa.com").Return(envs, nil)
 
 	mockHelmSvc := &mockSvc.HelmServiceInterface{}
@@ -62,7 +62,7 @@ func TestDeleteHelmRelease(t *testing.T) {
 	auditValues["environment"] = "bar"
 	auditValues["purge"] = "false"
 	auditValues["name"] = "foo"
-	mockAudit := MockDoAudit(&appContext, "deleteHelmRelease", auditValues)
+	mockAudit := mockDoAudit(&appContext, "deleteHelmRelease", auditValues)
 
 	mockConvention := mockConventionInterface(&appContext)
 
@@ -70,7 +70,7 @@ func TestDeleteHelmRelease(t *testing.T) {
 	appContext.Repositories.EnvironmentDAO = mockEnvDao
 	appContext.HelmServiceAPI = mockHelmSvc
 
-	MockPrincipal(req, []string{"tenkai-helm-upgrade"})
+	mockPrincipal(req, []string{"tenkai-helm-upgrade"})
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.deleteHelmRelease)
@@ -92,7 +92,7 @@ func TestRollback(t *testing.T) {
 	assert.NotNil(t, req)
 
 	appContext := AppContext{}
-	mockEnvDao := MockGetByID(&appContext)
+	mockEnvDao := mockGetByID(&appContext)
 
 	mockHelmSvc := &mockSvc.HelmServiceInterface{}
 	mockHelmSvc.On("RollbackRelease", "./config/foo_bar", "foo", 800).Return(nil)
@@ -119,7 +119,7 @@ func TestRevision(t *testing.T) {
 	assert.NotNil(t, req)
 
 	appContext := AppContext{}
-	mockEnvDao := MockGetByID(&appContext)
+	mockEnvDao := mockGetByID(&appContext)
 
 	mockHelmSvc := &mockSvc.HelmServiceInterface{}
 	yaml := "foo: bar"
@@ -152,7 +152,7 @@ func TestListReleaseHistory(t *testing.T) {
 	assert.NotNil(t, req)
 
 	appContext := AppContext{}
-	mockEnvDao := MockGetByID(&appContext)
+	mockEnvDao := mockGetByID(&appContext)
 	mockConvention := mockConventionInterface(&appContext)
 
 	var info helmapi.ReleaseInfo
@@ -188,7 +188,7 @@ func TestListHelmDeploymentsByEnvironment(t *testing.T) {
 	assert.NotNil(t, req)
 
 	appContext := AppContext{}
-	mockEnvDao := MockGetByID(&appContext)
+	mockEnvDao := mockGetByID(&appContext)
 	mockConvention := mockConventionInterface(&appContext)
 
 	var listReleases []helmapi.ListRelease
@@ -281,11 +281,11 @@ func TestGetHelmCommand(t *testing.T) {
 	assert.NotNil(t, req)
 
 	appContext := AppContext{}
-	mockEnvDao := MockGetByID(&appContext)
-	mockVariableDAO := MockGetAllVariablesByEnvironmentAndScope(&appContext)
+	mockEnvDao := mockGetByID(&appContext)
+	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
 	mockConvention := mockConventionInterface(&appContext)
 
-	MockPrincipal(req, []string{"tenkai-helm-upgrade"})
+	mockPrincipal(req, []string{"tenkai-helm-upgrade"})
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.getHelmCommand)
@@ -307,11 +307,11 @@ func TestMultipleInstall(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	MockPrincipal(req, []string{"tenkai-helm-upgrade"})
+	mockPrincipal(req, []string{"tenkai-helm-upgrade"})
 
 	appContext := AppContext{}
-	mockEnvDao := MockGetByID(&appContext)
-	mockVariableDAO := MockGetAllVariablesByEnvironmentAndScope(&appContext)
+	mockEnvDao := mockGetByID(&appContext)
+	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
 	mockConvention := mockConventionInterface(&appContext)
 	mockHelmSvc := mockUpgrade(&appContext)
 
@@ -319,7 +319,7 @@ func TestMultipleInstall(t *testing.T) {
 	auditValues["environment"] = "bar"
 	auditValues["chartName"] = "foo"
 	auditValues["name"] = "my-foo"
-	mockAudit := MockDoAudit(&appContext, "deploy", auditValues)
+	mockAudit := mockDoAudit(&appContext, "deploy", auditValues)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.multipleInstall)
@@ -339,11 +339,11 @@ func TestInstall(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	MockPrincipal(req, []string{"tenkai-helm-upgrade"})
+	mockPrincipal(req, []string{"tenkai-helm-upgrade"})
 
 	appContext := AppContext{}
-	mockEnvDao := MockGetByID(&appContext)
-	mockVariableDAO := MockGetAllVariablesByEnvironmentAndScope(&appContext)
+	mockEnvDao := mockGetByID(&appContext)
+	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
 	mockConvention := mockConventionInterface(&appContext)
 	mockHelmSvc := mockUpgrade(&appContext)
 
@@ -365,8 +365,8 @@ func TestDryRun(t *testing.T) {
 	assert.NotNil(t, req)
 
 	appContext := AppContext{}
-	mockEnvDao := MockGetByID(&appContext)
-	mockVariableDAO := MockGetAllVariablesByEnvironmentAndScope(&appContext)
+	mockEnvDao := mockGetByID(&appContext)
+	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
 	mockConvention := mockConventionInterface(&appContext)
 	mockHelmSvc := mockUpgrade(&appContext)
 

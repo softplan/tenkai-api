@@ -15,32 +15,32 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-//MockPrincipal injects a http header with the specified role to be used only for testing.
-func MockPrincipal(req *http.Request, roles []string) {
+//mockPrincipal injects a http header with the specified role to be used only for testing.
+func mockPrincipal(req *http.Request, roles []string) {
 	principal := model.Principal{Name: "alfa", Email: "beta@alfa.com", Roles: roles}
 	pSe, _ := json.Marshal(principal)
 	req.Header.Set("principal", string(pSe))
 }
 
-//MockGetByID mocks a call to GetByID function to be used only for testing.
-func MockGetByID(appContext *AppContext) *mockRepo.EnvironmentDAOInterface {
+//mockGetByID mocks a call to GetByID function to be used only for testing.
+func mockGetByID(appContext *AppContext) *mockRepo.EnvironmentDAOInterface {
 	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
-	env := MockGetEnv()
+	env := mockGetEnv()
 	mockEnvDao.On("GetByID", int(env.ID)).Return(&env, nil)
 	appContext.Repositories.EnvironmentDAO = mockEnvDao
 	return mockEnvDao
 }
 
-//MockGetByIDError mocks a call to GetByID function returning an error to be used only for testing.
-func MockGetByIDError(appContext *AppContext) *mockRepo.EnvironmentDAOInterface {
+//mockGetByIDError mocks a call to GetByID function returning an error to be used only for testing.
+func mockGetByIDError(appContext *AppContext) *mockRepo.EnvironmentDAOInterface {
 	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
 	mockEnvDao.On("GetByID", mock.Anything).Return(nil, errors.New("Some error"))
 	appContext.Repositories.EnvironmentDAO = mockEnvDao
 	return mockEnvDao
 }
 
-//MockGetEnv returns an Environment struct to be used only for testing.
-func MockGetEnv() model.Environment {
+//mockGetEnv returns an Environment struct to be used only for testing.
+func mockGetEnv() model.Environment {
 	var env model.Environment
 	env.ID = 999
 	env.Group = "foo"
@@ -53,8 +53,8 @@ func MockGetEnv() model.Environment {
 	return env
 }
 
-//MockVariable returns a Variable struct to be used only for testing.
-func MockVariable() model.Variable {
+//mockVariable returns a Variable struct to be used only for testing.
+func mockVariable() model.Variable {
 	var variable model.Variable
 	variable.Scope = "global"
 	variable.Name = "username"
@@ -65,8 +65,8 @@ func MockVariable() model.Variable {
 	return variable
 }
 
-//MockDoAudit mocks a call to DoAudit function to be used only for testing.
-func MockDoAudit(appContext *AppContext, operation string, auditValues map[string]string) *mockAud.AuditingInterface {
+//mockDoAudit mocks a call to DoAudit function to be used only for testing.
+func mockDoAudit(appContext *AppContext, operation string, auditValues map[string]string) *mockAud.AuditingInterface {
 	mockAudit := &mockAud.AuditingInterface{}
 	mockAudit.On("DoAudit", mock.Anything, mock.Anything, "beta@alfa.com", operation, auditValues)
 	appContext.Auditing = mockAudit
@@ -74,11 +74,10 @@ func MockDoAudit(appContext *AppContext, operation string, auditValues map[strin
 	return mockAudit
 }
 
-//MockGetAllVariablesByEnvironmentAndScope MockGetAllVariablesByEnvironmentAndScope
-func MockGetAllVariablesByEnvironmentAndScope(appContext *AppContext) *mockRepo.VariableDAOInterface {
+func mockGetAllVariablesByEnvironmentAndScope(appContext *AppContext) *mockRepo.VariableDAOInterface {
 	mockVariableDAO := &mockRepo.VariableDAOInterface{}
 	var variables []model.Variable
-	variable := MockVariable()
+	variable := mockVariable()
 	variables = append(variables, variable)
 	mockVariableDAO.On("GetAllVariablesByEnvironmentAndScope", int(variable.EnvironmentID), mock.Anything).Return(variables, nil)
 
@@ -87,14 +86,14 @@ func MockGetAllVariablesByEnvironmentAndScope(appContext *AppContext) *mockRepo.
 	return mockVariableDAO
 }
 
-//MyHandlerFunc should be used only for testing.
-type MyHandlerFunc func(http.ResponseWriter, *http.Request)
+//testHandlerFunc should be used only for testing.
+type testHandlerFunc func(http.ResponseWriter, *http.Request)
 
-func commonTestUnmarshalPayloadError(t *testing.T, endpoint string, handFunc MyHandlerFunc) *httptest.ResponseRecorder {
+func commonTestUnmarshalPayloadError(t *testing.T, endpoint string, handFunc testHandlerFunc) *httptest.ResponseRecorder {
 	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer([]byte(`["invalid": 123]`)))
 	assert.NoError(t, err)
 
-	MockPrincipal(req, []string{"tenkai-variables-save"})
+	mockPrincipal(req, []string{"tenkai-variables-save"})
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(handFunc)
@@ -103,15 +102,15 @@ func commonTestUnmarshalPayloadError(t *testing.T, endpoint string, handFunc MyH
 	return rr
 }
 
-func commonTestHasAccessError(t *testing.T, endpoint string, handFunc MyHandlerFunc, appContext *AppContext) *httptest.ResponseRecorder {
+func commonTestHasAccessError(t *testing.T, endpoint string, handFunc testHandlerFunc, appContext *AppContext) *httptest.ResponseRecorder {
 	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer([]byte(`{"data":[{"environmentId":999}]}`)))
 	assert.NoError(t, err)
 
-	MockPrincipal(req, []string{"tenkai-variables-save"})
+	mockPrincipal(req, []string{"tenkai-variables-save"})
 
 	var envs []model.Environment
-	envs = append(envs, MockGetEnv())
-	mockEnvDao := MockGetByID(appContext)
+	envs = append(envs, mockGetEnv())
+	mockEnvDao := mockGetByID(appContext)
 	mockEnvDao.On("GetAllEnvironments", "beta@alfa.com").Return(nil, errors.New("Record not found"))
 
 	appContext.Repositories.EnvironmentDAO = mockEnvDao
