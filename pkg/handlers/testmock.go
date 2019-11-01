@@ -1,13 +1,17 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/http/httptest"
+	"testing"
 
 	mockAud "github.com/softplan/tenkai-api/pkg/audit/mocks"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -81,4 +85,40 @@ func MockGetAllVariablesByEnvironmentAndScope(appContext *AppContext) *mockRepo.
 	appContext.Repositories.VariableDAO = mockVariableDAO
 
 	return mockVariableDAO
+}
+
+//MyHandlerFunc should be used only for testing.
+type MyHandlerFunc func(http.ResponseWriter, *http.Request)
+
+func commonTestUnmarshalPayloadError(t *testing.T, endpoint string, handFunc MyHandlerFunc) *httptest.ResponseRecorder {
+	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer([]byte(`["invalid": 123]`)))
+	assert.NoError(t, err)
+
+	MockPrincipal(req, []string{"tenkai-variables-save"})
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(handFunc)
+	handler.ServeHTTP(rr, req)
+
+	return rr
+}
+
+func commonTestHasAccessError(t *testing.T, endpoint string, handFunc MyHandlerFunc, appContext *AppContext) *httptest.ResponseRecorder {
+	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer([]byte(`{"data":[{"environmentId":999}]}`)))
+	assert.NoError(t, err)
+
+	MockPrincipal(req, []string{"tenkai-variables-save"})
+
+	var envs []model.Environment
+	envs = append(envs, MockGetEnv())
+	mockEnvDao := MockGetByID(appContext)
+	mockEnvDao.On("GetAllEnvironments", "beta@alfa.com").Return(nil, errors.New("Record not found"))
+
+	appContext.Repositories.EnvironmentDAO = mockEnvDao
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(handFunc)
+	handler.ServeHTTP(rr, req)
+
+	return rr
 }
