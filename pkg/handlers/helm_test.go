@@ -12,7 +12,6 @@ import (
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	mockSvc "github.com/softplan/tenkai-api/pkg/service/_helm/mocks"
-	"github.com/softplan/tenkai-api/pkg/service/core/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -190,29 +189,7 @@ func TestListHelmDeploymentsByEnvironment(t *testing.T) {
 	appContext := AppContext{}
 	mockEnvDao := mockGetByID(&appContext)
 	mockConvention := mockConventionInterface(&appContext)
-
-	var listReleases []helmapi.ListRelease
-
-	lr := helmapi.ListRelease{
-		Name:       "my-foo",
-		Revision:   9999,
-		Updated:    "",
-		Status:     "",
-		Chart:      "foo",
-		AppVersion: "0.1.0",
-		Namespace:  "dev",
-	}
-	listReleases = append(listReleases, lr)
-
-	result := &helmapi.HelmListResult{
-		Next:     "998",
-		Releases: listReleases,
-	}
-
-	mockHelmSvc := &mockSvc.HelmServiceInterface{}
-	mockHelmSvc.On("ListHelmDeployments", mock.Anything, "dev").Return(result, nil)
-
-	appContext.HelmServiceAPI = mockHelmSvc
+	mockHelmSvc := mockListHelmDeployments(&appContext)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -224,7 +201,7 @@ func TestListHelmDeploymentsByEnvironment(t *testing.T) {
 	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 1)
 
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
-	j, _ := json.Marshal(result)
+	j, _ := json.Marshal(mockHelmListResult())
 	assert.Equal(t, string(j), string(rr.Body.Bytes()), "Response is not correct.")
 }
 
@@ -398,13 +375,6 @@ func mockUpgrade(appContext *AppContext) *mockSvc.HelmServiceInterface {
 	mockHelmSvc.On("Upgrade", mock.Anything, mock.Anything).Return(nil)
 	appContext.HelmServiceAPI = mockHelmSvc
 	return mockHelmSvc
-}
-
-func mockConventionInterface(appContext *AppContext) *mocks.ConventionInterface {
-	mockConvention := &mocks.ConventionInterface{}
-	mockConvention.On("GetKubeConfigFileName", "foo", "bar").Return("./config/foo_bar")
-	appContext.ConventionInterface = mockConvention
-	return mockConvention
 }
 
 func getMultipleInstallPayload() *bytes.Buffer {

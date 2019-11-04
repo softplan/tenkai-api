@@ -11,6 +11,9 @@ import (
 	mockAud "github.com/softplan/tenkai-api/pkg/audit/mocks"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
+	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
+	mockSvc "github.com/softplan/tenkai-api/pkg/service/_helm/mocks"
+	"github.com/softplan/tenkai-api/pkg/service/core/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -53,14 +56,26 @@ func mockGetEnv() model.Environment {
 	return env
 }
 
-//mockVariable returns a Variable struct to be used only for testing.
-func mockVariable() model.Variable {
+//mockGlobalVariable returns a global Variable struct to be used only for testing.
+func mockGlobalVariable() model.Variable {
 	var variable model.Variable
 	variable.Scope = "global"
 	variable.Name = "username"
 	variable.Value = "user"
 	variable.Secret = false
 	variable.Description = "Login username."
+	variable.EnvironmentID = 999
+	return variable
+}
+
+//mockVariable returns a Variable struct to be used only for testing.
+func mockVariable() model.Variable {
+	var variable model.Variable
+	variable.Scope = "bar"
+	variable.Name = "password"
+	variable.Value = "password"
+	variable.Secret = false
+	variable.Description = "Login password."
 	variable.EnvironmentID = 999
 	return variable
 }
@@ -77,9 +92,19 @@ func mockDoAudit(appContext *AppContext, operation string, auditValues map[strin
 func mockGetAllVariablesByEnvironmentAndScope(appContext *AppContext) *mockRepo.VariableDAOInterface {
 	mockVariableDAO := &mockRepo.VariableDAOInterface{}
 	var variables []model.Variable
-	variable := mockVariable()
+	variable := mockGlobalVariable()
 	variables = append(variables, variable)
 	mockVariableDAO.On("GetAllVariablesByEnvironmentAndScope", int(variable.EnvironmentID), mock.Anything).Return(variables, nil)
+
+	appContext.Repositories.VariableDAO = mockVariableDAO
+
+	return mockVariableDAO
+}
+
+func mockGetAllVariablesByEnvironmentAndScopeError(appContext *AppContext) *mockRepo.VariableDAOInterface {
+	variable := mockGlobalVariable()
+	mockVariableDAO := &mockRepo.VariableDAOInterface{}
+	mockVariableDAO.On("GetAllVariablesByEnvironmentAndScope", int(variable.EnvironmentID), mock.Anything).Return(nil, errors.New("Some error"))
 
 	appContext.Repositories.VariableDAO = mockVariableDAO
 
@@ -120,4 +145,51 @@ func commonTestHasAccessError(t *testing.T, endpoint string, handFunc testHandle
 	handler.ServeHTTP(rr, req)
 
 	return rr
+}
+
+func mockGetAllEnvironments(appContext *AppContext) *mockRepo.EnvironmentDAOInterface {
+	var envs []model.Environment
+	envs = append(envs, mockGetEnv())
+	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
+	mockEnvDao.On("GetAllEnvironments", "beta@alfa.com").Return(envs, nil)
+	appContext.Repositories.EnvironmentDAO = mockEnvDao
+	return mockEnvDao
+}
+
+func mockConventionInterface(appContext *AppContext) *mocks.ConventionInterface {
+	mockConvention := &mocks.ConventionInterface{}
+	mockConvention.On("GetKubeConfigFileName", "foo", "bar").Return("./config/foo_bar")
+	appContext.ConventionInterface = mockConvention
+	return mockConvention
+}
+
+func mockHelmListResult() *helmapi.HelmListResult {
+	var listReleases []helmapi.ListRelease
+
+	lr := helmapi.ListRelease{
+		Name:       "my-foo",
+		Revision:   9999,
+		Updated:    "",
+		Status:     "",
+		Chart:      "foo",
+		AppVersion: "0.1.0",
+		Namespace:  "dev",
+	}
+	listReleases = append(listReleases, lr)
+
+	result := &helmapi.HelmListResult{
+		Next:     "998",
+		Releases: listReleases,
+	}
+	return result
+}
+
+func mockListHelmDeployments(appContext *AppContext) *mockSvc.HelmServiceInterface {
+	result := mockHelmListResult()
+
+	mockHelmSvc := &mockSvc.HelmServiceInterface{}
+	mockHelmSvc.On("ListHelmDeployments", mock.Anything, "dev").Return(result, nil)
+
+	appContext.HelmServiceAPI = mockHelmSvc
+	return mockHelmSvc
 }
