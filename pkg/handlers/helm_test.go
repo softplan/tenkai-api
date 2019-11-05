@@ -298,6 +298,8 @@ func TestMultipleInstall(t *testing.T) {
 	auditValues["name"] = "my-foo"
 	mockAudit := mockDoAudit(&appContext, "deploy", auditValues)
 
+	mockEnvDao.On("EditEnvironment", mock.Anything).Return(nil)
+
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.multipleInstall)
 	handler.ServeHTTP(rr, req)
@@ -385,6 +387,8 @@ func getMultipleInstallPayload() *bytes.Buffer {
 	ip.Name = "my-foo"
 
 	var payload model.MultipleInstallPayload
+	payload.EnvironmentID = 999
+	payload.ProductVersionID = 777
 	payload.Deployables = append(payload.Deployables, ip)
 	pStr, _ := json.Marshal(payload)
 	return bytes.NewBuffer(pStr)
