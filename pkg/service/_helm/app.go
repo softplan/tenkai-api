@@ -38,6 +38,7 @@ type HelmServiceInterface interface {
 	HelmExecutorFunc(kubeconfig string, cmd HelmCommand) error
 	GetHelmConnection() HelmConnection
 	HelmCommandExecutor(fn HelmExecutorFunc) HelmExecutorFunc
+	GetVirtualServices(kubeconfig string, namespace string) ([]string, error)
 }
 
 //HelmServiceImpl - Concrete type

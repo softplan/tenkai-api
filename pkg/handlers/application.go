@@ -59,6 +59,7 @@ func StartHTTPServer(appContext *AppContext) {
 
 	r := mux.NewRouter()
 
+	r.HandleFunc("/getVirtualServices", appContext.getVirtualServices).Methods("GET")
 	r.HandleFunc("/install", appContext.install).Methods("POST")
 	r.HandleFunc("/multipleInstall", appContext.multipleInstall).Methods("POST")
 	r.HandleFunc("/getHelmCommand", appContext.getHelmCommand).Methods("POST")
