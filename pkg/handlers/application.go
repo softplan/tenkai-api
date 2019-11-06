@@ -24,11 +24,9 @@ import (
 //Repositories  Repositories
 type Repositories struct {
 	ConfigDAO        repository.ConfigDAOInterface
-	DependencyDAO    repository.DependencyDAOInterface
 	DockerDAO        repository.DockerDAOInterface
 	EnvironmentDAO   repository.EnvironmentDAOInterface
 	ProductDAO       repository.ProductDAOInterface
-	ReleaseDAO       repository.ReleaseDAOInterface
 	SolutionDAO      repository.SolutionDAOInterface
 	SolutionChartDAO repository.SolutionChartDAOInterface
 	UserDAO          repository.UserDAOInterface
@@ -103,14 +101,6 @@ func StartHTTPServer(appContext *AppContext) {
 	r.HandleFunc("/deleteHelmRelease", appContext.deleteHelmRelease).Methods("DELETE")
 	r.HandleFunc("/helmDryRun", appContext.helmDryRun).Methods("POST")
 
-	r.HandleFunc("/releases", appContext.listReleases).Methods("GET")
-	r.HandleFunc("/releases", appContext.newRelease).Methods("POST")
-	r.HandleFunc("/releases/{id}", appContext.deleteRelease).Methods("DELETE")
-
-	r.HandleFunc("/dependencies", appContext.listDependencies).Methods("GET")
-	r.HandleFunc("/dependencies", appContext.newDependency).Methods("POST")
-	r.HandleFunc("/dependencies/{id}", appContext.deleteDependency).Methods("DELETE")
-
 	r.HandleFunc("/solutions", appContext.listSolution).Methods("GET")
 	r.HandleFunc("/solutions", appContext.newSolution).Methods("POST")
 	r.HandleFunc("/solutions/edit", appContext.editSolution).Methods("POST")
@@ -137,8 +127,6 @@ func StartHTTPServer(appContext *AppContext) {
 	r.HandleFunc("/solutionCharts", appContext.listSolutionCharts).Methods("GET")
 	r.HandleFunc("/solutionCharts", appContext.newSolutionChart).Methods("POST")
 	r.HandleFunc("/solutionCharts/{id}", appContext.deleteSolutionChart).Methods("DELETE")
-
-	r.HandleFunc("/analyse", appContext.analyse).Methods("POST")
 
 	r.HandleFunc("/deployTrafficRule", appContext.deployTrafficRule).Methods("POST")
 
