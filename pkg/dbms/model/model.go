@@ -5,14 +5,14 @@ import "github.com/jinzhu/gorm"
 //Environment - Environment Model
 type Environment struct {
 	gorm.Model
-	Group            string `json:"group"`
-	Name             string `json:"name"`
-	ClusterURI       string `json:"cluster_uri"`
-	CACertificate    string `json:"ca_certificate"`
-	Token            string `json:"token"`
-	Namespace        string `json:"namespace"`
-	Gateway          string `json:"gateway"`
-	ProductVersionID int    `json:"productVersionId"`
+	Group          string `json:"group"`
+	Name           string `json:"name"`
+	ClusterURI     string `json:"cluster_uri"`
+	CACertificate  string `json:"ca_certificate"`
+	Token          string `json:"token"`
+	Namespace      string `json:"namespace"`
+	Gateway        string `json:"gateway"`
+	ProductVersion string `json:"productVersion"`
 }
 
 //EnvResult Model

@@ -356,7 +356,12 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 	}
 
 	if payload.ProductVersionID > 0 {
-		environment.ProductVersionID = payload.ProductVersionID
+		pv, err := appContext.Repositories.ProductDAO.ListProductVersionsByID(payload.ProductVersionID)
+		if err != nil {
+			http.Error(w, err.Error(), 501)
+			return
+		}
+		environment.ProductVersion = pv.Version
 		if err := appContext.Repositories.EnvironmentDAO.EditEnvironment(*environment); err != nil {
 			http.Error(w, err.Error(), 501)
 			return

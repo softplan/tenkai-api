@@ -10,6 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
+	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
 	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	mockSvc "github.com/softplan/tenkai-api/pkg/service/_helm/mocks"
 	"github.com/stretchr/testify/assert"
@@ -291,6 +292,13 @@ func TestMultipleInstall(t *testing.T) {
 	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
 	mockConvention := mockConventionInterface(&appContext)
 	mockHelmSvc := mockUpgrade(&appContext)
+
+	var p model.ProductVersion
+	p.ID = uint(777)
+	p.Version = "19.0.1-0"
+	mockProductDAO := &mockRepo.ProductDAOInterface{}
+	mockProductDAO.On("ListProductVersionsByID", mock.Anything).Return(&p, nil)
+	appContext.Repositories.ProductDAO = mockProductDAO
 
 	auditValues := make(map[string]string)
 	auditValues["environment"] = "bar"
