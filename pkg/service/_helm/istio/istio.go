@@ -7,17 +7,18 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-type IstioInterface interface {
+//ClientInterface ClientInterface
+type ClientInterface interface {
 	RESTClient() rest.Interface
 }
 
-// CoreV1Client is used to interact with features provided by the  group.
-type IstioClient struct {
+//Client Client
+type Client struct {
 	restClient rest.Interface
 }
 
-// NewForConfig creates a new CoreV1Client for the given config.
-func NewForConfig(c *rest.Config) (*IstioClient, error) {
+//NewForConfig NewForConfig
+func NewForConfig(c *rest.Config) (*Client, error) {
 	config := *c
 	if err := setConfigDefaults(&config); err != nil {
 		return nil, err
@@ -26,12 +27,11 @@ func NewForConfig(c *rest.Config) (*IstioClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &IstioClient{client}, nil
+	return &Client{client}, nil
 }
 
-// NewForConfigOrDie creates a new CoreV1Client for the given config and
-// panics if there is an error in the config.
-func NewForConfigOrDie(c *rest.Config) *IstioClient {
+//NewForConfigOrDie NewForConfigOrDie
+func NewForConfigOrDie(c *rest.Config) *Client {
 	client, err := NewForConfig(c)
 	if err != nil {
 		panic(err)
@@ -39,11 +39,12 @@ func NewForConfigOrDie(c *rest.Config) *IstioClient {
 	return client
 }
 
-// New creates a new CoreV1Client for the given RESTClient.
-func New(c rest.Interface) *IstioClient {
-	return &IstioClient{c}
+//New New
+func New(c rest.Interface) *Client {
+	return &Client{c}
 }
 
+//IstioSchemeGroupVersion IstioSchemeGroupVersion
 var IstioSchemeGroupVersion = schema.GroupVersion{Group: "networking.istio.io", Version: "v1alpha3"}
 
 func setConfigDefaults(config *rest.Config) error {
@@ -59,9 +60,8 @@ func setConfigDefaults(config *rest.Config) error {
 	return nil
 }
 
-// RESTClient returns a RESTClient that is used to communicate
-// with API server by this client implementation.
-func (c *IstioClient) RESTClient() rest.Interface {
+//RESTClient RESTClient
+func (c *Client) RESTClient() rest.Interface {
 	if c == nil {
 		return nil
 	}

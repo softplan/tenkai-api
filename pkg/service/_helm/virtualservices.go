@@ -2,10 +2,11 @@ package helmapi
 
 import (
 	"encoding/json"
-	"github.com/softplan/tenkai-api/pkg/service/istio"
+	"github.com/softplan/tenkai-api/pkg/service/_helm/istio"
 	"time"
 )
 
+//GetVirtualServices Get virtual services dns names
 func (svc HelmServiceImpl) GetVirtualServices(kubeconfig string, namespace string) ([]string, error) {
 
 	hostNames := make([]string, 0)
