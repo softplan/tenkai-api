@@ -383,21 +383,32 @@ func (appContext *AppContext) verifyNewVersion(serviceName string, dockerImageTa
 
 }
 
-func getNumberOfTag(tag string) int {
+func getNumberOfTag(tag string) uint64 {
 
 	//Count amount of delimiters
 	n := strings.Count(tag, "#")
 	n = n + strings.Count(tag, ".")
 	n = n + strings.Count(tag, "-")
 
-	for i := 0; i < 10-n; i++ {
-		tag = tag + ".00"
+	// Normalize delimiters to dot
+	r := strings.ReplaceAll(tag, "#", ".")
+	r = strings.ReplaceAll(r, ".", ".")
+	r = strings.ReplaceAll(r, "-", ".")
+
+	// Add leading zeros when length is one
+	resultStr := ""
+	for _, s := range strings.Split(r, ".") {
+		if len(s) == 1 {
+			s = "0" + s
+		}
+		resultStr += s
 	}
 
-	tag = strings.ReplaceAll(tag, "#", "")
-	tag = strings.ReplaceAll(tag, ".", "")
-	tag = strings.ReplaceAll(tag, "-", "")
-	result, _ := strconv.Atoi(tag)
+	for i := 0; i < 6-n; i++ {
+		resultStr = resultStr + "00"
+	}
+
+	result, _ := strconv.ParseUint(resultStr, 10, 64)
 
 	return result
 }
