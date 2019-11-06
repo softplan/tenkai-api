@@ -6,13 +6,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/global"
 	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"github.com/softplan/tenkai-api/pkg/util"
-	"net/http"
-	"strconv"
-	"time"
 
 	"strings"
 
@@ -330,14 +331,14 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 
 	out := &bytes.Buffer{}
 
-	for _, element := range payload.Deployables {
+	//Locate Environment
+	environment, err := appContext.Repositories.EnvironmentDAO.GetByID(payload.EnvironmentID)
+	if err != nil {
+		http.Error(w, err.Error(), 501)
+		return
+	}
 
-		//Locate Environment
-		environment, err := appContext.Repositories.EnvironmentDAO.GetByID(element.EnvironmentID)
-		if err != nil {
-			http.Error(w, err.Error(), 501)
-			return
-		}
+	for _, element := range payload.Deployables {
 
 		_, err = appContext.simpleInstall(environment, element.Chart, element.ChartVersion, element.Name, out, false, false)
 		if err != nil {
@@ -354,7 +355,18 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 
 	}
 
-	fmt.Println(out.String())
+	if payload.ProductVersionID > 0 {
+		pv, err := appContext.Repositories.ProductDAO.ListProductVersionsByID(payload.ProductVersionID)
+		if err != nil {
+			http.Error(w, err.Error(), 501)
+			return
+		}
+		environment.ProductVersion = pv.Version
+		if err := appContext.Repositories.EnvironmentDAO.EditEnvironment(*environment); err != nil {
+			http.Error(w, err.Error(), 501)
+			return
+		}
+	}
 
 	w.WriteHeader(http.StatusOK)
 
