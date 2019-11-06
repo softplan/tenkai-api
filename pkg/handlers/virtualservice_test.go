@@ -16,8 +16,8 @@ func TestGetVirtualServices(t *testing.T) {
 	appContext := AppContext{}
 
 	var envs []model.Environment
-	envs = append(envs, MockGetEnv())
-	mockEnvDao := MockGetByID(&appContext)
+	envs = append(envs, mockGetEnv())
+	mockEnvDao := mockGetByID(&appContext)
 	mockEnvDao.On("GetAllEnvironments", "beta@alfa.com").Return(envs, nil)
 
 	appContext.Repositories = Repositories{}
@@ -36,7 +36,7 @@ func TestGetVirtualServices(t *testing.T) {
 	req, err := http.NewRequest("GET", "/getVirtualServices?environmentID=999", bytes.NewBuffer(nil))
 	assert.NoError(t, err)
 
-	MockPrincipal(req, []string{"tenkai-helm-upgrade"})
+	mockPrincipal(req, []string{"tenkai-helm-upgrade"})
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.getVirtualServices)
