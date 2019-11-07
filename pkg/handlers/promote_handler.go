@@ -6,11 +6,16 @@ import (
 	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/global"
-	helmapi "github.com/softplan/tenkai-api/pkg/service/helm"
+	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"github.com/softplan/tenkai-api/pkg/util"
 	"net/http"
 	"strconv"
 	"strings"
+)
+
+//TODO - FIND A WAY TO DEFINE THE RIGHT REPOSITORY
+const (
+	defaultRepo string = "saj6/"
 )
 
 type releaseToDeploy struct {
@@ -231,8 +236,7 @@ func retrieveReleasesToDeploy(hsi helmapi.HelmServiceInterface, kubeConfig strin
 		name := strings.ReplaceAll(e.Name, "-"+srcNamespace, "")
 		lastHifen := strings.LastIndex(e.Chart, "-")
 
-		//TODO - FIND A WAY TO DEFINE THE RIGHT REPOSITORY
-		chart := "saj6/" + e.Chart[:lastHifen]
+		chart := defaultRepo + e.Chart[:lastHifen]
 		result = append(result, releaseToDeploy{Name: name, Chart: chart})
 	}
 	return result, nil
@@ -255,8 +259,7 @@ func retrieveReleasesToPurge(hsi helmapi.HelmServiceInterface, kubeConfig string
 
 		lastHifen := strings.LastIndex(e.Chart, "-")
 
-		//TODO - FIND A WAY TO DEFINE THE RIGHT REPOSITORY
-		chart := "saj6/" + e.Chart[:lastHifen]
+		chart := defaultRepo + e.Chart[:lastHifen]
 		result = append(result, releaseToDeploy{Name: e.Name, Chart: chart})
 	}
 	return result, nil

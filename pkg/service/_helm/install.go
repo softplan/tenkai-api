@@ -287,19 +287,13 @@ func vals(valueFiles valueFiles, values []string, stringValues []string, fileVal
 
 // printRelease prints info about a release if the Debug is true.
 func (i *installCmd) printRelease(rel *release.Release) {
-
 	if rel == nil {
 		return
 	}
-
-	// TODO: Switch to text/template like everything else.
-
 	fmt.Fprintf(i.out, "NAME:   %s\n", rel.Name)
-
 	if i.Debug {
 		printRelease(i.out, rel)
 	}
-
 }
 
 var printReleaseTemplate = `REVISION: {{.Release.Version}}

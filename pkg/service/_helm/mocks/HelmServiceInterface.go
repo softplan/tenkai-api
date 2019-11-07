@@ -3,7 +3,7 @@
 package mocks
 
 import bytes "bytes"
-import helmapi "github.com/softplan/tenkai-api/pkg/service/helm"
+import helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 import mock "github.com/stretchr/testify/mock"
 import model "github.com/softplan/tenkai-api/pkg/dbms/model"
 import sync "sync"
@@ -267,6 +267,29 @@ func (_m *HelmServiceInterface) GetValues(chartName string, version string) ([]b
 	var r1 error
 	if rf, ok := ret.Get(1).(func(string, string) error); ok {
 		r1 = rf(chartName, version)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetVirtualServices provides a mock function with given fields: kubeconfig, namespace
+func (_m *HelmServiceInterface) GetVirtualServices(kubeconfig string, namespace string) ([]string, error) {
+	ret := _m.Called(kubeconfig, namespace)
+
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(string, string) []string); ok {
+		r0 = rf(kubeconfig, namespace)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, string) error); ok {
+		r1 = rf(kubeconfig, namespace)
 	} else {
 		r1 = ret.Error(1)
 	}

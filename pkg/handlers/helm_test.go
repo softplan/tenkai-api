@@ -9,12 +9,10 @@ import (
 	"encoding/json"
 
 	"github.com/gorilla/mux"
-	mockAud "github.com/softplan/tenkai-api/pkg/audit/mocks"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
-	"github.com/softplan/tenkai-api/pkg/service/core/mocks"
-	helmapi "github.com/softplan/tenkai-api/pkg/service/helm"
-	mockSvc "github.com/softplan/tenkai-api/pkg/service/helm/mocks"
+	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
+	mockSvc "github.com/softplan/tenkai-api/pkg/service/_helm/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -72,7 +70,7 @@ func TestDeleteHelmRelease(t *testing.T) {
 	appContext.Repositories.EnvironmentDAO = mockEnvDao
 	appContext.HelmServiceAPI = mockHelmSvc
 
-	mockPrincipal(req)
+	mockPrincipal(req, []string{"tenkai-helm-upgrade"})
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.deleteHelmRelease)
@@ -160,7 +158,7 @@ func TestListReleaseHistory(t *testing.T) {
 	var info helmapi.ReleaseInfo
 	info.Revision = 987
 	info.Status = "DEPLOYED"
-	info.Chart = "my-helm-chart"
+	info.Chart = "my-_helm-chart"
 	info.Description = "Install completed"
 
 	var history helmapi.ReleaseHistory
@@ -192,29 +190,7 @@ func TestListHelmDeploymentsByEnvironment(t *testing.T) {
 	appContext := AppContext{}
 	mockEnvDao := mockGetByID(&appContext)
 	mockConvention := mockConventionInterface(&appContext)
-
-	var listReleases []helmapi.ListRelease
-
-	lr := helmapi.ListRelease{
-		Name:       "my-foo",
-		Revision:   9999,
-		Updated:    "",
-		Status:     "",
-		Chart:      "foo",
-		AppVersion: "0.1.0",
-		Namespace:  "dev",
-	}
-	listReleases = append(listReleases, lr)
-
-	result := &helmapi.HelmListResult{
-		Next:     "998",
-		Releases: listReleases,
-	}
-
-	mockHelmSvc := &mockSvc.HelmServiceInterface{}
-	mockHelmSvc.On("ListHelmDeployments", mock.Anything, "dev").Return(result, nil)
-
-	appContext.HelmServiceAPI = mockHelmSvc
+	mockHelmSvc := mockListHelmDeployments(&appContext)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -226,7 +202,7 @@ func TestListHelmDeploymentsByEnvironment(t *testing.T) {
 	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 1)
 
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
-	j, _ := json.Marshal(result)
+	j, _ := json.Marshal(mockHelmListResult())
 	assert.Equal(t, string(j), string(rr.Body.Bytes()), "Response is not correct.")
 }
 
@@ -287,7 +263,7 @@ func TestGetHelmCommand(t *testing.T) {
 	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
 	mockConvention := mockConventionInterface(&appContext)
 
-	mockPrincipal(req)
+	mockPrincipal(req, []string{"tenkai-helm-upgrade"})
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.getHelmCommand)
@@ -298,7 +274,7 @@ func TestGetHelmCommand(t *testing.T) {
 	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironmentAndScope", 2)
 
 	response := string(rr.Body.Bytes())
-	assert.Contains(t, response, "helm upgrade --install my-foo-dev")
+	assert.Contains(t, response, "_helm upgrade --install my-foo-dev")
 	assert.Contains(t, response, "--set \"app.username=user")
 	assert.Contains(t, response, "istio.virtualservices.gateways[0]=my-gateway.istio-system.svc.cluster.local")
 	assert.Contains(t, response, "foo --namespace=dev")
@@ -309,7 +285,7 @@ func TestMultipleInstall(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req)
+	mockPrincipal(req, []string{"tenkai-helm-upgrade"})
 
 	appContext := AppContext{}
 	mockEnvDao := mockGetByID(&appContext)
@@ -317,11 +293,20 @@ func TestMultipleInstall(t *testing.T) {
 	mockConvention := mockConventionInterface(&appContext)
 	mockHelmSvc := mockUpgrade(&appContext)
 
+	var p model.ProductVersion
+	p.ID = uint(777)
+	p.Version = "19.0.1-0"
+	mockProductDAO := &mockRepo.ProductDAOInterface{}
+	mockProductDAO.On("ListProductVersionsByID", mock.Anything).Return(&p, nil)
+	appContext.Repositories.ProductDAO = mockProductDAO
+
 	auditValues := make(map[string]string)
 	auditValues["environment"] = "bar"
 	auditValues["chartName"] = "foo"
 	auditValues["name"] = "my-foo"
 	mockAudit := mockDoAudit(&appContext, "deploy", auditValues)
+
+	mockEnvDao.On("EditEnvironment", mock.Anything).Return(nil)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.multipleInstall)
@@ -341,7 +326,7 @@ func TestInstall(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req)
+	mockPrincipal(req, []string{"tenkai-helm-upgrade"})
 
 	appContext := AppContext{}
 	mockEnvDao := mockGetByID(&appContext)
@@ -395,38 +380,11 @@ func getInstallPayload() *bytes.Buffer {
 	return bytes.NewBuffer(pStr)
 }
 
-func mockDoAudit(appContext *AppContext, operation string, auditValues map[string]string) *mockAud.AuditingInterface {
-	mockAudit := &mockAud.AuditingInterface{}
-	mockAudit.On("DoAudit", mock.Anything, mock.Anything, "beta@alfa.com", operation, auditValues)
-	appContext.Auditing = mockAudit
-
-	return mockAudit
-}
-
 func mockUpgrade(appContext *AppContext) *mockSvc.HelmServiceInterface {
 	mockHelmSvc := &mockSvc.HelmServiceInterface{}
 	mockHelmSvc.On("Upgrade", mock.Anything, mock.Anything).Return(nil)
 	appContext.HelmServiceAPI = mockHelmSvc
 	return mockHelmSvc
-}
-
-func mockConventionInterface(appContext *AppContext) *mocks.ConventionInterface {
-	mockConvention := &mocks.ConventionInterface{}
-	mockConvention.On("GetKubeConfigFileName", "foo", "bar").Return("./config/foo_bar")
-	appContext.ConventionInterface = mockConvention
-	return mockConvention
-}
-
-func mockGetAllVariablesByEnvironmentAndScope(appContext *AppContext) *mockRepo.VariableDAOInterface {
-	mockVariableDAO := &mockRepo.VariableDAOInterface{}
-	var variables []model.Variable
-	variable := mockVariable()
-	variables = append(variables, variable)
-	mockVariableDAO.On("GetAllVariablesByEnvironmentAndScope", int(variable.EnvironmentID), mock.Anything).Return(variables, nil)
-
-	appContext.Repositories.VariableDAO = mockVariableDAO
-
-	return mockVariableDAO
 }
 
 func getMultipleInstallPayload() *bytes.Buffer {
@@ -437,48 +395,11 @@ func getMultipleInstallPayload() *bytes.Buffer {
 	ip.Name = "my-foo"
 
 	var payload model.MultipleInstallPayload
+	payload.EnvironmentID = 999
+	payload.ProductVersionID = 777
 	payload.Deployables = append(payload.Deployables, ip)
 	pStr, _ := json.Marshal(payload)
 	return bytes.NewBuffer(pStr)
-}
-
-func mockVariable() model.Variable {
-	var variable model.Variable
-	variable.Scope = "global"
-	variable.Name = "username"
-	variable.Value = "user"
-	variable.Secret = false
-	variable.Description = "Login username."
-	variable.EnvironmentID = 999
-	return variable
-}
-
-func mockGetEnv() model.Environment {
-	var env model.Environment
-	env.ID = 999
-	env.Group = "foo"
-	env.Name = "bar"
-	env.ClusterURI = "https://rancher-k8s-my-domain.com/k8s/clusters/c-kbfxr"
-	env.CACertificate = "my-certificate"
-	env.Token = "my-token"
-	env.Namespace = "dev"
-	env.Gateway = "my-gateway.istio-system.svc.cluster.local"
-	return env
-}
-
-func mockGetByID(appContext *AppContext) *mockRepo.EnvironmentDAOInterface {
-	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
-	env := mockGetEnv()
-	mockEnvDao.On("GetByID", int(env.ID)).Return(&env, nil)
-	appContext.Repositories.EnvironmentDAO = mockEnvDao
-	return mockEnvDao
-}
-
-func mockPrincipal(req *http.Request) {
-	roles := []string{"tenkai-helm-upgrade"}
-	principal := model.Principal{Name: "alfa", Email: "beta@alfa.com", Roles: roles}
-	pSe, _ := json.Marshal(principal)
-	req.Header.Set("principal", string(pSe))
 }
 
 func getPayloadChartRequest() *bytes.Buffer {
@@ -495,7 +416,7 @@ func getExpect(sr []model.SearchResult) string {
 }
 
 func getExpecHistory() string {
-	return "[{\"revision\":987,\"updated\":\"\",\"status\":\"DEPLOYED\",\"chart\":\"my-helm-chart\",\"description\":\"Install completed\"}]"
+	return "[{\"revision\":987,\"updated\":\"\",\"status\":\"DEPLOYED\",\"chart\":\"my-_helm-chart\",\"description\":\"Install completed\"}]"
 }
 
 func getRevision() *model.GetRevisionRequest {

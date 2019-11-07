@@ -137,8 +137,6 @@ func initLocalRepo(indexFile, cacheFile string, home helmpath.Home, out io.Write
 		if err := i.WriteFile(indexFile, 0644); err != nil {
 			return nil, err
 		}
-
-		//TODO: take this out and replace with helm update functionality
 		if err := createLink(indexFile, cacheFile, home); err != nil {
 			return nil, err
 		}

@@ -5,13 +5,14 @@ import "github.com/jinzhu/gorm"
 //Environment - Environment Model
 type Environment struct {
 	gorm.Model
-	Group         string `json:"group"`
-	Name          string `json:"name"`
-	ClusterURI    string `json:"cluster_uri"`
-	CACertificate string `json:"ca_certificate"`
-	Token         string `json:"token"`
-	Namespace     string `json:"namespace"`
-	Gateway       string `json:"gateway"`
+	Group          string `json:"group"`
+	Name           string `json:"name"`
+	ClusterURI     string `json:"cluster_uri"`
+	CACertificate  string `json:"ca_certificate"`
+	Token          string `json:"token"`
+	Namespace      string `json:"namespace"`
+	Gateway        string `json:"gateway"`
+	ProductVersion string `json:"productVersion"`
 }
 
 //EnvResult Model
@@ -92,7 +93,9 @@ type InstallPayload struct {
 
 //MultipleInstallPayload struct
 type MultipleInstallPayload struct {
-	Deployables []InstallPayload `json:"deployables"`
+	ProductVersionID int              `json:"productVersionId"`
+	EnvironmentID    int              `json:"environmentId"`
+	Deployables      []InstallPayload `json:"deployables"`
 }
 
 //GetChartRequest struct

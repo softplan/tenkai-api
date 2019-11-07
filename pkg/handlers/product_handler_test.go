@@ -47,3 +47,9 @@ func TestGetChartLatestVersion(t *testing.T) {
 	latestVersion = appContext.getChartLatestVersion("repo/my-chart - 0.1.0", results)
 	assert.Equal(t, "0.2.0", latestVersion, "Latest version should be 0.2.0")
 }
+
+func Test_getNumberOfTag(t *testing.T) {
+	assert.Equal(t, uint64(19030015000000), getNumberOfTag("19.3.0-15"))
+	assert.Equal(t, uint64(20401025000000), getNumberOfTag("20.40.10-25"))
+	assert.Equal(t, uint64(10000000000), getNumberOfTag("0.1.0-0"))
+}

@@ -6,13 +6,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/softplan/tenkai-api/pkg/constraints"
-	"github.com/softplan/tenkai-api/pkg/global"
-	helmapi "github.com/softplan/tenkai-api/pkg/service/helm"
-	"github.com/softplan/tenkai-api/pkg/util"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/softplan/tenkai-api/pkg/constraints"
+	"github.com/softplan/tenkai-api/pkg/global"
+	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
+	"github.com/softplan/tenkai-api/pkg/util"
 
 	"strings"
 
@@ -330,14 +331,14 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 
 	out := &bytes.Buffer{}
 
-	for _, element := range payload.Deployables {
+	//Locate Environment
+	environment, err := appContext.Repositories.EnvironmentDAO.GetByID(payload.EnvironmentID)
+	if err != nil {
+		http.Error(w, err.Error(), 501)
+		return
+	}
 
-		//Locate Environment
-		environment, err := appContext.Repositories.EnvironmentDAO.GetByID(element.EnvironmentID)
-		if err != nil {
-			http.Error(w, err.Error(), 501)
-			return
-		}
+	for _, element := range payload.Deployables {
 
 		_, err = appContext.simpleInstall(environment, element.Chart, element.ChartVersion, element.Name, out, false, false)
 		if err != nil {
@@ -354,7 +355,18 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 
 	}
 
-	fmt.Println(out.String())
+	if payload.ProductVersionID > 0 {
+		pv, err := appContext.Repositories.ProductDAO.ListProductVersionsByID(payload.ProductVersionID)
+		if err != nil {
+			http.Error(w, err.Error(), 501)
+			return
+		}
+		environment.ProductVersion = pv.Version
+		if err := appContext.Repositories.EnvironmentDAO.EditEnvironment(*environment); err != nil {
+			http.Error(w, err.Error(), 501)
+			return
+		}
+	}
 
 	w.WriteHeader(http.StatusOK)
 
@@ -386,6 +398,7 @@ func (appContext *AppContext) install(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//TODO Verify if chart exists
+
 	_, err = appContext.simpleInstall(environment, payload.Chart, payload.ChartVersion, payload.Name, out, false, false)
 	if err != nil {
 		fmt.Println(out.String())
@@ -429,10 +442,28 @@ func (appContext *AppContext) helmDryRun(w http.ResponseWriter, r *http.Request)
 
 }
 
+func (appContext *AppContext) getArgs(variables []model.Variable, globalVariables []model.Variable, environment *model.Environment) []string {
+
+	var args []string
+	for i, item := range variables {
+		if item.Secret {
+			byteValues, _ := hex.DecodeString(item.Value)
+			value, err := util.Decrypt(byteValues, appContext.Configuration.App.Passkey)
+			if err == nil {
+				variables[i].Value = string(value)
+			}
+		}
+		if len(item.Name) > 0 && len(item.Value) > 0 {
+			args = append(args, normalizeVariableName(item.Name)+"="+replace(item.Value, *environment, globalVariables))
+		}
+	}
+	return args
+}
+
 func (appContext *AppContext) simpleInstall(environment *model.Environment, chart string, chartVersion string,
 	name string, out *bytes.Buffer, dryRun bool, helmCommandOnly bool) (string, error) {
 
-	//TODO - VERIFY IF CONFIG FILE EXISTS !!! This is the cause of  u.client.ReleaseHistory fail sometimes.
+	//WARNING - VERIFY IF CONFIG FILE EXISTS !!! This is the cause of  u.client.ReleaseHistory fail sometimes.
 
 	searchTerm := chart
 	if strings.Index(name, "gcm") > -1 {
@@ -441,22 +472,7 @@ func (appContext *AppContext) simpleInstall(environment *model.Environment, char
 	variables, err := appContext.Repositories.VariableDAO.GetAllVariablesByEnvironmentAndScope(int(environment.ID), searchTerm)
 	globalVariables := appContext.getGlobalVariables(int(environment.ID))
 
-	var args []string
-	for i, item := range variables {
-
-		if item.Secret {
-			byteValues, _ := hex.DecodeString(item.Value)
-			value, err := util.Decrypt(byteValues, appContext.Configuration.App.Passkey)
-			if err == nil {
-				variables[i].Value = string(value)
-			}
-		}
-
-		if len(item.Name) > 0 && len(item.Value) > 0 {
-			args = append(args, normalizeVariableName(item.Name)+"="+replace(item.Value, *environment, globalVariables))
-		}
-
-	}
+	args := appContext.getArgs(variables, globalVariables, environment)
 
 	//Add Default Gateway
 	if len(environment.Gateway) > 0 {
@@ -480,27 +496,34 @@ func (appContext *AppContext) simpleInstall(environment *model.Environment, char
 			upgradeRequest.Variables = args
 			upgradeRequest.Dryrun = dryRun
 			upgradeRequest.Release = name
-			err := appContext.HelmServiceAPI.Upgrade(upgradeRequest, out)
 
-			if err != nil {
-				return "", err
-			}
-		} else {
-			var message string
+			return appContext.doUpgrade(upgradeRequest, out)
 
-			message = "helm upgrade --install " + name + " \\\n"
-
-			for _, e := range args {
-				message = message + " --set \"" + e + "\" " + " \\\n"
-			}
-
-			message = message + " " + chart + " --namespace=" + environment.Namespace
-
-			return message, nil
 		}
+
+		return getHelmMessage(name, args, environment, chart), nil
+
 	}
 
 	return "", nil
+}
+
+func (appContext *AppContext) doUpgrade(upgradeRequest helmapi.UpgradeRequest, out *bytes.Buffer) (string, error) {
+	err := appContext.HelmServiceAPI.Upgrade(upgradeRequest, out)
+	if err != nil {
+		return "", err
+	}
+	return "", nil
+}
+
+func getHelmMessage(name string, args []string, environment *model.Environment, chart string) string {
+	var message string
+	message = "_helm upgrade --install " + name + " \\\n"
+	for _, e := range args {
+		message = message + " --set \"" + e + "\" " + " \\\n"
+	}
+	message = message + " " + chart + " --namespace=" + environment.Namespace
+	return message
 }
 
 func replace(value string, environment model.Environment, variables []model.Variable) string {
