@@ -33,8 +33,6 @@ func (database *Database) Connect(dbmsURI string, local bool) {
 
 	database.Db.AutoMigrate(&model2.Environment{})
 	database.Db.AutoMigrate(&model2.Variable{})
-	database.Db.AutoMigrate(&model2.Release{})
-	database.Db.AutoMigrate(&model2.Dependency{}) //.AddForeignKey("release_id", "release(id)", "CASCADE", "RESTRICT")
 	database.Db.AutoMigrate(&model2.Solution{})
 	database.Db.AutoMigrate(&model2.SolutionChart{}) //.AddForeignKey("solution_id", "solution(id)", "CASCADE", "RESTRICT")
 	database.Db.AutoMigrate(&model2.User{})

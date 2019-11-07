@@ -7,9 +7,9 @@ import (
 	"github.com/softplan/tenkai-api/pkg/dbms/repository"
 	"github.com/softplan/tenkai-api/pkg/global"
 	"github.com/softplan/tenkai-api/pkg/handlers"
+	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"github.com/softplan/tenkai-api/pkg/service/core"
 	dockerapi "github.com/softplan/tenkai-api/pkg/service/docker"
-	helmapi "github.com/softplan/tenkai-api/pkg/service/helm"
 	"log"
 	"os"
 	"sync"
@@ -74,11 +74,9 @@ func initAPIs(appContext *handlers.AppContext) {
 func initRepository(database *dbms.Database) handlers.Repositories {
 	repositories := handlers.Repositories{}
 	repositories.ConfigDAO = &repository.ConfigDAOImpl{Db: database.Db}
-	repositories.DependencyDAO = &repository.DependencyDAOImpl{Db: database.Db}
 	repositories.DockerDAO = &repository.DockerDAOImpl{Db: database.Db}
 	repositories.EnvironmentDAO = &repository.EnvironmentDAOImpl{Db: database.Db}
 	repositories.ProductDAO = &repository.ProductDAOImpl{Db: database.Db}
-	repositories.ReleaseDAO = &repository.ReleaseDAOImpl{Db: database.Db}
 	repositories.SolutionDAO = &repository.SolutionDAOImpl{Db: database.Db}
 	repositories.SolutionChartDAO = &repository.SolutionChartDAOImpl{Db: database.Db}
 	repositories.UserDAO = &repository.UserDAOImpl{Db: database.Db}
