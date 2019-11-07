@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/softplan/tenkai-api/pkg/util"
 	"net/http"
+	"sort"
 	"strconv"
 )
 
@@ -41,6 +42,10 @@ func (appContext *AppContext) getVirtualServices(w http.ResponseWriter, r *http.
 		return
 
 	}
+
+	sort.Slice(services, func(i, j int) bool {
+		return services[i] < (services[j])
+	})
 
 	w.WriteHeader(http.StatusOK)
 	data, _ := json.Marshal(services)
