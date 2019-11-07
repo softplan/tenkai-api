@@ -158,7 +158,7 @@ func TestListReleaseHistory(t *testing.T) {
 	var info helmapi.ReleaseInfo
 	info.Revision = 987
 	info.Status = "DEPLOYED"
-	info.Chart = "my-helm-chart"
+	info.Chart = "my-_helm-chart"
 	info.Description = "Install completed"
 
 	var history helmapi.ReleaseHistory
@@ -274,7 +274,7 @@ func TestGetHelmCommand(t *testing.T) {
 	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironmentAndScope", 2)
 
 	response := string(rr.Body.Bytes())
-	assert.Contains(t, response, "helm upgrade --install my-foo-dev")
+	assert.Contains(t, response, "_helm upgrade --install my-foo-dev")
 	assert.Contains(t, response, "--set \"app.username=user")
 	assert.Contains(t, response, "istio.virtualservices.gateways[0]=my-gateway.istio-system.svc.cluster.local")
 	assert.Contains(t, response, "foo --namespace=dev")
@@ -416,7 +416,7 @@ func getExpect(sr []model.SearchResult) string {
 }
 
 func getExpecHistory() string {
-	return "[{\"revision\":987,\"updated\":\"\",\"status\":\"DEPLOYED\",\"chart\":\"my-helm-chart\",\"description\":\"Install completed\"}]"
+	return "[{\"revision\":987,\"updated\":\"\",\"status\":\"DEPLOYED\",\"chart\":\"my-_helm-chart\",\"description\":\"Install completed\"}]"
 }
 
 func getRevision() *model.GetRevisionRequest {
