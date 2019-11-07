@@ -10,7 +10,7 @@ const (
 	KubeConfigBasePath string = "./config/"
 
 	//HelmDir - Path of Helm diretory
-	HelmDir = "./._helm/"
+	HelmDir = "./.helm/"
 
 	//AccessDenied AccessDenied
 	AccessDenied = "Acccess Denied"
