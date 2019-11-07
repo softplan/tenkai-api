@@ -2,8 +2,9 @@ package helmapi
 
 import (
 	"fmt"
-	"github.com/softplan/tenkai-api/pkg/global"
 	"strings"
+
+	"github.com/softplan/tenkai-api/pkg/global"
 
 	"github.com/Masterminds/semver"
 	"github.com/gosuri/uitable"
@@ -142,7 +143,7 @@ func (s *searchCmd) buildIndex() (*search.Index, error) {
 		f := s.helmhome.CacheIndex(n)
 		ind, err := repo.LoadIndexFile(f)
 		if err != nil {
-			//fmt.Fprintf(s.out, "WARNING: Repo %q is corrupt or missing. Try '_helm repo update'.\n", n)
+			//fmt.Fprintf(s.out, "WARNING: Repo %q is corrupt or missing. Try 'helm repo update'.\n", n)
 			continue
 		}
 

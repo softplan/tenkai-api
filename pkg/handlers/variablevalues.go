@@ -4,15 +4,16 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"net/http"
+	"strconv"
+	"strings"
+
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/global"
 	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"github.com/softplan/tenkai-api/pkg/util"
-	"net/http"
-	"strconv"
-	"strings"
 )
 
 func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.Request) {
@@ -131,7 +132,7 @@ func (appContext *AppContext) getVariablesNotUsed(w http.ResponseWriter, r *http
 		return
 	}
 
-	//Retrieve all _helm release in environment
+	//Retrieve all helm release in environment
 	//Locate Environment
 	environment, err := appContext.Repositories.EnvironmentDAO.GetByID(id)
 	if err != nil {
