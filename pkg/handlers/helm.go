@@ -518,7 +518,9 @@ func (appContext *AppContext) doUpgrade(upgradeRequest helmapi.UpgradeRequest, o
 
 func getHelmMessage(name string, args []string, environment *model.Environment, chart string) string {
 	var message string
-	message = "_helm upgrade --install " + name + " \\\n"
+
+	message = "helm upgrade --install " + name + " \\\n"
+
 	for _, e := range args {
 		message = message + " --set \"" + e + "\" " + " \\\n"
 	}

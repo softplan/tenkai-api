@@ -235,5 +235,6 @@ func locateChartPath(repoURL, username, password, name, version string, verify b
 	}
 
 	global.Logger.Error(global.AppFields{global.Function: "locateChartPath", "filename": filename, "err": err.Error()}, "Before final return")
-	return filename, fmt.Errorf("failed to download %q (hint: running `_helm repo update` may help)", name)
+
+	return filename, fmt.Errorf("failed to download %q (hint: running `helm repo update` may help)", name)
 }
