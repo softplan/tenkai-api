@@ -520,7 +520,7 @@ func getHelmMessage(name string, args []string, environment *model.Environment, 
 	var message string
 
 	message = "helm upgrade --install " + name + " \\\n"
-  
+
 	for _, e := range args {
 		message = message + " --set \"" + e + "\" " + " \\\n"
 	}
