@@ -77,7 +77,7 @@ func (svc HelmServiceImpl) GetReleaseHistory(kubeconfig string, releaseName stri
 	return deployed, err
 }
 
-//GetHelmReleaseHistory - Get _helm release history
+//GetHelmReleaseHistory - Get helm release history
 func (svc HelmServiceImpl) GetHelmReleaseHistory(kubeconfig string, releaseName string) (ReleaseHistory, error) {
 
 	var result ReleaseHistory
