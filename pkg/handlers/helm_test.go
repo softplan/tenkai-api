@@ -404,6 +404,18 @@ func mockHelmSvcWithLotOfThings(appContext *AppContext) *mockSvc.HelmServiceInte
 	mockHelmSvc.On("Upgrade", mock.Anything, mock.Anything).Return(nil)
 	mockHelmSvc.On("ListHelmDeployments", mock.Anything, mock.Anything).Return(&hlr, nil)
 	mockHelmSvc.On("DeleteHelmRelease", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	services := make([]model.Service, 0)
+	service := model.Service{}
+	service.Name = "abacaxi"
+	service.Age = "1d"
+	service.Type = "ClusterIP"
+	service.Ports = "1223, 8080"
+	service.ExternalIP = ""
+	services = append(services, service)
+
+	mockHelmSvc.On("GetServices", mock.Anything, mock.Anything).Return(services, nil)
+
 	appContext.HelmServiceAPI = mockHelmSvc
 	return mockHelmSvc
 }
