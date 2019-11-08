@@ -387,6 +387,27 @@ func mockUpgrade(appContext *AppContext) *mockSvc.HelmServiceInterface {
 	return mockHelmSvc
 }
 
+func mockHelmSvcWithLotOfThings(appContext *AppContext) *mockSvc.HelmServiceInterface {
+
+	hlr := helmapi.HelmListResult{}
+	hlr.Releases = make([]helmapi.ListRelease, 0)
+	lr := helmapi.ListRelease{}
+	lr.Name = "tjusuarios-master"
+	lr.Chart = "tjusuarios-master"
+	lr.Namespace = "master"
+	lr.Status = "Running"
+	lr.AppVersion = "1.0"
+	lr.Revision = 1
+	hlr.Releases = append(hlr.Releases, lr)
+
+	mockHelmSvc := &mockSvc.HelmServiceInterface{}
+	mockHelmSvc.On("Upgrade", mock.Anything, mock.Anything).Return(nil)
+	mockHelmSvc.On("ListHelmDeployments", mock.Anything, mock.Anything).Return(&hlr, nil)
+	mockHelmSvc.On("DeleteHelmRelease", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	appContext.HelmServiceAPI = mockHelmSvc
+	return mockHelmSvc
+}
+
 func getMultipleInstallPayload() *bytes.Buffer {
 	var ip model.InstallPayload
 	ip.EnvironmentID = 999

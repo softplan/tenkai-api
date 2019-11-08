@@ -34,6 +34,17 @@ func mockGetByID(appContext *AppContext) *mockRepo.EnvironmentDAOInterface {
 	return mockEnvDao
 }
 
+func mockEnvDaoWithLotOfThings(appContext *AppContext) *mockRepo.EnvironmentDAOInterface {
+	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
+	env := mockGetEnv()
+	mockEnvDao.On("GetByID", mock.Anything).Return(&env, nil)
+	var envs []model.Environment
+	envs = append(envs, mockGetEnv())
+	mockEnvDao.On("GetAllEnvironments", mock.Anything).Return(envs, nil)
+	appContext.Repositories.EnvironmentDAO = mockEnvDao
+	return mockEnvDao
+}
+
 //mockGetByIDError mocks a call to GetByID function returning an error to be used only for testing.
 func mockGetByIDError(appContext *AppContext) *mockRepo.EnvironmentDAOInterface {
 	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
@@ -95,6 +106,21 @@ func mockGetAllVariablesByEnvironmentAndScope(appContext *AppContext) *mockRepo.
 	variable := mockGlobalVariable()
 	variables = append(variables, variable)
 	mockVariableDAO.On("GetAllVariablesByEnvironmentAndScope", int(variable.EnvironmentID), mock.Anything).Return(variables, nil)
+
+	appContext.Repositories.VariableDAO = mockVariableDAO
+
+	return mockVariableDAO
+}
+
+func mockVariableDAOWithLotOfThings(appContext *AppContext) *mockRepo.VariableDAOInterface {
+	mockVariableDAO := &mockRepo.VariableDAOInterface{}
+	var variables []model.Variable
+	variable := mockGlobalVariable()
+	variables = append(variables, variable)
+	mockVariableDAO.On("GetAllVariablesByEnvironmentAndScope", int(variable.EnvironmentID), mock.Anything).Return(variables, nil)
+	mockVariableDAO.On("DeleteVariableByEnvironmentID", mock.Anything).Return(nil)
+	mockVariableDAO.On("GetAllVariablesByEnvironment", mock.Anything).Return(variables, nil)
+	mockVariableDAO.On("CreateVariable", mock.Anything).Return(nil, true, nil)
 
 	appContext.Repositories.VariableDAO = mockVariableDAO
 
