@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
 	"github.com/stretchr/testify/assert"
@@ -141,6 +142,46 @@ func TestEditProduct_CreateProductError(t *testing.T) {
 	handler := http.HandlerFunc(appContext.editProduct)
 	handler.ServeHTTP(rr, req)
 
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestDeleteProduct(t *testing.T) {
+	appContext := AppContext{}
+
+	mockProductDAO := &mockRepo.ProductDAOInterface{}
+	mockProductDAO.On("DeleteProduct", 999).Return(nil)
+	appContext.Repositories.ProductDAO = mockProductDAO
+
+	req, err := http.NewRequest("DELETE", "/products/999", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/products/{id}", appContext.deleteProduct).Methods("DELETE")
+	r.ServeHTTP(rr, req)
+
+	mockProductDAO.AssertNumberOfCalls(t, "DeleteProduct", 1)
+	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
+}
+
+func TestDeleteProduct_Error(t *testing.T) {
+	appContext := AppContext{}
+
+	mockProductDAO := &mockRepo.ProductDAOInterface{}
+	mockProductDAO.On("DeleteProduct", 999).Return(errors.New("Error deleting product"))
+	appContext.Repositories.ProductDAO = mockProductDAO
+
+	req, err := http.NewRequest("DELETE", "/products/999", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/products/{id}", appContext.deleteProduct).Methods("DELETE")
+	r.ServeHTTP(rr, req)
+
+	mockProductDAO.AssertNumberOfCalls(t, "DeleteProduct", 1)
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
 
