@@ -104,7 +104,7 @@ func (appContext *AppContext) deletePod(w http.ResponseWriter, r *http.Request) 
 
 	environment, err := appContext.Repositories.EnvironmentDAO.GetByID(int(envID))
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -112,7 +112,7 @@ func (appContext *AppContext) deletePod(w http.ResponseWriter, r *http.Request) 
 
 	err = appContext.HelmServiceAPI.DeletePod(kubeConfig, podName[0], environment.Namespace)
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 

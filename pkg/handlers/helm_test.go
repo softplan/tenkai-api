@@ -414,7 +414,20 @@ func mockHelmSvcWithLotOfThings(appContext *AppContext) *mockSvc.HelmServiceInte
 	service.ExternalIP = ""
 	services = append(services, service)
 
+	pods := make([]model.Pod, 0)
+	pod := model.Pod{}
+	pod.Name = "alfa"
+	pod.Age = "1d"
+	pod.Status = "Running"
+	pod.Restarts = 0
+	pod.Image = "alfa"
+	pod.Ready = "1/1"
+
+	pods = append(pods, pod)
+
 	mockHelmSvc.On("GetServices", mock.Anything, mock.Anything).Return(services, nil)
+	mockHelmSvc.On("GetPods", mock.Anything, mock.Anything).Return(pods, nil)
+	mockHelmSvc.On("DeletePod", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	appContext.HelmServiceAPI = mockHelmSvc
 	return mockHelmSvc
