@@ -224,3 +224,36 @@ func payload(v interface{}) *bytes.Buffer {
 	payloadStr, _ := json.Marshal(v)
 	return bytes.NewBuffer(payloadStr)
 }
+
+func getProduct() model.Product {
+	var payload model.Product
+	payload.ID = 999
+	payload.Name = "my-product"
+	return payload
+}
+
+func getProductWithoutID() model.Product {
+	var payload model.Product
+	payload.Name = "my-product"
+	return payload
+}
+
+func getProductVersionWithoutID(copyRelease bool) model.ProductVersion {
+	var p model.ProductVersion
+	p.Version = "19.0.1-0"
+	p.ProductID = 999
+	p.CopyLatestRelease = copyRelease
+	return p
+}
+
+func getProductVersionSvcReqResp() *model.ProductVersionServiceRequestReponse {
+	var pvs model.ProductVersionService
+	pvs.ID = 888
+	pvs.ServiceName = "repo/my-chart"
+	pvs.ProductVersionID = 999
+	pvs.DockerImageTag = "19.0.1-0"
+
+	childs := &model.ProductVersionServiceRequestReponse{}
+	childs.List = append(childs.List, pvs)
+	return childs
+}
