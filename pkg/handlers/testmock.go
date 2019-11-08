@@ -219,3 +219,8 @@ func mockListHelmDeployments(appContext *AppContext) *mockSvc.HelmServiceInterfa
 	appContext.HelmServiceAPI = mockHelmSvc
 	return mockHelmSvc
 }
+
+func payload(v interface{}) *bytes.Buffer {
+	payloadStr, _ := json.Marshal(v)
+	return bytes.NewBuffer(payloadStr)
+}
