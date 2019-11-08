@@ -257,3 +257,11 @@ func getProductVersionSvcReqResp() *model.ProductVersionServiceRequestReponse {
 	childs.List = append(childs.List, pvs)
 	return childs
 }
+
+func getProductVersionReqResp() *model.ProductVersionRequestReponse {
+	pv := getProductVersionWithoutID(false)
+	pv.ID = 777
+	l := &model.ProductVersionRequestReponse{}
+	l.List = append(l.List, pv)
+	return l
+}

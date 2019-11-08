@@ -372,3 +372,29 @@ func TestDeleteProductVersion_DeleteProductVersionError(t *testing.T) {
 	mockProductDAO.AssertNumberOfCalls(t, "DeleteProductVersion", 1)
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
+
+func TestListProductVersions(t *testing.T) {
+	appContext := AppContext{}
+
+	result := getProductVersionReqResp()
+
+	mockProductDAO := &mockRepo.ProductDAOInterface{}
+	mockProductDAO.On("ListProductsVersions", 777).Return(result.List, nil)
+	appContext.Repositories.ProductDAO = mockProductDAO
+
+	req, err := http.NewRequest("GET", "/productVersions/?productId=777", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.listProductVersions)
+	handler.ServeHTTP(rr, req)
+
+	mockProductDAO.AssertNumberOfCalls(t, "ListProductsVersions", 1)
+	assert.Equal(t, http.StatusOK, rr.Code, "Response should be Ok.")
+
+	response := string(rr.Body.Bytes())
+	assert.Contains(t, response, `{"list":[{"ID":777,`)
+	assert.Contains(t, response, `"version":"19.0.1-0",`)
+	assert.Contains(t, response, `"copyLatestRelease":false}]}`)
+}

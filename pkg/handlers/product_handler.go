@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sort"
 	"strconv"
@@ -205,6 +206,7 @@ func (appContext *AppContext) listProductVersions(w http.ResponseWriter, r *http
 	data, _ := json.Marshal(result)
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
+	fmt.Println(string(data))
 
 }
 
