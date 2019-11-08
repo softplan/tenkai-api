@@ -24,6 +24,39 @@ type releaseToDeploy struct {
 	ChartVersion string
 }
 
+func (appContext *AppContext) validateAndExtractParams(w http.ResponseWriter, r *http.Request) (string, int64, int64, error) {
+
+	modes, ok := r.URL.Query()["mode"]
+
+	if !ok || len(modes[0]) < 1 {
+		error := errors.New("Url Param 'mode' is missing")
+		http.Error(w, error.Error(), http.StatusInternalServerError)
+		return "", -1, -1, error
+	}
+
+	mode := modes[0]
+
+	srcEnvID, ok := r.URL.Query()["srcEnvID"]
+	if !ok || len(srcEnvID[0]) < 1 || srcEnvID[0] == "undefined" {
+		error := errors.New("param srcEnvID is required")
+		http.Error(w, error.Error(), http.StatusInternalServerError)
+		return "", -1, -1, error
+	}
+
+	targetEnvID, ok := r.URL.Query()["targetEnvID"]
+	if !ok || len(targetEnvID[0]) < 1 || targetEnvID[0] == "undefined" {
+		error := errors.New("param targetEnvID is required")
+		http.Error(w, error.Error(), http.StatusInternalServerError)
+		return "", -1, -1, error
+	}
+
+	srcEnvIDi, _ := strconv.ParseInt(srcEnvID[0], 10, 64)
+	targetEnvIDi, _ := strconv.ParseInt(targetEnvID[0], 10, 64)
+
+	return mode, srcEnvIDi, targetEnvIDi, nil
+
+}
+
 func (appContext *AppContext) promote(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set(global.ContentType, global.JSONContentType)
@@ -35,29 +68,10 @@ func (appContext *AppContext) promote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	modes, ok := r.URL.Query()["mode"]
-
-	if !ok || len(modes[0]) < 1 {
-		http.Error(w, errors.New("Url Param 'mode' is missing").Error(), http.StatusUnauthorized)
+	mode, srcEnvIDi, targetEnvIDi, err := appContext.validateAndExtractParams(w, r)
+	if err != nil {
 		return
 	}
-
-	mode := modes[0]
-
-	srcEnvID, ok := r.URL.Query()["srcEnvID"]
-	if !ok || len(srcEnvID[0]) < 1 || srcEnvID[0] == "undefined" {
-		http.Error(w, errors.New("param srcEnvID is required").Error(), 501)
-		return
-	}
-
-	targetEnvID, ok := r.URL.Query()["targetEnvID"]
-	if !ok || len(targetEnvID[0]) < 1 || targetEnvID[0] == "undefined" {
-		http.Error(w, errors.New("param targetEnvID is required").Error(), 501)
-		return
-	}
-
-	srcEnvIDi, _ := strconv.ParseInt(srcEnvID[0], 10, 64)
-	targetEnvIDi, _ := strconv.ParseInt(targetEnvID[0], 10, 64)
 
 	srcEnvironment, err := appContext.Repositories.EnvironmentDAO.GetByID(int(srcEnvIDi))
 	if err != nil {

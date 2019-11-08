@@ -2,9 +2,6 @@ package handlers
 
 import (
 	"github.com/softplan/tenkai-api/pkg/constraints"
-	"github.com/softplan/tenkai-api/pkg/dbms/model"
-	"github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
-	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"net/http"
@@ -14,43 +11,16 @@ import (
 	mockAudit "github.com/softplan/tenkai-api/pkg/audit/mocks"
 )
 
-func TestPromoteFull(t *testing.T) {
+func doTest(t *testing.T, mode string) {
 
 	appContext := AppContext{}
 
-	var envs []model.Environment
-	envs = append(envs, mockGetEnv())
-	mockEnvDao := &mocks.EnvironmentDAOInterface{}
-
-	env := mockGetEnv()
-	mockEnvDao.On("GetByID", mock.Anything).Return(&env, nil)
-	mockEnvDao.On("GetAllEnvironments", mock.Anything).Return(envs, nil)
+	mockEnvDao := mockEnvDaoWithLotOfThings(&appContext)
 	mockConvention := mockConventionInterface(&appContext)
 
-	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
-	var variables []model.Variable
-	variable := mockGlobalVariable()
-	variables = append(variables, variable)
-	mockVariableDAO.On("DeleteVariableByEnvironmentID", mock.Anything).Return(nil)
-	mockVariableDAO.On("GetAllVariablesByEnvironment", mock.Anything).Return(variables, nil)
-	mockVariableDAO.On("CreateVariable", mock.Anything).Return(nil, true, nil)
+	mockVariableDAO := mockVariableDAOWithLotOfThings(&appContext)
 
-	hlr := helmapi.HelmListResult{}
-	hlr.Releases = make([]helmapi.ListRelease, 0)
-
-	lr := helmapi.ListRelease{}
-	lr.Name = "tjusuarios-master"
-	lr.Chart = "tjusuarios-master"
-	lr.Namespace = "master"
-	lr.Status = "Running"
-	lr.AppVersion = "1.0"
-	lr.Revision = 1
-
-	hlr.Releases = append(hlr.Releases, lr)
-
-	mockHelmSvc := mockUpgrade(&appContext)
-	mockHelmSvc.On("ListHelmDeployments", mock.Anything, mock.Anything).Return(&hlr, nil)
-	mockHelmSvc.On("DeleteHelmRelease", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mockHelmSvc := mockHelmSvcWithLotOfThings(&appContext)
 
 	auditSvc := &mockAudit.AuditingInterface{}
 	auditSvc.On("DoAudit", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything)
@@ -61,7 +31,8 @@ func TestPromoteFull(t *testing.T) {
 	appContext.HelmServiceAPI = mockHelmSvc
 	appContext.Auditing = auditSvc
 
-	req, err := http.NewRequest("GET", "/promote?mode=full&srcEnvID=91&targetEnvID=92", nil)
+	url := "/promote?mode=" + mode + "&srcEnvID=91&targetEnvID=92"
+	req, err := http.NewRequest("GET", url, nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
@@ -73,6 +44,64 @@ func TestPromoteFull(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 1)
-	mockVariableDAO.AssertNumberOfCalls(t, "DeleteVariableByEnvironmentID", 1)
 
+	if mode == "full" {
+		mockVariableDAO.AssertNumberOfCalls(t, "DeleteVariableByEnvironmentID", 1)
+	}
+
+}
+
+func TestPromoteFull(t *testing.T) {
+	doTest(t, "full")
+}
+
+func TestPromotePartial(t *testing.T) {
+	doTest(t, "partial")
+}
+
+func TestPromote_Unauthorized(t *testing.T) {
+	appContext := AppContext{}
+
+	url := "/promote?mode=full&srcEnvID=91&targetEnvID=92"
+	req, err := http.NewRequest("GET", url, nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, []string{"role-unauthorized"})
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.promote)
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusUnauthorized, rr.Code, "Response should be unauthorized.")
+}
+
+func doTestParamsError(t *testing.T, url string) {
+
+	appContext := AppContext{}
+
+	req, err := http.NewRequest("GET", url, nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, []string{constraints.TenkaiPromote})
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.promote)
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Mode missing")
+
+}
+
+func TestPromote_WithoutMode(t *testing.T) {
+	doTestParamsError(t, "/promote?srcEnvID=91&targetEnvID=92")
+}
+
+func TestPromote_WithoutSrcEnvID(t *testing.T) {
+	doTestParamsError(t, "/promote?mode=full&targetEnvID=92")
+}
+
+func TestPromote_WithoutTargetEnvID(t *testing.T) {
+	doTestParamsError(t, "/promote?mode=full&srcEnvID=91")
 }
