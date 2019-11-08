@@ -405,6 +405,17 @@ func mockHelmSvcWithLotOfThings(appContext *AppContext) *mockSvc.HelmServiceInte
 	mockHelmSvc.On("ListHelmDeployments", mock.Anything, mock.Anything).Return(&hlr, nil)
 	mockHelmSvc.On("DeleteHelmRelease", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
+	repos := make([]model.Repository, 0)
+	repo := model.Repository{}
+	repo.Name = "alfa.beta"
+	repo.Password = "123"
+	repo.Username = "guri"
+	repo.URL = "http://artifactory.xpto"
+	repos = append(repos, repo)
+
+	mockHelmSvc.On("GetRepositories").Return(repos, nil)
+	mockHelmSvc.On("AddRepository", mock.Anything).Return(nil)
+
 	services := make([]model.Service, 0)
 	service := model.Service{}
 	service.Name = "abacaxi"
