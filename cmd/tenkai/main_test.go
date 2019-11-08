@@ -31,3 +31,7 @@ func TestInitCache(t *testing.T) {
 	appContext := handlers.AppContext{}
 	initCache(&appContext)
 }
+
+func TestCheckError(t *testing.T) {
+	checkFatalError(nil)
+}
