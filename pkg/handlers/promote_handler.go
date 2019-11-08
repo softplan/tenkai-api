@@ -57,6 +57,37 @@ func (appContext *AppContext) validateAndExtractParams(w http.ResponseWriter, r 
 
 }
 
+func (appContext *AppContext) retrieveSrcAndTargetEnv(w http.ResponseWriter, principal model.Principal, srcEnvIDi int64, targetEnvIDi int64) (*model.Environment, *model.Environment, error) {
+	srcEnvironment, err := appContext.Repositories.EnvironmentDAO.GetByID(int(srcEnvIDi))
+	if err != nil {
+		http.Error(w, err.Error(), 501)
+		return nil, nil, err
+	}
+
+	targetEnvironment, err := appContext.Repositories.EnvironmentDAO.GetByID(int(targetEnvIDi))
+	if err != nil {
+		http.Error(w, err.Error(), 501)
+		return nil, nil, err
+	}
+
+	has, err := appContext.hasAccess(principal.Email, int(srcEnvironment.ID))
+	if err != nil || !has {
+		newErr := errors.New("Access Denied in environment " + srcEnvironment.Namespace)
+		http.Error(w, newErr.Error(), http.StatusUnauthorized)
+		return nil, nil, newErr
+	}
+
+	has, err = appContext.hasAccess(principal.Email, int(targetEnvironment.ID))
+	if err != nil || !has {
+		newErr := errors.New("Access Denied in environment " + targetEnvironment.Namespace)
+		http.Error(w, newErr.Error(), http.StatusUnauthorized)
+		return nil, nil, newErr
+	}
+
+	return srcEnvironment, targetEnvironment, nil
+
+}
+
 func (appContext *AppContext) promote(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set(global.ContentType, global.JSONContentType)
@@ -73,27 +104,8 @@ func (appContext *AppContext) promote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	srcEnvironment, err := appContext.Repositories.EnvironmentDAO.GetByID(int(srcEnvIDi))
-	if err != nil {
-		http.Error(w, err.Error(), 501)
-		return
-	}
-
-	targetEnvironment, err := appContext.Repositories.EnvironmentDAO.GetByID(int(targetEnvIDi))
-	if err != nil {
-		http.Error(w, err.Error(), 501)
-		return
-	}
-
-	has, err := appContext.hasAccess(principal.Email, int(srcEnvironment.ID))
-	if err != nil || !has {
-		http.Error(w, errors.New("Access Denied in environment "+srcEnvironment.Namespace).Error(), http.StatusUnauthorized)
-		return
-	}
-
-	has, err = appContext.hasAccess(principal.Email, int(targetEnvironment.ID))
-	if err != nil || !has {
-		http.Error(w, errors.New("Access Denied in environment "+targetEnvironment.Namespace).Error(), http.StatusUnauthorized)
+	srcEnvironment, targetEnvironment, envErr := appContext.retrieveSrcAndTargetEnv(w, principal, srcEnvIDi, targetEnvIDi)
+	if envErr != nil {
 		return
 	}
 
