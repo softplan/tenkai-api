@@ -398,3 +398,36 @@ func TestListProductVersions(t *testing.T) {
 	assert.Contains(t, response, `"version":"19.0.1-0",`)
 	assert.Contains(t, response, `"copyLatestRelease":false}]}`)
 }
+
+func TestListProductVersions_QueryError(t *testing.T) {
+	appContext := AppContext{}
+
+	req, err := http.NewRequest("GET", "/productVersions/?foo=bar", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.listProductVersions)
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestListProductVersions_ListProductsVersionsError(t *testing.T) {
+	appContext := AppContext{}
+
+	mockProductDAO := &mockRepo.ProductDAOInterface{}
+	mockProductDAO.On("ListProductsVersions", 777).Return(nil, errors.New("some error"))
+	appContext.Repositories.ProductDAO = mockProductDAO
+
+	req, err := http.NewRequest("GET", "/productVersions/?productId=777", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.listProductVersions)
+	handler.ServeHTTP(rr, req)
+
+	mockProductDAO.AssertNumberOfCalls(t, "ListProductsVersions", 1)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
