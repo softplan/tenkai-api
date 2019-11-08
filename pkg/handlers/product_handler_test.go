@@ -10,6 +10,7 @@ import (
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestSplitSrvNameIfNeeded(t *testing.T) {
@@ -185,6 +186,97 @@ func TestDeleteProduct_Error(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
 
+func TestListProducts(t *testing.T) {
+	result := &model.ProductRequestReponse{}
+	result.List = append(result.List, getProduct())
+
+	appContext := AppContext{}
+
+	mockProductDAO := &mockRepo.ProductDAOInterface{}
+	mockProductDAO.On("ListProducts").Return(result.List, nil)
+	appContext.Repositories.ProductDAO = mockProductDAO
+
+	req, err := http.NewRequest("GET", "/products", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.listProducts)
+	handler.ServeHTTP(rr, req)
+
+	mockProductDAO.AssertNumberOfCalls(t, "ListProducts", 1)
+	assert.Equal(t, http.StatusOK, rr.Code, "Response should be Ok")
+
+	response := string(rr.Body.Bytes())
+	assert.Contains(t, response, `{"list":[{"ID":999,`)
+	assert.Contains(t, response, `"name":"my-product"}]}`)
+}
+
+func TestListProducts_Error(t *testing.T) {
+	appContext := AppContext{}
+
+	mockProductDAO := &mockRepo.ProductDAOInterface{}
+	mockProductDAO.On("ListProducts").Return(nil, errors.New("Error listing product"))
+	appContext.Repositories.ProductDAO = mockProductDAO
+
+	req, err := http.NewRequest("GET", "/products", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.listProducts)
+	handler.ServeHTTP(rr, req)
+
+	mockProductDAO.AssertNumberOfCalls(t, "ListProducts", 1)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestNewProductVersion(t *testing.T) {
+	appContext := AppContext{}
+
+	pv := getProductVersionWithoutID(false)
+	mockProductDAO := &mockRepo.ProductDAOInterface{}
+	mockProductDAO.On("CreateProductVersionCopying", mock.Anything).Return(999, nil)
+	appContext.Repositories.ProductDAO = mockProductDAO
+
+	req, err := http.NewRequest("POST", "/productVersions", payload(pv))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.newProductVersion)
+	handler.ServeHTTP(rr, req)
+
+	mockProductDAO.AssertNumberOfCalls(t, "CreateProductVersionCopying", 1)
+	assert.Equal(t, http.StatusCreated, rr.Code, "Response should be Created")
+}
+
+func TestNewProductVersion_UnmarshalPayloadError(t *testing.T) {
+	appContext := AppContext{}
+	rr := commonTestUnmarshalPayloadError(t, "/productVersions", appContext.newProductVersion)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestNewProductVersion_Error(t *testing.T) {
+	appContext := AppContext{}
+
+	pv := getProductVersionWithoutID(false)
+	mockProductDAO := &mockRepo.ProductDAOInterface{}
+	mockProductDAO.On("CreateProductVersionCopying", mock.Anything).Return(0, errors.New("Some error"))
+	appContext.Repositories.ProductDAO = mockProductDAO
+
+	req, err := http.NewRequest("POST", "/productVersions", payload(pv))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.newProductVersion)
+	handler.ServeHTTP(rr, req)
+
+	mockProductDAO.AssertNumberOfCalls(t, "CreateProductVersionCopying", 1)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500")
+}
+
 func getProduct() model.Product {
 	var payload model.Product
 	payload.ID = 999
@@ -196,4 +288,12 @@ func getProductWithoutID() model.Product {
 	var payload model.Product
 	payload.Name = "my-product"
 	return payload
+}
+
+func getProductVersionWithoutID(copyRelease bool) model.ProductVersion {
+	var p model.ProductVersion
+	p.Version = "19.0.1-0"
+	p.ProductID = 999
+	p.CopyLatestRelease = copyRelease
+	return p
 }
