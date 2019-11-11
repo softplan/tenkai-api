@@ -9,6 +9,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
+	mockSvc "github.com/softplan/tenkai-api/pkg/service/_helm/mocks"
+	"github.com/softplan/tenkai-api/pkg/service/docker/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -430,4 +432,48 @@ func TestListProductVersions_ListProductsVersionsError(t *testing.T) {
 
 	mockProductDAO.AssertNumberOfCalls(t, "ListProductsVersions", 1)
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestListProductVersionServices(t *testing.T) {
+	appContext := AppContext{}
+
+	var pvs []model.ProductVersionService
+	pvs = append(pvs, getProductVersionSvc())
+
+	mockProductDAO := &mockRepo.ProductDAOInterface{}
+	mockProductDAO.On("ListProductsVersionServices", 999).Return(pvs, nil)
+	appContext.Repositories.ProductDAO = mockProductDAO
+
+	mockHelmSvc := &mockSvc.HelmServiceInterface{}
+	data := getHelmSearchResult()
+	mockHelmSvc.On("SearchCharts", mock.Anything, false).Return(&data)
+	appContext.HelmServiceAPI = mockHelmSvc
+
+	appContext.ChartImageCache.Store("repo/my-chart", "myrepo.com/my-chart")
+
+	mockDockerSvc := &mocks.DockerServiceInterface{}
+	result := &model.ListDockerTagsResult{}
+	var tr model.TagResponse
+	tr.Tag = "19.0.1-0"
+	result.TagResponse = append(result.TagResponse, tr)
+	mockDockerSvc.On("GetDockerTagsWithDate", mock.Anything, mock.Anything, mock.Anything).Return(result, nil)
+	appContext.DockerServiceAPI = mockDockerSvc
+
+	req, err := http.NewRequest("GET", "/productVersionServices/?productVersionId=999", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.listProductVersionServices)
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code, "Response should be Ok.")
+
+	response := string(rr.Body.Bytes())
+	assert.Contains(t, response, `{"list":[{"ID":888,`)
+	assert.Contains(t, response, `"productVersionId":999,`)
+	assert.Contains(t, response, `"serviceName":"repo/my-chart - 0.1.0",`)
+	assert.Contains(t, response, `"dockerImageTag":"19.0.1-0"`)
+	assert.Contains(t, response, `"latestVersion":"",`)
+	assert.Contains(t, response, `"chartLatestVersion":"1.0"}]}`)
 }
