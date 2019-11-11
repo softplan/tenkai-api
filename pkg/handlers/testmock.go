@@ -246,15 +246,18 @@ func getProductVersionWithoutID(copyRelease bool) model.ProductVersion {
 	return p
 }
 
-func getProductVersionSvcReqResp() *model.ProductVersionServiceRequestReponse {
+func getProductVersionSvc() model.ProductVersionService {
 	var pvs model.ProductVersionService
 	pvs.ID = 888
-	pvs.ServiceName = "repo/my-chart"
+	pvs.ServiceName = "repo/my-chart - 0.1.0"
 	pvs.ProductVersionID = 999
 	pvs.DockerImageTag = "19.0.1-0"
+	return pvs
+}
 
+func getProductVersionSvcReqResp() *model.ProductVersionServiceRequestReponse {
 	childs := &model.ProductVersionServiceRequestReponse{}
-	childs.List = append(childs.List, pvs)
+	childs.List = append(childs.List, getProductVersionSvc())
 	return childs
 }
 
@@ -264,4 +267,21 @@ func getProductVersionReqResp() *model.ProductVersionRequestReponse {
 	l := &model.ProductVersionRequestReponse{}
 	l.List = append(l.List, pv)
 	return l
+}
+
+func getHelmSearchResult() []model.SearchResult {
+	data := make([]model.SearchResult, 1)
+	data[0].Name = "repo/my-chart"
+	data[0].ChartVersion = "1.0"
+	data[0].Description = "Test only"
+	data[0].AppVersion = "1.0"
+	return data
+}
+
+func mockHelmSearchCharts(appContext *AppContext) *mockSvc.HelmServiceInterface {
+	mockHelmSvc := &mockSvc.HelmServiceInterface{}
+	data := getHelmSearchResult()
+	mockHelmSvc.On("SearchCharts", mock.Anything, true).Return(&data)
+	appContext.HelmServiceAPI = mockHelmSvc
+	return mockHelmSvc
 }
