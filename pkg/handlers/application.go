@@ -49,13 +49,7 @@ type AppContext struct {
 	DockerTagsCache     sync.Map
 }
 
-//StartHTTPServer StartHTTPServer
-func StartHTTPServer(appContext *AppContext) {
-
-	port := appContext.Configuration.Server.Port
-	global.Logger.Info(global.AppFields{global.Function: "startHTTPServer", "port": port}, "online - listen and server")
-
-	r := mux.NewRouter()
+func defineRotes(r *mux.Router, appContext *AppContext) {
 
 	r.HandleFunc("/getVirtualServices", appContext.getVirtualServices).Methods("GET")
 	r.HandleFunc("/install", appContext.install).Methods("POST")
@@ -151,6 +145,18 @@ func StartHTTPServer(appContext *AppContext) {
 	r.HandleFunc("/getSettingList", appContext.getSettingList).Methods("POST")
 
 	r.HandleFunc("/", appContext.rootHandler)
+
+}
+
+//StartHTTPServer StartHTTPServer
+func StartHTTPServer(appContext *AppContext) {
+
+	port := appContext.Configuration.Server.Port
+	global.Logger.Info(global.AppFields{global.Function: "startHTTPServer", "port": port}, "online - listen and server")
+
+	r := mux.NewRouter()
+
+	defineRotes(r, appContext)
 
 	log.Fatal(http.ListenAndServe(":"+port, commonHandler(r)))
 
