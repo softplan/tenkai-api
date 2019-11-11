@@ -26,12 +26,12 @@ func (appContext *AppContext) newUser(w http.ResponseWriter, r *http.Request) {
 	var payload model.User
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	if err := appContext.Repositories.UserDAO.CreateUser(payload); err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -46,12 +46,12 @@ func (appContext *AppContext) createOrUpdateUser(w http.ResponseWriter, r *http.
 	var payload model.User
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	if err := appContext.Repositories.UserDAO.CreateOrUpdateUser(payload); err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -65,7 +65,7 @@ func (appContext *AppContext) listUsers(w http.ResponseWriter, r *http.Request) 
 	var err error
 
 	if result.Users, err = appContext.Repositories.UserDAO.ListAllUsers(); err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
