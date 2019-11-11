@@ -5,13 +5,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"github.com/softplan/tenkai-api/pkg/constraints"
-	"github.com/softplan/tenkai-api/pkg/global"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/softplan/tenkai-api/pkg/constraints"
+	"github.com/softplan/tenkai-api/pkg/global"
 
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
@@ -23,6 +24,7 @@ func (appContext *AppContext) deleteEnvironment(w http.ResponseWriter, r *http.R
 	principal := util.GetPrincipal(r)
 	if !util.Contains(principal.Roles, constraints.TenkaiAdmin) {
 		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
+		return
 	}
 
 	vars := mux.Vars(r)
