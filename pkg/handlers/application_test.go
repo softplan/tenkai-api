@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/configs"
 	"net/http"
 	"net/http/httptest"
@@ -41,4 +42,9 @@ func TestRoot(t *testing.T) {
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("Handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
+}
+
+func TestDefineRoutes(t *testing.T) {
+	r := mux.NewRouter()
+	defineRotes(r, &AppContext{})
 }
