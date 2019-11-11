@@ -21,16 +21,7 @@ func TestListCharts(t *testing.T) {
 	appContext := AppContext{}
 	appContext.K8sConfigPath = "/tmp/"
 
-	mockObject := &mockSvc.HelmServiceInterface{}
-
-	data := make([]model.SearchResult, 1)
-	data[0].Name = "test-chart"
-	data[0].ChartVersion = "1.0"
-	data[0].Description = "Test only"
-	data[0].AppVersion = "1.0"
-
-	mockObject.On("SearchCharts", mock.Anything, true).Return(&data)
-	appContext.HelmServiceAPI = mockObject
+	mockHelmSvc := mockHelmSearchCharts(&appContext)
 
 	req, err := http.NewRequest("GET", "/listCharts", bytes.NewBuffer(nil))
 	assert.NoError(t, err)
@@ -39,10 +30,10 @@ func TestListCharts(t *testing.T) {
 	handler := http.HandlerFunc(appContext.listCharts)
 	handler.ServeHTTP(rr, req)
 
-	mockObject.AssertNumberOfCalls(t, "SearchCharts", 1)
+	mockHelmSvc.AssertNumberOfCalls(t, "SearchCharts", 1)
 
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
-	assert.Equal(t, getExpect(data), string(rr.Body.Bytes()), "Response is not correct.")
+	assert.Equal(t, getExpect(getHelmSearchResult()), string(rr.Body.Bytes()), "Response is not correct.")
 }
 
 func TestDeleteHelmRelease(t *testing.T) {
