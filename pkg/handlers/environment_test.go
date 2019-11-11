@@ -3,12 +3,15 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gorilla/mux"
+	"github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
+
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -59,4 +62,44 @@ func TestAddEnvironments(t *testing.T) {
 			status, http.StatusOK)
 	}
 
+}
+
+func TestDeleteEnvironment(t *testing.T) {
+	appContext := AppContext{}
+
+	env := mockGetEnv()
+	mockEnvDAO := mockGetByID(&appContext)
+	mockEnvDAO.On("DeleteEnvironment", env).Return(nil)
+
+	req, err := http.NewRequest("DELETE", "/environments/delete/999", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, []string{"tenkai-admin"})
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/environments/delete/{id}", appContext.deleteEnvironment).Methods("DELETE")
+	r.ServeHTTP(rr, req)
+
+	mockEnvDAO.AssertNumberOfCalls(t, "GetByID", 1)
+	mockEnvDAO.AssertNumberOfCalls(t, "DeleteEnvironment", 1)
+	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
+}
+
+func TestDeleteEnvironment_Unauthorized(t *testing.T) {
+	appContext := AppContext{}
+
+	req, err := http.NewRequest("DELETE", "/environments/delete/999", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, []string{"tenkai-user"})
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/environments/delete/{id}", appContext.deleteEnvironment).Methods("DELETE")
+	r.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusUnauthorized, rr.Code, "Response is not Ok.")
 }
