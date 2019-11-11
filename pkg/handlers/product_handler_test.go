@@ -467,6 +467,10 @@ func TestListProductVersionServices(t *testing.T) {
 	handler := http.HandlerFunc(appContext.listProductVersionServices)
 	handler.ServeHTTP(rr, req)
 
+	mockProductDAO.AssertNumberOfCalls(t, "ListProductsVersionServices", 1)
+	mockHelmSvc.AssertNumberOfCalls(t, "SearchCharts", 1)
+	mockDockerSvc.AssertNumberOfCalls(t, "GetDockerTagsWithDate", 1)
+
 	assert.Equal(t, http.StatusOK, rr.Code, "Response should be Ok.")
 
 	response := string(rr.Body.Bytes())
@@ -476,4 +480,174 @@ func TestListProductVersionServices(t *testing.T) {
 	assert.Contains(t, response, `"dockerImageTag":"19.0.1-0"`)
 	assert.Contains(t, response, `"latestVersion":"",`)
 	assert.Contains(t, response, `"chartLatestVersion":"1.0"}]}`)
+}
+
+func TestListProductVersionServices_QueryError(t *testing.T) {
+	appContext := AppContext{}
+
+	req, err := http.NewRequest("GET", "/productVersionServices/?foo=bar", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.listProductVersionServices)
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestListProductVersionServices_ListProdVerSvcError(t *testing.T) {
+	appContext := AppContext{}
+
+	mockProductDAO := &mockRepo.ProductDAOInterface{}
+	mockProductDAO.On("ListProductsVersionServices", 999).Return(nil, errors.New("some error"))
+	appContext.Repositories.ProductDAO = mockProductDAO
+
+	req, err := http.NewRequest("GET", "/productVersionServices/?productVersionId=999", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.listProductVersionServices)
+	handler.ServeHTTP(rr, req)
+
+	mockProductDAO.AssertNumberOfCalls(t, "ListProductsVersionServices", 1)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be Ok.")
+}
+
+func TestNewProductVersionService(t *testing.T) {
+	appContext := AppContext{}
+
+	pvs := getProductVersionSvc()
+	mockProductDAO := &mockRepo.ProductDAOInterface{}
+	mockProductDAO.On("CreateProductVersionService", pvs).Return(888, nil)
+	appContext.Repositories.ProductDAO = mockProductDAO
+
+	req, err := http.NewRequest("POST", "/productVersionServices", payload(pvs))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.newProductVersionService)
+	handler.ServeHTTP(rr, req)
+
+	mockProductDAO.AssertNumberOfCalls(t, "CreateProductVersionService", 1)
+
+	assert.Equal(t, http.StatusCreated, rr.Code, "Response should be Created.")
+}
+
+func TestNewProductVersionService_UnmarshalPayloadError(t *testing.T) {
+	appContext := AppContext{}
+	rr := commonTestUnmarshalPayloadError(t, "/productVersionServices", appContext.newProductVersionService)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestNewProductVersionService_CreateProductVersionServiceError(t *testing.T) {
+	appContext := AppContext{}
+
+	mockProductDAO := &mockRepo.ProductDAOInterface{}
+	mockProductDAO.On("CreateProductVersionService", mock.Anything).Return(0, errors.New("some error"))
+	appContext.Repositories.ProductDAO = mockProductDAO
+
+	req, err := http.NewRequest("POST", "/productVersionServices", payload(getProductVersionSvc()))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.newProductVersionService)
+	handler.ServeHTTP(rr, req)
+
+	mockProductDAO.AssertNumberOfCalls(t, "CreateProductVersionService", 1)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be Created.")
+}
+
+func TestEditProductVersionService(t *testing.T) {
+	appContext := AppContext{}
+
+	pvs := getProductVersionSvc()
+	mockProductDAO := &mockRepo.ProductDAOInterface{}
+	mockProductDAO.On("EditProductVersionService", pvs).Return(nil)
+	appContext.Repositories.ProductDAO = mockProductDAO
+
+	req, err := http.NewRequest("POST", "/productVersionServices/edit", payload(pvs))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.editProductVersionService)
+	handler.ServeHTTP(rr, req)
+
+	mockProductDAO.AssertNumberOfCalls(t, "EditProductVersionService", 1)
+
+	assert.Equal(t, http.StatusOK, rr.Code, "Response should be Ok.")
+}
+
+func TestEditProductVersionService_UnmarshalPayloadError(t *testing.T) {
+	appContext := AppContext{}
+	rr := commonTestUnmarshalPayloadError(t, "/productVersionServices/edit", appContext.editProductVersionService)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestEditProductVersionService_EditProductVersionServiceError(t *testing.T) {
+	appContext := AppContext{}
+
+	mockProductDAO := &mockRepo.ProductDAOInterface{}
+	mockProductDAO.On("EditProductVersionService", mock.Anything).Return(errors.New("some error"))
+	appContext.Repositories.ProductDAO = mockProductDAO
+
+	req, err := http.NewRequest("POST", "/productVersionServices/edit", payload(getProductVersionSvc()))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.editProductVersionService)
+	handler.ServeHTTP(rr, req)
+
+	mockProductDAO.AssertNumberOfCalls(t, "EditProductVersionService", 1)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestDeleteProductVersionService(t *testing.T) {
+	appContext := AppContext{}
+
+	mockProductDAO := &mockRepo.ProductDAOInterface{}
+	mockProductDAO.On("DeleteProductVersionService", 888).Return(nil)
+	appContext.Repositories.ProductDAO = mockProductDAO
+
+	req, err := http.NewRequest("DELETE", "/productVersionServices/888", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/productVersionServices/{id}", appContext.deleteProductVersionService).Methods("DELETE")
+	r.ServeHTTP(rr, req)
+
+	mockProductDAO.AssertNumberOfCalls(t, "DeleteProductVersionService", 1)
+
+	assert.Equal(t, http.StatusOK, rr.Code, "Response should be Ok.")
+}
+
+func TestDeleteProductVersionService_DeleteProductVersionServiceError(t *testing.T) {
+	appContext := AppContext{}
+
+	mockProductDAO := &mockRepo.ProductDAOInterface{}
+	mockProductDAO.On("DeleteProductVersionService", 888).Return(errors.New("some error"))
+	appContext.Repositories.ProductDAO = mockProductDAO
+
+	req, err := http.NewRequest("DELETE", "/productVersionServices/888", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/productVersionServices/{id}", appContext.deleteProductVersionService).Methods("DELETE")
+	r.ServeHTTP(rr, req)
+
+	mockProductDAO.AssertNumberOfCalls(t, "DeleteProductVersionService", 1)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
