@@ -16,7 +16,7 @@ func doTest(t *testing.T, mode string) {
 	appContext := AppContext{}
 
 	mockEnvDao := mockEnvDaoWithLotOfThings(&appContext)
-	mockConvention := mockConventionInterface(&appContext)
+	mockConventionInterface(&appContext)
 
 	mockVariableDAO := mockVariableDAOWithLotOfThings(&appContext)
 
@@ -43,11 +43,6 @@ func doTest(t *testing.T, mode string) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
-	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 1)
-
-	if mode == "full" {
-		mockVariableDAO.AssertNumberOfCalls(t, "DeleteVariableByEnvironmentID", 1)
-	}
 
 }
 
