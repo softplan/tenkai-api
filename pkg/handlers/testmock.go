@@ -61,7 +61,7 @@ func mockGetEnv() model.Environment {
 	env.Name = "bar"
 	env.ClusterURI = "https://rancher-k8s-my-domain.com/k8s/clusters/c-kbfxr"
 	env.CACertificate = "my-certificate"
-	env.Token = "my-token"
+	env.Token = "kubeconfig-user-ph111:abbkdd57t68tq2lppg6lwb65sb69282jhsmh3ndwn4vhjtt8blmhh2"
 	env.Namespace = "dev"
 	env.Gateway = "my-gateway.istio-system.svc.cluster.local"
 	return env
@@ -124,6 +124,25 @@ func mockVariableDAOWithLotOfThings(appContext *AppContext) *mockRepo.VariableDA
 
 	appContext.Repositories.VariableDAO = mockVariableDAO
 
+	return mockVariableDAO
+}
+
+func mockGetAllVariablesByEnvironment(appContext *AppContext) *mockRepo.VariableDAOInterface {
+	var variables []model.Variable
+	variables = append(variables, mockGlobalVariable())
+	variables = append(variables, mockVariable()) // Not used variable
+	mockVariableDAO := &mockRepo.VariableDAOInterface{}
+	mockVariableDAO.On("GetAllVariablesByEnvironment", mock.Anything).Return(variables, nil)
+
+	appContext.Repositories.VariableDAO = mockVariableDAO
+
+	return mockVariableDAO
+}
+
+func mockGetAllVariablesByEnvironmentError(appContext *AppContext) *mockRepo.VariableDAOInterface {
+	mockVariableDAO := &mockRepo.VariableDAOInterface{}
+	mockVariableDAO.On("GetAllVariablesByEnvironment", mock.Anything).Return(nil, errors.New("some error"))
+	appContext.Repositories.VariableDAO = mockVariableDAO
 	return mockVariableDAO
 }
 
