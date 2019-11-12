@@ -37,9 +37,9 @@ func (appContext *AppContext) deleteEnvironment(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	env, error := appContext.Repositories.EnvironmentDAO.GetByID(id)
-	if error != nil {
-		log.Println("Error retrieving environment by ID: ", error)
+	env, err := appContext.Repositories.EnvironmentDAO.GetByID(id)
+	if err != nil {
+		log.Println("Error retrieving environment by ID: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
