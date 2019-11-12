@@ -222,7 +222,7 @@ func TestEditEnvironment_UnmarshalPayload(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
 
-func TestEditEnvironment_etByIDError(t *testing.T) {
+func TestEditEnvironment_GetByIDError(t *testing.T) {
 	appContext := AppContext{}
 	appContext.K8sConfigPath = "/tmp/"
 
@@ -271,5 +271,167 @@ func TestEditEnvironment_EditEnvironmentError(t *testing.T) {
 
 	mockEnvDAO.AssertNumberOfCalls(t, "GetByID", 1)
 	mockEnvDAO.AssertNumberOfCalls(t, "EditEnvironment", 1)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestDuplicateEnvironments(t *testing.T) {
+	appContext := AppContext{}
+	appContext.K8sConfigPath = "/tmp/"
+
+	mockEnvDAO := mockGetByID(&appContext)
+	mockEnvDAO.On("CreateEnvironment", mock.Anything).Return(1, nil)
+
+	mockVariableDAO := mockGetAllVariablesByEnvironment(&appContext)
+	mockVariableDAO.On("CreateVariable", mock.Anything).Return(nil, true, nil)
+
+	appContext.Repositories.VariableDAO = mockVariableDAO
+
+	req, err := http.NewRequest("GET", "/environments/duplicate/999", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, "tenkai-admin")
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/environments/duplicate/{id}", appContext.duplicateEnvironments).Methods("GET")
+	r.ServeHTTP(rr, req)
+
+	mockPrincipal(req, "tenkai-admin")
+
+	mockEnvDAO.AssertNumberOfCalls(t, "GetByID", 1)
+	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironment", 1)
+	mockEnvDAO.AssertNumberOfCalls(t, "CreateEnvironment", 1)
+	mockVariableDAO.AssertNumberOfCalls(t, "CreateVariable", 2)
+	assert.Equal(t, http.StatusCreated, rr.Code, "Response should be Created.")
+}
+
+func TestDuplicateEnvironments_Unauthorized(t *testing.T) {
+	appContext := AppContext{}
+
+	req, err := http.NewRequest("GET", "/environments/duplicate/999", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, "tenkai-user")
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/environments/duplicate/{id}", appContext.duplicateEnvironments).Methods("GET")
+	r.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusUnauthorized, rr.Code, "Response should be 401.")
+}
+
+func TestDuplicateEnvironments_StringConvError(t *testing.T) {
+	appContext := AppContext{}
+
+	req, err := http.NewRequest("GET", "/environments/duplicate/qwert", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, "tenkai-admin")
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/environments/duplicate/{id}", appContext.duplicateEnvironments).Methods("GET")
+	r.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestDuplicateEnvironments_GetByIDError(t *testing.T) {
+	appContext := AppContext{}
+	appContext.K8sConfigPath = "/tmp/"
+
+	mockEnvDAO := mockGetByIDError(&appContext)
+
+	req, err := http.NewRequest("GET", "/environments/duplicate/999", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, "tenkai-admin")
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/environments/duplicate/{id}", appContext.duplicateEnvironments).Methods("GET")
+	r.ServeHTTP(rr, req)
+
+	mockEnvDAO.AssertNumberOfCalls(t, "GetByID", 1)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestDuplicateEnvironments_GetAllVarByEnvError(t *testing.T) {
+	appContext := AppContext{}
+	appContext.K8sConfigPath = "/tmp/"
+
+	mockEnvDAO := mockGetByID(&appContext)
+	mockVariableDAO := mockGetAllVariablesByEnvironmentError(&appContext)
+
+	req, err := http.NewRequest("GET", "/environments/duplicate/999", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, "tenkai-admin")
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/environments/duplicate/{id}", appContext.duplicateEnvironments).Methods("GET")
+	r.ServeHTTP(rr, req)
+
+	mockEnvDAO.AssertNumberOfCalls(t, "GetByID", 1)
+	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironment", 1)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestDuplicateEnvironments_CreateEnvError(t *testing.T) {
+	appContext := AppContext{}
+	appContext.K8sConfigPath = "/tmp/"
+
+	mockEnvDAO := mockGetByID(&appContext)
+	mockVariableDAO := mockGetAllVariablesByEnvironment(&appContext)
+	mockEnvDAO.On("CreateEnvironment", mock.Anything).Return(0, errors.New("some error"))
+
+	req, err := http.NewRequest("GET", "/environments/duplicate/999", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, "tenkai-admin")
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/environments/duplicate/{id}", appContext.duplicateEnvironments).Methods("GET")
+	r.ServeHTTP(rr, req)
+
+	mockEnvDAO.AssertNumberOfCalls(t, "GetByID", 1)
+	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironment", 1)
+	mockEnvDAO.AssertNumberOfCalls(t, "CreateEnvironment", 1)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestDuplicateEnvironments_CreateVarError(t *testing.T) {
+	appContext := AppContext{}
+	appContext.K8sConfigPath = "/tmp/"
+
+	mockEnvDAO := mockGetByID(&appContext)
+	mockVariableDAO := mockGetAllVariablesByEnvironment(&appContext)
+	mockEnvDAO.On("CreateEnvironment", mock.Anything).Return(1, nil)
+	mockVariableDAO.On("CreateVariable", mock.Anything).Return(nil, true, errors.New("some error"))
+
+	req, err := http.NewRequest("GET", "/environments/duplicate/999", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, "tenkai-admin")
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/environments/duplicate/{id}", appContext.duplicateEnvironments).Methods("GET")
+	r.ServeHTTP(rr, req)
+
+	mockEnvDAO.AssertNumberOfCalls(t, "GetByID", 1)
+	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironment", 1)
+	mockEnvDAO.AssertNumberOfCalls(t, "CreateEnvironment", 1)
+	mockVariableDAO.AssertNumberOfCalls(t, "CreateVariable", 1)
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
