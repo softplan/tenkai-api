@@ -199,6 +199,13 @@ func mockGetAllEnvironments(appContext *AppContext) *mockRepo.EnvironmentDAOInte
 	return mockEnvDao
 }
 
+func mockGetAllEnvironmentsError(appContext *AppContext) *mockRepo.EnvironmentDAOInterface {
+	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
+	mockEnvDao.On("GetAllEnvironments", mock.Anything).Return(nil, errors.New("some error"))
+	appContext.Repositories.EnvironmentDAO = mockEnvDao
+	return mockEnvDao
+}
+
 func mockConventionInterface(appContext *AppContext) *mocks.ConventionInterface {
 	mockConvention := &mocks.ConventionInterface{}
 	mockConvention.On("GetKubeConfigFileName", "foo", "bar").Return("./config/foo_bar")

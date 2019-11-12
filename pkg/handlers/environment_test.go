@@ -435,3 +435,62 @@ func TestDuplicateEnvironments_CreateVarError(t *testing.T) {
 	mockVariableDAO.AssertNumberOfCalls(t, "CreateVariable", 1)
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
+
+func TestGetEnvironments(t *testing.T) {
+	appContext := AppContext{}
+	mockEnvDAO := mockGetAllEnvironments(&appContext)
+
+	req, err := http.NewRequest("GET", "/environments", bytes.NewBuffer(nil))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, "tenkai-user")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.getEnvironments)
+	handler.ServeHTTP(rr, req)
+
+	mockEnvDAO.AssertNumberOfCalls(t, "GetAllEnvironments", 1)
+	assert.Equal(t, http.StatusOK, rr.Code, "Response should be Ok.")
+
+	response := string(rr.Body.Bytes())
+	assert.Contains(t, response, `{"Envs":[{"ID":999`)
+	assert.Contains(t, response, `"group":"foo","name":"bar"`)
+	assert.Contains(t, response, `"cluster_uri":"https://rancher-k8s-my-domain.com/k8s/clusters/c-kbfxr"`)
+	assert.Contains(t, response, `"ca_certificate":"my-certificate"`)
+	assert.Contains(t, response, `"token":"kubeconfig-user-ph111:abbkdd57t68tq2lppg6lwb65sb69282jhsmh3ndwn4vhjtt8blmhh2"`)
+	assert.Contains(t, response, `"namespace":"dev","gateway":"my-gateway.istio-system.svc.cluster.local"`)
+	assert.Contains(t, response, `"productVersion":""}]}`)
+}
+
+func TestGetEnvironments_AccessDenied(t *testing.T) {
+	appContext := AppContext{}
+
+	req, err := http.NewRequest("GET", "/environments", bytes.NewBuffer(nil))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.getEnvironments)
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusMethodNotAllowed, rr.Code, "Response should be 405.")
+}
+
+func TestGetEnvironments_GetAllEnvError(t *testing.T) {
+	appContext := AppContext{}
+	mockEnvDAO := mockGetAllEnvironmentsError(&appContext)
+
+	req, err := http.NewRequest("GET", "/environments", bytes.NewBuffer(nil))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, "tenkai-user")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.getEnvironments)
+	handler.ServeHTTP(rr, req)
+
+	mockEnvDAO.AssertNumberOfCalls(t, "GetAllEnvironments", 1)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
