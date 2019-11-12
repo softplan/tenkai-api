@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"database/sql/driver"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/jinzhu/gorm"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
@@ -21,13 +20,6 @@ func getProductVersion() *model.ProductVersion {
 	item.Version = "1.0"
 	item.CopyLatestRelease = true
 	return &item
-}
-
-type AnyTime struct{}
-
-func (a AnyTime) Match(v driver.Value) bool {
-	_, ok := v.(time.Time)
-	return ok
 }
 
 func TestCreateProductVersionCopying(t *testing.T) {
@@ -69,8 +61,87 @@ func TestCreateProductVersionCopying(t *testing.T) {
 		WithArgs(AnyTime{}, AnyTime{}, nil, 1, "alfa", "latest").
 		WillReturnRows(rows4)
 
-	produtDAO.CreateProductVersionCopying(*payload)
+	_, err = produtDAO.CreateProductVersionCopying(*payload)
+	assert.Nil(t, err)
 
 	mock.ExpectationsWereMet()
 
+}
+
+func TestCreateProduct(t *testing.T) {
+
+	db, mock, err := sqlmock.New()
+	mock.MatchExpectationsInOrder(false)
+	assert.Nil(t, err)
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	produtDAO := ProductDAOImpl{}
+	produtDAO.Db = gormDB
+
+	product := model.Product{}
+	product.Name = "xpto"
+
+	rows := sqlmock.NewRows([]string{"id"}).AddRow(99)
+
+	mock.ExpectQuery(`INSERT INTO "products"`).
+		WithArgs(AnyTime{}, AnyTime{}, nil, product.Name).WillReturnRows(rows)
+
+	_, err = produtDAO.CreateProduct(product)
+	assert.Nil(t, err)
+
+	mock.ExpectationsWereMet()
+
+}
+
+func TestEdit(t *testing.T) {
+
+	db, mock, err := sqlmock.New()
+	mock.MatchExpectationsInOrder(false)
+	assert.Nil(t, err)
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	produtDAO := ProductDAOImpl{}
+	produtDAO.Db = gormDB
+
+	product := model.Product{}
+	product.Name = "xpto"
+	product.Model.ID = 99
+	product.ID = 1
+
+	mock.ExpectExec(`UPDATE "products" SET (.*) WHERE (.*)`).
+		WithArgs(AnyTime{}, nil, product.Name, product.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+
+	err = produtDAO.EditProduct(product)
+	assert.Nil(t, err)
+
+	productVersion := model.ProductVersion{}
+	productVersion.Version = "200"
+	productVersion.ProductID = 99
+	productVersion.Model.ID = 1
+
+	mock.ExpectExec(`UPDATE "product_versions" SET (.*) WHERE (.*)`).
+		WithArgs(AnyTime{}, nil, productVersion.ProductID, productVersion.Date, productVersion.Version, productVersion.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+
+	err = produtDAO.EditProductVersion(productVersion)
+	assert.Nil(t, err)
+
+	productVersionService := model.ProductVersionService{}
+	productVersionService.Model.ID = 1
+	productVersionService.ServiceName = "alfa"
+	productVersionService.ProductVersionID = 99
+	productVersionService.DockerImageTag = "latest"
+	productVersionService.LatestVersion = "latest"
+	productVersionService.ChartLatestVersion = "latest"
+
+	mock.ExpectExec(`UPDATE "product_version_services" SET (.*) WHERE (.*)`).
+		WithArgs(AnyTime{}, nil, productVersionService.ProductVersionID, productVersionService.ServiceName, productVersionService.DockerImageTag, productVersionService.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+
+	err = produtDAO.EditProductVersionService(productVersionService)
+	assert.Nil(t, err)
+
+	mock.ExpectationsWereMet()
 }
