@@ -15,10 +15,6 @@ import (
 
 func TestNewSolution(t *testing.T) {
 
-	var payload model.Solution
-	payload.Name = "alfa"
-	payload.Team = "teamx"
-
 	appContext := AppContext{}
 	appContext.K8sConfigPath = "/tmp/"
 
@@ -28,6 +24,9 @@ func TestNewSolution(t *testing.T) {
 	appContext.Repositories = Repositories{}
 	appContext.Repositories.SolutionDAO = &mockSolutionDAO
 
+	var payload model.Solution
+	payload.Name = "alfa"
+	payload.Team = "teamx"
 	payloadStr, _ := json.Marshal(payload)
 
 	req, err := http.NewRequest("POST", "/solutions", bytes.NewBuffer(payloadStr))

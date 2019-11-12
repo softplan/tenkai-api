@@ -17,3 +17,8 @@ func TestGetElkClient(t *testing.T) {
 	_, e := audit.ElkClient("http://localhost:8080", "alfa", "beta")
 	assert.Nil(t, e)
 }
+
+func TestGetAuditBuilder(t *testing.T) {
+	a := AuditingBuilder()
+	assert.NotNil(t, a)
+}
