@@ -1,12 +1,13 @@
 package handlers
 
 import (
-	"github.com/gorilla/mux"
-	"github.com/softplan/tenkai-api/pkg/constraints"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/gorilla/mux"
+	"github.com/softplan/tenkai-api/pkg/constraints"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestServices(t *testing.T) {
@@ -77,7 +78,7 @@ func TestDeletePods(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, []string{constraints.TenkaiAdmin})
+	mockPrincipal(req, constraints.TenkaiAdmin)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()

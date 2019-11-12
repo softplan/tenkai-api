@@ -61,7 +61,7 @@ func TestDeleteHelmRelease(t *testing.T) {
 	appContext.Repositories.EnvironmentDAO = mockEnvDao
 	appContext.HelmServiceAPI = mockHelmSvc
 
-	mockPrincipal(req, []string{"tenkai-helm-upgrade"})
+	mockPrincipal(req, "tenkai-helm-upgrade")
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.deleteHelmRelease)
@@ -254,7 +254,7 @@ func TestGetHelmCommand(t *testing.T) {
 	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
 	mockConvention := mockConventionInterface(&appContext)
 
-	mockPrincipal(req, []string{"tenkai-helm-upgrade"})
+	mockPrincipal(req, "tenkai-helm-upgrade")
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.getHelmCommand)
@@ -276,7 +276,7 @@ func TestMultipleInstall(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, []string{"tenkai-helm-upgrade"})
+	mockPrincipal(req, "tenkai-helm-upgrade")
 
 	appContext := AppContext{}
 	mockEnvDao := mockGetByID(&appContext)
@@ -317,7 +317,7 @@ func TestInstall(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, []string{"tenkai-helm-upgrade"})
+	mockPrincipal(req, "tenkai-helm-upgrade")
 
 	appContext := AppContext{}
 	mockEnvDao := mockGetByID(&appContext)
