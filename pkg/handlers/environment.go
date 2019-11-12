@@ -64,6 +64,7 @@ func (appContext *AppContext) editEnvironment(w http.ResponseWriter, r *http.Req
 	principal := util.GetPrincipal(r)
 	if !util.Contains(principal.Roles, constraints.TenkaiAdmin) {
 		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
+		return
 	}
 
 	var payload model.DataElement

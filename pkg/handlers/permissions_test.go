@@ -1,14 +1,15 @@
 package handlers
 
 import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 )
 
 func TestNewEnvironmentPermission(t *testing.T) {
@@ -24,7 +25,7 @@ func TestNewEnvironmentPermission(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, []string{constraints.TenkaiAdmin})
+	mockPrincipal(req, constraints.TenkaiAdmin)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()

@@ -3,14 +3,15 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
 	"github.com/stretchr/testify/mock"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 )
 
 func TestNewUser(t *testing.T) {
@@ -33,7 +34,7 @@ func TestNewUser(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mockPrincipal(req, []string{constraints.TenkaiAdmin})
+	mockPrincipal(req, constraints.TenkaiAdmin)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.newUser)
@@ -68,7 +69,7 @@ func TestCreateOrUpdateUser(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mockPrincipal(req, []string{constraints.TenkaiAdmin})
+	mockPrincipal(req, constraints.TenkaiAdmin)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.createOrUpdateUser)
@@ -98,7 +99,7 @@ func TestListUsers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mockPrincipal(req, []string{constraints.TenkaiAdmin})
+	mockPrincipal(req, constraints.TenkaiAdmin)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.listUsers)
@@ -127,7 +128,7 @@ func TestDeleteUser(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mockPrincipal(req, []string{constraints.TenkaiAdmin})
+	mockPrincipal(req, constraints.TenkaiAdmin)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
