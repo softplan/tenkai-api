@@ -19,7 +19,7 @@ import (
 )
 
 //mockPrincipal injects a http header with the specified role to be used only for testing.
-func mockPrincipal(req *http.Request, roles []string) {
+func mockPrincipal(req *http.Request, roles ...string) {
 	principal := model.Principal{Name: "alfa", Email: "beta@alfa.com", Roles: roles}
 	pSe, _ := json.Marshal(principal)
 	req.Header.Set("principal", string(pSe))
@@ -144,8 +144,6 @@ func commonTestUnmarshalPayloadError(t *testing.T, endpoint string, handFunc tes
 	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer([]byte(`["invalid": 123]`)))
 	assert.NoError(t, err)
 
-	mockPrincipal(req, []string{"tenkai-variables-save"})
-
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(handFunc)
 	handler.ServeHTTP(rr, req)
@@ -157,7 +155,7 @@ func commonTestHasAccessError(t *testing.T, endpoint string, handFunc testHandle
 	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer([]byte(`{"data":[{"environmentId":999}]}`)))
 	assert.NoError(t, err)
 
-	mockPrincipal(req, []string{"tenkai-variables-save"})
+	mockPrincipal(req, "tenkai-variables-save")
 
 	var envs []model.Environment
 	envs = append(envs, mockGetEnv())

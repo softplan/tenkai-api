@@ -3,14 +3,15 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	mockDbms "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
 	"github.com/softplan/tenkai-api/pkg/service/docker/mocks"
 	"github.com/stretchr/testify/mock"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 )
 
 func TestListDockerTags(t *testing.T) {
@@ -69,7 +70,7 @@ func TestListDockerRepositories(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mockPrincipal(req, []string{constraints.TenkaiAdmin})
+	mockPrincipal(req, constraints.TenkaiAdmin)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.listDockerRepositories)
@@ -104,7 +105,7 @@ func TestNewDockerRepository(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	mockPrincipal(req, []string{constraints.TenkaiAdmin})
+	mockPrincipal(req, constraints.TenkaiAdmin)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.newDockerRepository)
@@ -137,7 +138,7 @@ func TestDeleteDockerRepository(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mockPrincipal(req, []string{constraints.TenkaiAdmin})
+	mockPrincipal(req, constraints.TenkaiAdmin)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.deleteDockerRepository)

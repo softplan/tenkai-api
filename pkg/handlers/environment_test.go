@@ -76,7 +76,7 @@ func TestDeleteEnvironment(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, []string{"tenkai-admin"})
+	mockPrincipal(req, "tenkai-admin")
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -95,7 +95,7 @@ func TestDeleteEnvironment_Unauthorized(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, []string{"tenkai-user"})
+	mockPrincipal(req, "tenkai-user")
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -112,7 +112,7 @@ func TestDeleteEnvironment_StringConvError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, []string{"tenkai-admin"})
+	mockPrincipal(req, "tenkai-admin")
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -131,7 +131,7 @@ func TestDeleteEnvironment_GetByIDError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, []string{"tenkai-admin"})
+	mockPrincipal(req, "tenkai-admin")
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -153,7 +153,7 @@ func TestDeleteEnvironment_DeleteEnvironmentError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, []string{"tenkai-admin"})
+	mockPrincipal(req, "tenkai-admin")
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -181,7 +181,7 @@ func TestEditEnvironment(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, []string{"tenkai-admin"})
+	mockPrincipal(req, "tenkai-admin")
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.editEnvironment)
@@ -190,4 +190,86 @@ func TestEditEnvironment(t *testing.T) {
 	mockEnvDAO.AssertNumberOfCalls(t, "GetByID", 1)
 	mockEnvDAO.AssertNumberOfCalls(t, "EditEnvironment", 1)
 	assert.Equal(t, http.StatusOK, rr.Code, "Response should be Ok.")
+}
+
+func TestEditEnvironment_Unauthorized(t *testing.T) {
+	appContext := AppContext{}
+
+	req, err := http.NewRequest("POST", "/environments/edit", payload(mockGetEnv()))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, "tenkai-user")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.editEnvironment)
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusUnauthorized, rr.Code, "Response should be 401.")
+}
+
+func TestEditEnvironment_UnmarshalPayload(t *testing.T) {
+	appContext := AppContext{}
+	req, err := http.NewRequest("POST", "/environments/edit", bytes.NewBuffer([]byte(`["invalid": 123]`)))
+	assert.NoError(t, err)
+
+	mockPrincipal(req, "tenkai-admin")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.editEnvironment)
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestEditEnvironment_etByIDError(t *testing.T) {
+	appContext := AppContext{}
+	appContext.K8sConfigPath = "/tmp/"
+
+	mockEnvDAO := mockGetByIDError(&appContext)
+
+	var p model.DataElement
+	env := mockGetEnv()
+	env.Token = "kubeconfig-user-ph111:abbkdd57t68tq2lppg6lwb65sb69282jhsmh3ndwn4vhjtt8blmhh2"
+	p.Data = env
+
+	req, err := http.NewRequest("POST", "/environments/edit", payload(p))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, "tenkai-admin")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.editEnvironment)
+	handler.ServeHTTP(rr, req)
+
+	mockEnvDAO.AssertNumberOfCalls(t, "GetByID", 1)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestEditEnvironment_EditEnvironmentError(t *testing.T) {
+	appContext := AppContext{}
+	appContext.K8sConfigPath = "/tmp/"
+
+	mockEnvDAO := mockGetByID(&appContext)
+	mockEnvDAO.On("EditEnvironment", mock.Anything).Return(errors.New("some error"))
+
+	var p model.DataElement
+	env := mockGetEnv()
+	env.Token = "kubeconfig-user-ph111:abbkdd57t68tq2lppg6lwb65sb69282jhsmh3ndwn4vhjtt8blmhh2"
+	p.Data = env
+
+	req, err := http.NewRequest("POST", "/environments/edit", payload(p))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, "tenkai-admin")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.editEnvironment)
+	handler.ServeHTTP(rr, req)
+
+	mockEnvDAO.AssertNumberOfCalls(t, "GetByID", 1)
+	mockEnvDAO.AssertNumberOfCalls(t, "EditEnvironment", 1)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }

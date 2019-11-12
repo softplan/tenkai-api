@@ -2,13 +2,14 @@ package handlers
 
 import (
 	"bytes"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/service/_helm/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 )
 
 func TestGetVirtualServices(t *testing.T) {
@@ -36,7 +37,7 @@ func TestGetVirtualServices(t *testing.T) {
 	req, err := http.NewRequest("GET", "/getVirtualServices?environmentID=999", bytes.NewBuffer(nil))
 	assert.NoError(t, err)
 
-	mockPrincipal(req, []string{"tenkai-helm-upgrade"})
+	mockPrincipal(req, "tenkai-helm-upgrade")
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.getVirtualServices)
