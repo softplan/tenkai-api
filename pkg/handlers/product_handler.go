@@ -313,7 +313,6 @@ func (appContext *AppContext) verifyNewVersion(serviceName string, dockerImageTa
 
 	var payload model.ListDockerTagsRequest
 
-	//imageCache := appContext.chartImageCache[pvs.ServiceName]
 	object, ok := appContext.ChartImageCache.Load(serviceName)
 	var imageCache string
 	if ok {
@@ -329,11 +328,7 @@ func (appContext *AppContext) verifyNewVersion(serviceName string, dockerImageTa
 		}
 
 		appContext.ChartImageCache.Store(serviceName, payload.ImageName)
-
-		//appContext.chartImageCache[pvs.ServiceName] = payload.ImageName
-
 	} else {
-		//payload.ImageName = appContext.chartImageCache[pvs.ServiceName]
 		object, ok := appContext.ChartImageCache.Load(serviceName)
 		if ok {
 			payload.ImageName = object.(string)
