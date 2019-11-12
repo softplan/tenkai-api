@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
@@ -451,13 +452,7 @@ func TestListProductVersionServices(t *testing.T) {
 
 	appContext.ChartImageCache.Store("repo/my-chart", "myrepo.com/my-chart")
 
-	mockDockerSvc := &mocks.DockerServiceInterface{}
-	result := &model.ListDockerTagsResult{}
-	var tr model.TagResponse
-	tr.Tag = "19.0.1-0"
-	result.TagResponse = append(result.TagResponse, tr)
-	mockDockerSvc.On("GetDockerTagsWithDate", mock.Anything, mock.Anything, mock.Anything).Return(result, nil)
-	appContext.DockerServiceAPI = mockDockerSvc
+	mockDockerSvc := mockGetDockerTagsWithDate(&appContext, getTagResponse("19.0.2-0"))
 
 	req, err := http.NewRequest("GET", "/productVersionServices/?productVersionId=999", nil)
 	assert.NoError(t, err)
@@ -478,7 +473,7 @@ func TestListProductVersionServices(t *testing.T) {
 	assert.Contains(t, response, `"productVersionId":999,`)
 	assert.Contains(t, response, `"serviceName":"repo/my-chart - 0.1.0",`)
 	assert.Contains(t, response, `"dockerImageTag":"19.0.1-0"`)
-	assert.Contains(t, response, `"latestVersion":"",`)
+	assert.Contains(t, response, `"latestVersion":"19.0.2-0",`)
 	assert.Contains(t, response, `"chartLatestVersion":"1.0"}]}`)
 }
 
@@ -650,4 +645,128 @@ func TestDeleteProductVersionService_DeleteProductVersionServiceError(t *testing
 	mockProductDAO.AssertNumberOfCalls(t, "DeleteProductVersionService", 1)
 
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestVerifyNewVersion(t *testing.T) {
+	appContext := AppContext{}
+
+	appContext.ChartImageCache.Store("repo/my-chart - 0.1.0", "myrepo.com/my-chart")
+
+	mockDockerSvc := mockGetDockerTagsWithDate(&appContext, getTagResponse("19.0.2-0"))
+
+	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "19.0.1-0")
+	assert.NoError(t, err)
+	assert.NotNil(t, version)
+
+	assert.Equal(t, "19.0.2-0", version)
+
+	mockDockerSvc.AssertNumberOfCalls(t, "GetDockerTagsWithDate", 1)
+}
+
+func TestVerifyNewVersion_NotOk(t *testing.T) {
+	appContext := AppContext{}
+
+	appContext.ChartImageCache.Store("foo", "bar")
+
+	mockDockerSvc := mockGetDockerTagsWithDate(&appContext, getTagResponse("19.0.2-0"))
+	mockHelmSvc := &mockSvc.HelmServiceInterface{}
+	appContext.HelmServiceAPI = mockHelmSvc
+
+	bytes := []byte("{\"image\":{\"repository\":\"myrepo.com/my-chart\"}}")
+	mockHelmSvc.On("GetValues", "repo/my-chart - 0.1.0", "0").Return(bytes, nil)
+
+	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "19.0.1-0")
+	assert.NoError(t, err)
+	assert.NotNil(t, version)
+
+	assert.Equal(t, "19.0.2-0", version)
+
+	mockDockerSvc.AssertNumberOfCalls(t, "GetDockerTagsWithDate", 1)
+}
+
+func TestVerifyNewVersion_NotOk_Error(t *testing.T) {
+	appContext := AppContext{}
+
+	appContext.ChartImageCache.Store("repo/my-chart - 0.1.0", "")
+
+	mockHelmSvc := &mockSvc.HelmServiceInterface{}
+	appContext.HelmServiceAPI = mockHelmSvc
+
+	mockHelmSvc.On("GetValues", mock.Anything, mock.Anything).Return(nil, errors.New("some error"))
+
+	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "19.0.1-0")
+	assert.Error(t, err)
+	assert.NotNil(t, version)
+
+	assert.Equal(t, "", version)
+}
+
+func TestVerifyNewVersion_NotOk_UnmarshalError(t *testing.T) {
+	appContext := AppContext{}
+
+	appContext.ChartImageCache.Store("repo/my-chart - 0.1.0", "")
+
+	mockHelmSvc := &mockSvc.HelmServiceInterface{}
+	appContext.HelmServiceAPI = mockHelmSvc
+
+	bytes := []byte(`["foo":"baz"]`)
+	mockHelmSvc.On("GetValues", "repo/my-chart - 0.1.0", "0").Return(bytes, nil)
+
+	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "19.0.1-0")
+	assert.Error(t, err)
+	assert.NotNil(t, version)
+	assert.Equal(t, "", version)
+}
+
+func TestVerifyNewVersion_GetDockerTagsWithDateError(t *testing.T) {
+	appContext := AppContext{}
+
+	appContext.ChartImageCache.Store("repo/my-chart - 0.1.0", "myrepo.com/my-chart")
+
+	mockDockerSvc := &mocks.DockerServiceInterface{}
+	mockDockerSvc.On("GetDockerTagsWithDate", mock.Anything, mock.Anything, mock.Anything).
+		Return(nil, errors.New("some error"))
+	appContext.DockerServiceAPI = mockDockerSvc
+
+	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "19.0.1-0")
+	assert.Error(t, err)
+	assert.NotNil(t, version)
+	assert.Equal(t, "", version)
+
+	mockDockerSvc.AssertNumberOfCalls(t, "GetDockerTagsWithDate", 1)
+}
+
+func TestVerifyNewVersion_NoNewVersion(t *testing.T) {
+	appContext := AppContext{}
+
+	appContext.ChartImageCache.Store("repo/my-chart - 0.1.0", "myrepo.com/my-chart")
+
+	mockDockerSvc := mockGetDockerTagsWithDate(&appContext, getTagResponse("19.0.1-0"))
+
+	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "19.0.1-0")
+	assert.NoError(t, err)
+	assert.NotNil(t, version)
+
+	assert.Equal(t, "", version)
+
+	mockDockerSvc.AssertNumberOfCalls(t, "GetDockerTagsWithDate", 1)
+}
+
+func mockGetDockerTagsWithDate(appContext *AppContext, result *model.ListDockerTagsResult) *mocks.DockerServiceInterface {
+	mockDockerSvc := &mocks.DockerServiceInterface{}
+	mockDockerSvc.On("GetDockerTagsWithDate", mock.Anything, mock.Anything, mock.Anything).Return(result, nil)
+	appContext.DockerServiceAPI = mockDockerSvc
+
+	return mockDockerSvc
+}
+
+func getTagResponse(tag string) *model.ListDockerTagsResult {
+	result := &model.ListDockerTagsResult{}
+
+	var tr model.TagResponse
+	tr.Tag = tag
+	tr.Created = time.Date(2019, time.January, 1, 0, 0, 0, 0, time.UTC)
+	result.TagResponse = append(result.TagResponse, tr)
+
+	return result
 }
