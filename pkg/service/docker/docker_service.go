@@ -1,12 +1,14 @@
 package dockerapi
 
 import (
+	"bytes"
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/dbms/repository"
+	"io/ioutil"
 	"net/http"
 	"sort"
 	"strings"
@@ -17,11 +19,47 @@ import (
 //DockerServiceBuilder DockerServiceBuilder
 func DockerServiceBuilder() *DockerService {
 	r := &DockerService{}
+	r.httpClient = HTTPClientImpl{}
 	return r
+}
+
+//HTTPClient HTTPClient
+type HTTPClient interface {
+	doRequest(url string, user string, password string) ([]byte, error)
+}
+
+//HTTPClientImpl HTTPClientImpl
+type HTTPClientImpl struct {
+	HTTPClient
+}
+
+func (h HTTPClientImpl) doRequest(url string, user string, password string) ([]byte, error) {
+
+	client := getHTTPClient()
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	sEnc := base64.StdEncoding.EncodeToString([]byte(user + ":" + password))
+	req.Header.Add("Authorization", " Basic "+sEnc)
+
+	// Fetch Request
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	return bodyBytes, err
+
 }
 
 // DockerService is used to concretize DockerServiceInterface
 type DockerService struct {
+	httpClient HTTPClient
 }
 
 // DockerServiceInterface can be used to interact with a remote Docker repo
@@ -55,7 +93,7 @@ func getBaseDomainFromRepo(dao repository.DockerDAOInterface, imageName string) 
 	return &result, err
 }
 
-func cacheDockerTags(tags []string, imageName string, result *model.ListDockerTagsResult, ds DockerServiceInterface,
+func (docker DockerService) cacheDockerTags(tags []string, imageName string, result *model.ListDockerTagsResult,
 	repo *model.DockerRepo, matchFromDate bool, dateFrom time.Time, globalCache *sync.Map) error {
 
 	for _, tag := range tags {
@@ -78,7 +116,7 @@ func cacheDockerTags(tags []string, imageName string, result *model.ListDockerTa
 				result.TagResponse = append(result.TagResponse, model.TagResponse{Tag: tag, Created: createDate.(time.Time)})
 			}
 		} else {
-			date, err := ds.GetDate(*repo, imageName, tag)
+			date, err := docker.GetDate(*repo, imageName, tag)
 			if err != nil {
 				return err
 			}
@@ -104,7 +142,6 @@ func (docker DockerService) GetDockerTagsWithDate(payload model.ListDockerTagsRe
 		layout := "2006-01-02"
 		dateFrom, _ = time.Parse(layout, payload.From)
 		matchFromDate = true
-
 	}
 
 	repo, err := getBaseDomainFromRepo(dao, payload.ImageName)
@@ -119,7 +156,7 @@ func (docker DockerService) GetDockerTagsWithDate(payload model.ListDockerTagsRe
 
 	result := &model.ListDockerTagsResult{}
 
-	cacheErr := cacheDockerTags(tagResult.Tags, payload.ImageName, result, docker, repo, matchFromDate, dateFrom, globalCache)
+	cacheErr := docker.cacheDockerTags(tagResult.Tags, payload.ImageName, result, repo, matchFromDate, dateFrom, globalCache)
 	if cacheErr != nil {
 		return nil, cacheErr
 	}
@@ -139,24 +176,12 @@ func (docker DockerService) GetDate(repo model.DockerRepo, imageName string, tag
 
 	url := "https://" + repo.Host + "/v2/" + imageName + "/manifests/" + tag
 
-	client := getHTTPClient()
-
-	req, err := http.NewRequest("GET", url, nil)
+	body, err := docker.httpClient.doRequest(url, repo.Username, repo.Password)
 	if err != nil {
 		return nil, err
 	}
 
-	sEnc := base64.StdEncoding.EncodeToString([]byte(repo.Username + ":" + repo.Password))
-	req.Header.Add("Authorization", " Basic "+sEnc)
-
-	// Fetch Request
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	d := json.NewDecoder(resp.Body)
+	d := json.NewDecoder(bytes.NewReader(body))
 	var manifestResult model.ManifestResult
 
 	err = d.Decode(&manifestResult)
@@ -176,6 +201,11 @@ func (docker DockerService) GetDate(repo model.DockerRepo, imageName string, tag
 		return list[i].Created.Before(list[j].Created)
 	})
 
+	if len(list) <= 0 {
+		currentDate := time.Now()
+		return &currentDate, nil
+	}
+
 	return &list[len(list)-1].Created, nil
 
 }
@@ -185,25 +215,12 @@ func (docker DockerService) GetTags(repo *model.DockerRepo, imageName string) (*
 
 	url := "https://" + repo.Host + "/v2/" + getImageWithoutRepo(imageName) + "/tags/list"
 
-	client := getHTTPClient()
-
-	req, err := http.NewRequest("GET", url, nil)
+	body, err := docker.httpClient.doRequest(url, repo.Username, repo.Password)
 	if err != nil {
 		return nil, err
 	}
 
-	sEnc := base64.StdEncoding.EncodeToString([]byte(repo.Username + ":" + repo.Password))
-
-	req.Header.Add("Authorization", " Basic "+sEnc)
-
-	// Fetch Request
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	d := json.NewDecoder(resp.Body)
+	d := json.NewDecoder(bytes.NewReader(body))
 	var tagResult model.TagsResult
 
 	err = d.Decode(&tagResult)
