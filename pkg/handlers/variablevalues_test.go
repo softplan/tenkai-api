@@ -223,11 +223,7 @@ func TestGetVariablesByEnvironmentAndScope_Error(t *testing.T) {
 func TestGetVariablesNotUsed(t *testing.T) {
 	appContext := AppContext{}
 
-	var variables []model.Variable
-	variables = append(variables, mockGlobalVariable())
-	variables = append(variables, mockVariable()) // Not used variable
-	mockVariableDAO := &mockRepo.VariableDAOInterface{}
-	mockVariableDAO.On("GetAllVariablesByEnvironment", mock.Anything).Return(variables, nil)
+	mockVariableDAO := mockGetAllVariablesByEnvironment(&appContext)
 
 	mockEnvDao := mockGetByID(&appContext)
 	appContext.Repositories.VariableDAO = mockVariableDAO
