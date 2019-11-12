@@ -1,12 +1,13 @@
 package handlers
 
 import (
-	"github.com/softplan/tenkai-api/pkg/constraints"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/softplan/tenkai-api/pkg/constraints"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	mockAudit "github.com/softplan/tenkai-api/pkg/audit/mocks"
 )
@@ -36,7 +37,7 @@ func doTest(t *testing.T, mode string) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, []string{constraints.TenkaiPromote})
+	mockPrincipal(req, constraints.TenkaiPromote)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.promote)
@@ -62,7 +63,7 @@ func TestPromote_Unauthorized(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, []string{"role-unauthorized"})
+	mockPrincipal(req, "role-unauthorized")
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.promote)
@@ -79,7 +80,7 @@ func doTestParamsError(t *testing.T, url string) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, []string{constraints.TenkaiPromote})
+	mockPrincipal(req, constraints.TenkaiPromote)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.promote)
