@@ -174,12 +174,23 @@ func (appContext *AppContext) doIt(kubeConfig string, targetEnvironment *model.E
 
 	for _, e := range toDeploy {
 		global.Logger.Info(logFields, "deploying: "+e.Name+" - "+e.Chart)
-		_, err := appContext.simpleInstall(targetEnvironment, e.Chart, e.ChartVersion, e.Name, out, false, false)
+
+		installPayload := convertPayload(e)
+
+		_, err := appContext.simpleInstall(targetEnvironment, installPayload, out, false, false)
 		if err != nil {
 			global.Logger.Error(logFields, "error: "+err.Error())
 		}
 	}
 
+}
+
+func convertPayload(e releaseToDeploy) model.InstallPayload {
+	p := model.InstallPayload{}
+	p.Chart = e.Chart
+	p.ChartVersion = e.ChartVersion
+	p.Name = e.Name
+	return p
 }
 
 func (appContext *AppContext) purgeAll(kubeConfig string, envs []releaseToDeploy) error {

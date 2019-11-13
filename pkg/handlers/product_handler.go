@@ -307,11 +307,20 @@ func (appContext *AppContext) getChartLatestVersion(serviceName string, charts [
 	return ""
 }
 
-func (appContext *AppContext) verifyNewVersion(serviceName string, dockerImageTag string) (string, error) {
+func getCreateDateOfCurrentTag(tags []model.TagResponse, dockerImageTag string) time.Time {
+	var currentDate time.Time
+	for _, e := range tags {
+		if e.Tag == dockerImageTag {
+			currentDate = e.Created
+			break
+		}
+	}
+	return currentDate
+}
 
-	currentTag := getNumberOfTag(dockerImageTag)
+func (appContext *AppContext) getImageName(serviceName string) (string, error) {
 
-	var payload model.ListDockerTagsRequest
+	var result string
 
 	object, ok := appContext.ChartImageCache.Load(serviceName)
 	var imageCache string
@@ -322,17 +331,32 @@ func (appContext *AppContext) verifyNewVersion(serviceName string, dockerImageTa
 	if !ok || imageCache == "" {
 		var err error
 
-		payload.ImageName, err = analyser.GetImageFromService(appContext.HelmServiceAPI, serviceName, &appContext.Mutex)
+		result, err = analyser.GetImageFromService(appContext.HelmServiceAPI, serviceName, &appContext.Mutex)
 		if err != nil {
 			return "", err
 		}
 
-		appContext.ChartImageCache.Store(serviceName, payload.ImageName)
+		appContext.ChartImageCache.Store(serviceName, result)
+
 	} else {
 		object, ok := appContext.ChartImageCache.Load(serviceName)
 		if ok {
-			payload.ImageName = object.(string)
+			result = object.(string)
 		}
+	}
+	return result, nil
+}
+
+func (appContext *AppContext) verifyNewVersion(serviceName string, dockerImageTag string) (string, error) {
+
+	currentTag := getNumberOfTag(dockerImageTag)
+
+	var payload model.ListDockerTagsRequest
+	var err error
+
+	payload.ImageName, err = appContext.getImageName(serviceName)
+	if err != nil {
+		return "", err
 	}
 
 	//Get version tags
@@ -344,13 +368,7 @@ func (appContext *AppContext) verifyNewVersion(serviceName string, dockerImageTa
 	var currentDate time.Time
 	majorList := make([]model.TagResponse, 0)
 
-	//Get create date of current tag
-	for _, e := range result.TagResponse {
-		if e.Tag == dockerImageTag {
-			currentDate = e.Created
-			break
-		}
-	}
+	currentDate = getCreateDateOfCurrentTag(result.TagResponse, dockerImageTag)
 
 	//Get all tags created after current tag
 	for _, e := range result.TagResponse {
