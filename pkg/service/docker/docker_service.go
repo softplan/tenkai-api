@@ -77,7 +77,6 @@ type DockerServiceInterface interface {
 	GetDockerTagsWithDate(payload model.ListDockerTagsRequest, dao repository.DockerDAOInterface, globalCache *sync.Map) (*model.ListDockerTagsResult, error)
 	GetDate(repo model.DockerRepo, imageName string, tag string) (*time.Time, error)
 	GetTags(repo *model.DockerRepo, imageName string) (*model.TagsResult, error)
-	GetDateCalledTimes() int
 }
 
 func getImageWithoutRepo(image string) string {
@@ -257,9 +256,4 @@ func (docker DockerService) GetTags(repo *model.DockerRepo, imageName string) (*
 	}
 	return &tagResult, nil
 
-}
-
-// GetDateCalledTimes returns number of times the func was called.
-func (docker DockerService) GetDateCalledTimes() int {
-	return 0
 }
