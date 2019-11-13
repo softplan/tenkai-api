@@ -41,3 +41,13 @@ func TestGetDockerTagsWithDate(t *testing.T) {
 	assert.Equal(t, 2, len(result.TagResponse))
 
 }
+
+func TestBuilder(t *testing.T) {
+	ds := DockerServiceBuilder()
+	assert.NotNil(t, ds)
+}
+
+func TestGetHTTPClient(t *testing.T) {
+	c := getHTTPClient()
+	assert.NotNil(t, c)
+}
