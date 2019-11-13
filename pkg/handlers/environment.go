@@ -250,12 +250,6 @@ func (appContext *AppContext) getAllEnvironments(w http.ResponseWriter, r *http.
 
 	w.Header().Set(global.ContentType, global.JSONContentType)
 
-	//principal := util.GetPrincipal(r)
-
-	//if !contains(principal.Roles, TenkaiAdmin) {
-	//	http.Error(w, errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
-	//}
-
 	envResult := &model.EnvResult{}
 
 	var err error
@@ -267,7 +261,6 @@ func (appContext *AppContext) getAllEnvironments(w http.ResponseWriter, r *http.
 	w.WriteHeader(http.StatusOK)
 	data, _ := json.Marshal(envResult)
 	w.Write(data)
-
 }
 
 func removeEnvironmentFile(fileName string) error {
