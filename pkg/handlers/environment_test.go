@@ -494,3 +494,97 @@ func TestGetEnvironments_GetAllEnvError(t *testing.T) {
 	mockEnvDAO.AssertNumberOfCalls(t, "GetAllEnvironments", 1)
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
+
+func TestExport(t *testing.T) {
+	appContext := AppContext{}
+	mockVariableDAO := mockGetAllVariablesByEnvironment(&appContext)
+
+	req, err := http.NewRequest("GET", "/environments/export/999", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/environments/export/{id}", appContext.export).Methods("GET")
+	r.ServeHTTP(rr, req)
+
+	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironment", 1)
+	assert.Equal(t, http.StatusOK, rr.Code, "Response should be Ok.")
+
+	response := string(rr.Body.Bytes())
+	assert.Contains(t, response, `global username=user`)
+	assert.Contains(t, response, `bar password=password`)
+}
+
+func TestExport_GetAllVarByEnvError(t *testing.T) {
+	appContext := AppContext{}
+	mockVariableDAO := mockGetAllVariablesByEnvironmentError(&appContext)
+
+	req, err := http.NewRequest("GET", "/environments/export/999", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/environments/export/{id}", appContext.export).Methods("GET")
+	r.ServeHTTP(rr, req)
+
+	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironment", 1)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestExport_StringConvError(t *testing.T) {
+	appContext := AppContext{}
+
+	req, err := http.NewRequest("GET", "/environments/export/qwert", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/environments/export/{id}", appContext.export).Methods("GET")
+	r.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestGetAllEnvironments(t *testing.T) {
+	appContext := AppContext{}
+	mockEnvDAO := mockGetAllEnvironmentsPrincipal(&appContext, "")
+
+	req, err := http.NewRequest("GET", "/environments/all", bytes.NewBuffer(nil))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.getAllEnvironments)
+	handler.ServeHTTP(rr, req)
+
+	mockEnvDAO.AssertNumberOfCalls(t, "GetAllEnvironments", 1)
+	assert.Equal(t, http.StatusOK, rr.Code, "Response should be Ok.")
+
+	response := string(rr.Body.Bytes())
+	assert.Contains(t, response, `{"Envs":[{"ID":999`)
+	assert.Contains(t, response, `"group":"foo","name":"bar"`)
+	assert.Contains(t, response, `"cluster_uri":"https://rancher-k8s-my-domain.com/k8s/clusters/c-kbfxr"`)
+	assert.Contains(t, response, `"ca_certificate":"my-certificate"`)
+	assert.Contains(t, response, `"token":"kubeconfig-user-ph111:abbkdd57t68tq2lppg6lwb65sb69282jhsmh3ndwn4vhjtt8blmhh2"`)
+	assert.Contains(t, response, `"namespace":"dev","gateway":"my-gateway.istio-system.svc.cluster.local"`)
+	assert.Contains(t, response, `"productVersion":""}]}`)
+}
+
+func TestGetAllEnvironments_GetAllEnvError(t *testing.T) {
+	appContext := AppContext{}
+	mockEnvDAO := mockGetAllEnvironmentsError(&appContext)
+
+	req, err := http.NewRequest("GET", "/environments/all", bytes.NewBuffer(nil))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.getAllEnvironments)
+	handler.ServeHTTP(rr, req)
+
+	mockEnvDAO.AssertNumberOfCalls(t, "GetAllEnvironments", 1)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}

@@ -191,10 +191,14 @@ func commonTestHasAccessError(t *testing.T, endpoint string, handFunc testHandle
 }
 
 func mockGetAllEnvironments(appContext *AppContext) *mockRepo.EnvironmentDAOInterface {
+	return mockGetAllEnvironmentsPrincipal(appContext, "beta@alfa.com")
+}
+
+func mockGetAllEnvironmentsPrincipal(appContext *AppContext, principal string) *mockRepo.EnvironmentDAOInterface {
 	var envs []model.Environment
 	envs = append(envs, mockGetEnv())
 	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
-	mockEnvDao.On("GetAllEnvironments", "beta@alfa.com").Return(envs, nil)
+	mockEnvDao.On("GetAllEnvironments", principal).Return(envs, nil)
 	appContext.Repositories.EnvironmentDAO = mockEnvDao
 	return mockEnvDao
 }
