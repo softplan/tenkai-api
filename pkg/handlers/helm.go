@@ -298,7 +298,7 @@ func (appContext *AppContext) getHelmCommand(w http.ResponseWriter, r *http.Requ
 			return
 		}
 
-		command, errX := appContext.simpleInstall(environment, element.Chart, element.ChartVersion, element.Name, out, false, true)
+		command, errX := appContext.simpleInstall(environment, element, out, false, true)
 		if errX != nil {
 			http.Error(w, err.Error(), 501)
 			return
@@ -340,7 +340,7 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 
 	for _, element := range payload.Deployables {
 
-		_, err = appContext.simpleInstall(environment, element.Chart, element.ChartVersion, element.Name, out, false, false)
+		_, err = appContext.simpleInstall(environment, element, out, false, false)
 		if err != nil {
 			http.Error(w, err.Error(), 501)
 			return
@@ -399,7 +399,7 @@ func (appContext *AppContext) install(w http.ResponseWriter, r *http.Request) {
 
 	//TODO Verify if chart exists
 
-	_, err = appContext.simpleInstall(environment, payload.Chart, payload.ChartVersion, payload.Name, out, false, false)
+	_, err = appContext.simpleInstall(environment, payload, out, false, false)
 	if err != nil {
 		fmt.Println(out.String())
 		http.Error(w, err.Error(), 501)
@@ -430,7 +430,7 @@ func (appContext *AppContext) helmDryRun(w http.ResponseWriter, r *http.Request)
 	}
 
 	//TODO Verify if chart exists
-	_, err = appContext.simpleInstall(environment, payload.Chart, payload.ChartVersion, payload.Name, out, true, false)
+	_, err = appContext.simpleInstall(environment, payload, out, true, false)
 
 	if err != nil {
 		http.Error(w, err.Error(), 501)
@@ -460,14 +460,13 @@ func (appContext *AppContext) getArgs(variables []model.Variable, globalVariable
 	return args
 }
 
-func (appContext *AppContext) simpleInstall(environment *model.Environment, chart string, chartVersion string,
-	name string, out *bytes.Buffer, dryRun bool, helmCommandOnly bool) (string, error) {
+func (appContext *AppContext) simpleInstall(environment *model.Environment, installPayload model.InstallPayload, out *bytes.Buffer, dryRun bool, helmCommandOnly bool) (string, error) {
 
 	//WARNING - VERIFY IF CONFIG FILE EXISTS !!! This is the cause of  u.client.ReleaseHistory fail sometimes.
 
-	searchTerm := chart
-	if strings.Index(name, "gcm") > -1 {
-		searchTerm = name
+	searchTerm := installPayload.Chart
+	if strings.Index(installPayload.Name, "gcm") > -1 {
+		searchTerm = installPayload.Name
 	}
 	variables, err := appContext.Repositories.VariableDAO.GetAllVariablesByEnvironmentAndScope(int(environment.ID), searchTerm)
 	globalVariables := appContext.getGlobalVariables(int(environment.ID))
@@ -483,7 +482,7 @@ func (appContext *AppContext) simpleInstall(environment *model.Environment, char
 	args = append(args, "app.dateHour="+dt.String())
 
 	if err == nil {
-		name := name + "-" + environment.Namespace
+		name := installPayload.Name + "-" + environment.Namespace
 		kubeConfig := appContext.ConventionInterface.GetKubeConfigFileName(environment.Group, environment.Name)
 
 		if !helmCommandOnly {
@@ -491,8 +490,8 @@ func (appContext *AppContext) simpleInstall(environment *model.Environment, char
 			upgradeRequest := helmapi.UpgradeRequest{}
 			upgradeRequest.Kubeconfig = kubeConfig
 			upgradeRequest.Namespace = environment.Namespace
-			upgradeRequest.ChartVersion = chartVersion
-			upgradeRequest.Chart = chart
+			upgradeRequest.ChartVersion = installPayload.ChartVersion
+			upgradeRequest.Chart = installPayload.Chart
 			upgradeRequest.Variables = args
 			upgradeRequest.Dryrun = dryRun
 			upgradeRequest.Release = name
@@ -501,7 +500,7 @@ func (appContext *AppContext) simpleInstall(environment *model.Environment, char
 
 		}
 
-		return getHelmMessage(name, args, environment, chart), nil
+		return getHelmMessage(name, args, environment, installPayload.Chart), nil
 
 	}
 
