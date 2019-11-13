@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -36,4 +37,11 @@ func TestDepAnalyseMarshal(t *testing.T) {
 		t.Errorf("Error getting node name: got %v want %v", string(out), expected)
 	}
 
+}
+
+func TestModel(t *testing.T) {
+	mp := ConfigMap{}
+	mp.Name = "alfa"
+	mp.Value = "xpto"
+	assert.NotNil(t, mp)
 }
