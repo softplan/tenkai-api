@@ -156,6 +156,73 @@ func TestEditVariable_EditVariableError(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
 
+func TestGetVariables(t *testing.T) {
+	appContext := AppContext{}
+	mockVariableDAO := mockGetAllVariablesByEnvironment(&appContext)
+
+	req, err := http.NewRequest("GET", "/variables/999", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, "tenkai-user")
+	mockEnvDao := mockGetAllEnvironments(&appContext)
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/variables/{envId}", appContext.getVariables).Methods("GET")
+	r.ServeHTTP(rr, req)
+
+	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironment", 1)
+	mockEnvDao.AssertNumberOfCalls(t, "GetAllEnvironments", 1)
+	assert.Equal(t, http.StatusOK, rr.Code, "Response should be Ok.")
+
+	response := string(rr.Body.Bytes())
+	assert.Contains(t, response, `{"Variables":[{"ID":0,`)
+	assert.Contains(t, response, `"scope":"global","name":"username","value":"user",`)
+	assert.Contains(t, response, `"secret":false,"description":"Login username.","environmentId":999},{"ID":0,`)
+	assert.Contains(t, response, `"scope":"bar","name":"password","value":"password","secret":false,`)
+	assert.Contains(t, response, `"description":"Login password.","environmentId":999}]}`)
+}
+
+func TestGetVariables_Unauthorized(t *testing.T) {
+	appContext := AppContext{}
+
+	req, err := http.NewRequest("GET", "/variables/999", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockEnvDao := mockGetAllEnvironmentsError(&appContext)
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/variables/{envId}", appContext.getVariables).Methods("GET")
+	r.ServeHTTP(rr, req)
+
+	mockEnvDao.AssertNumberOfCalls(t, "GetAllEnvironments", 1)
+	assert.Equal(t, http.StatusUnauthorized, rr.Code, "Response should be 401.")
+}
+
+func TestGetVariables_GetAllVarByEnvError(t *testing.T) {
+	appContext := AppContext{}
+	mockVariableDAO := mockGetAllVariablesByEnvironmentError(&appContext)
+
+	req, err := http.NewRequest("GET", "/variables/999", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, "tenkai-user")
+	mockEnvDao := mockGetAllEnvironments(&appContext)
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/variables/{envId}", appContext.getVariables).Methods("GET")
+	r.ServeHTTP(rr, req)
+
+	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironment", 1)
+	mockEnvDao.AssertNumberOfCalls(t, "GetAllEnvironments", 1)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
 func getDataVariableElement(secret bool) model.DataVariableElement {
 	var payload model.DataVariableElement
 	payload.Data.Secret = secret
