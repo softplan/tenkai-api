@@ -159,9 +159,22 @@ func mockGetAllVariablesByEnvironmentAndScopeError(appContext *AppContext) *mock
 //testHandlerFunc should be used only for testing.
 type testHandlerFunc func(http.ResponseWriter, *http.Request)
 
-func commonTestUnmarshalPayloadError(t *testing.T, endpoint string, handFunc testHandlerFunc) *httptest.ResponseRecorder {
+func testUnmarshalPayloadError(t *testing.T, endpoint string, handFunc testHandlerFunc) *httptest.ResponseRecorder {
 	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer([]byte(`["invalid": 123]`)))
 	assert.NoError(t, err)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(handFunc)
+	handler.ServeHTTP(rr, req)
+
+	return rr
+}
+
+func testUnmarshalPayloadErrorWithPrincipal(t *testing.T, endpoint string, handFunc testHandlerFunc, role string) *httptest.ResponseRecorder {
+	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer([]byte(`["invalid": 123]`)))
+	assert.NoError(t, err)
+
+	mockPrincipal(req, role)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(handFunc)
@@ -312,4 +325,11 @@ func mockHelmSearchCharts(appContext *AppContext) *mockSvc.HelmServiceInterface 
 	mockHelmSvc.On("SearchCharts", mock.Anything, true).Return(&data)
 	appContext.HelmServiceAPI = mockHelmSvc
 	return mockHelmSvc
+}
+
+func mockEditVariableError(appContext *AppContext) *mockRepo.VariableDAOInterface {
+	mockVariableDAO := &mockRepo.VariableDAOInterface{}
+	mockVariableDAO.On("EditVariable", mock.Anything).Return(errors.New("some error"))
+	appContext.Repositories.VariableDAO = mockVariableDAO
+	return mockVariableDAO
 }
