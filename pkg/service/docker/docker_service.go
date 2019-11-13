@@ -33,6 +33,16 @@ type HTTPClientImpl struct {
 	HTTPClient
 }
 
+//CacheInfo CacheInfo
+type CacheInfo struct {
+	imageName     string
+	result        *model.ListDockerTagsResult
+	repo          *model.DockerRepo
+	matchFromDate bool
+	dateFrom      time.Time
+	globalCache   *sync.Map
+}
+
 func (h HTTPClientImpl) doRequest(url string, user string, password string) ([]byte, error) {
 
 	client := getHTTPClient()
@@ -93,41 +103,51 @@ func getBaseDomainFromRepo(dao repository.DockerDAOInterface, imageName string) 
 	return &result, err
 }
 
-func (docker DockerService) cacheDockerTags(tags []string, imageName string, result *model.ListDockerTagsResult,
-	repo *model.DockerRepo, matchFromDate bool, dateFrom time.Time, globalCache *sync.Map) error {
+func defineTagResponseFromCache(img string, tag string, createDate interface{}, cacheInfo CacheInfo) {
 
+	if cacheInfo.matchFromDate {
+		var object interface{}
+		var dateTime time.Time
+		object, _ = cacheInfo.globalCache.Load(img)
+		dateTime = object.(time.Time)
+		major := dateTime.After(cacheInfo.dateFrom)
+		if major {
+			cacheInfo.result.TagResponse = append(cacheInfo.result.TagResponse, model.TagResponse{Tag: tag, Created: createDate.(time.Time)})
+		}
+	} else {
+		cacheInfo.result.TagResponse = append(cacheInfo.result.TagResponse, model.TagResponse{Tag: tag, Created: createDate.(time.Time)})
+	}
+
+}
+
+func (docker DockerService) defineTagResponse(img string, tag string, cacheInfo CacheInfo) error {
+
+	date, err := docker.GetDate(*cacheInfo.repo, cacheInfo.imageName, tag)
+	if err != nil {
+		return err
+	}
+	if cacheInfo.matchFromDate {
+		if date.After(cacheInfo.dateFrom) {
+			cacheInfo.result.TagResponse = append(cacheInfo.result.TagResponse, model.TagResponse{Tag: tag, Created: *date})
+		}
+	} else {
+		cacheInfo.result.TagResponse = append(cacheInfo.result.TagResponse, model.TagResponse{Tag: tag, Created: *date})
+	}
+	cacheInfo.globalCache.Store(img, *date)
+	return nil
+}
+
+func (docker DockerService) cacheDockerTags(tags []string, cacheInfo CacheInfo) error {
 	for _, tag := range tags {
-
-		img := imageName + ":" + tag
-		createDate, ok := globalCache.Load(img)
-
+		img := cacheInfo.imageName + ":" + tag
+		createDate, ok := cacheInfo.globalCache.Load(img)
 		if ok {
-
-			if matchFromDate {
-				var object interface{}
-				var dateTime time.Time
-				object, _ = globalCache.Load(img)
-				dateTime = object.(time.Time)
-				major := dateTime.After(dateFrom)
-				if major {
-					result.TagResponse = append(result.TagResponse, model.TagResponse{Tag: tag, Created: createDate.(time.Time)})
-				}
-			} else {
-				result.TagResponse = append(result.TagResponse, model.TagResponse{Tag: tag, Created: createDate.(time.Time)})
-			}
+			defineTagResponseFromCache(img, tag, createDate, cacheInfo)
 		} else {
-			date, err := docker.GetDate(*repo, imageName, tag)
+			err := docker.defineTagResponse(img, tag, cacheInfo)
 			if err != nil {
 				return err
 			}
-			if matchFromDate {
-				if date.After(dateFrom) {
-					result.TagResponse = append(result.TagResponse, model.TagResponse{Tag: tag, Created: *date})
-				}
-			} else {
-				result.TagResponse = append(result.TagResponse, model.TagResponse{Tag: tag, Created: *date})
-			}
-			globalCache.Store(img, *date)
 		}
 	}
 	return nil
@@ -156,7 +176,15 @@ func (docker DockerService) GetDockerTagsWithDate(payload model.ListDockerTagsRe
 
 	result := &model.ListDockerTagsResult{}
 
-	cacheErr := docker.cacheDockerTags(tagResult.Tags, payload.ImageName, result, repo, matchFromDate, dateFrom, globalCache)
+	cacheInfo := CacheInfo{}
+	cacheInfo.imageName = payload.ImageName
+	cacheInfo.result = result
+	cacheInfo.repo = repo
+	cacheInfo.matchFromDate = matchFromDate
+	cacheInfo.dateFrom = dateFrom
+	cacheInfo.globalCache = globalCache
+
+	cacheErr := docker.cacheDockerTags(tagResult.Tags, cacheInfo)
 	if cacheErr != nil {
 		return nil, cacheErr
 	}
