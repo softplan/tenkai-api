@@ -210,15 +210,7 @@ func TestEditEnvironment_Unauthorized(t *testing.T) {
 
 func TestEditEnvironment_UnmarshalPayload(t *testing.T) {
 	appContext := AppContext{}
-	req, err := http.NewRequest("POST", "/environments/edit", bytes.NewBuffer([]byte(`["invalid": 123]`)))
-	assert.NoError(t, err)
-
-	mockPrincipal(req, "tenkai-admin")
-
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(appContext.editEnvironment)
-	handler.ServeHTTP(rr, req)
-
+	rr := testUnmarshalPayloadErrorWithPrincipal(t, "/environments/edit", appContext.editEnvironment, "tenkai-admin")
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
 

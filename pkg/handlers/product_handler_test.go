@@ -84,7 +84,7 @@ func TestNewProduct(t *testing.T) {
 
 func TestNewProduct_UnmarshalPayloadError(t *testing.T) {
 	appContext := AppContext{}
-	rr := commonTestUnmarshalPayloadError(t, "/products", appContext.newProduct)
+	rr := testUnmarshalPayloadError(t, "/products", appContext.newProduct)
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
 
@@ -127,7 +127,7 @@ func TestEditProduct(t *testing.T) {
 
 func TestEditProduct_UnmarshalPayloadError(t *testing.T) {
 	appContext := AppContext{}
-	rr := commonTestUnmarshalPayloadError(t, "/products/edit", appContext.editProduct)
+	rr := testUnmarshalPayloadError(t, "/products/edit", appContext.editProduct)
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
 
@@ -256,7 +256,7 @@ func TestNewProductVersion(t *testing.T) {
 
 func TestNewProductVersion_UnmarshalPayloadError(t *testing.T) {
 	appContext := AppContext{}
-	rr := commonTestUnmarshalPayloadError(t, "/productVersions", appContext.newProductVersion)
+	rr := testUnmarshalPayloadError(t, "/productVersions", appContext.newProductVersion)
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
 
@@ -534,7 +534,7 @@ func TestNewProductVersionService(t *testing.T) {
 
 func TestNewProductVersionService_UnmarshalPayloadError(t *testing.T) {
 	appContext := AppContext{}
-	rr := commonTestUnmarshalPayloadError(t, "/productVersionServices", appContext.newProductVersionService)
+	rr := testUnmarshalPayloadError(t, "/productVersionServices", appContext.newProductVersionService)
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
 
@@ -581,7 +581,7 @@ func TestEditProductVersionService(t *testing.T) {
 
 func TestEditProductVersionService_UnmarshalPayloadError(t *testing.T) {
 	appContext := AppContext{}
-	rr := commonTestUnmarshalPayloadError(t, "/productVersionServices/edit", appContext.editProductVersionService)
+	rr := testUnmarshalPayloadError(t, "/productVersionServices/edit", appContext.editProductVersionService)
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
 

@@ -115,15 +115,7 @@ func TestSaveVariableValues_HasAccessError(t *testing.T) {
 
 func TestSaveVariableValues_UnmarshalPayloadError(t *testing.T) {
 	appContext := AppContext{}
-	req, err := http.NewRequest("POST", "/saveVariableValues", bytes.NewBuffer([]byte(`["invalid": 123]`)))
-	assert.NoError(t, err)
-
-	mockPrincipal(req, "tenkai-variables-save")
-
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(appContext.saveVariableValues)
-	handler.ServeHTTP(rr, req)
-
+	rr := testUnmarshalPayloadErrorWithPrincipal(t, "/saveVariableValues", appContext.saveVariableValues, "tenkai-variables-save")
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
 
@@ -190,7 +182,7 @@ func TestGetVariablesByEnvironmentAndScope(t *testing.T) {
 
 func TestGetVariablesByEnvironmentAndScope_UnmarshalPayloadError(t *testing.T) {
 	appContext := AppContext{}
-	rr := commonTestUnmarshalPayloadError(t, "/listVariables", appContext.getVariablesByEnvironmentAndScope)
+	rr := testUnmarshalPayloadError(t, "/listVariables", appContext.getVariablesByEnvironmentAndScope)
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
 
