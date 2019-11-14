@@ -10,11 +10,6 @@ import (
 )
 
 func getUser() model.User {
-	// var envs []model.Environment
-	// e := getEnvironmentTestData()
-	// e.ID = 999
-	// envs = append(envs, e)
-
 	item := model.User{}
 	item.Email = "musk@mars.com"
 	item.DefaultEnvironmentID = 999
