@@ -74,3 +74,45 @@ func TestDeleteUser(t *testing.T) {
 
 	mock.ExpectationsWereMet()
 }
+
+func TestAssociateEnvironmentUser(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	mock.MatchExpectationsInOrder(false)
+	assert.Nil(t, err)
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	userDAO := UserDAOImpl{}
+	userDAO.Db = gormDB
+
+	payload := getUser()
+	payload.ID = 888
+
+	env := getEnvironmentTestData()
+	env.ID = 999
+
+	payload.Environments = append(payload.Environments, env)
+
+	row1 := sqlmock.NewRows([]string{"id", "email", "default_environment_id"}).AddRow(payload.ID, payload.Email, payload.DefaultEnvironmentID)
+	mock.ExpectQuery(`SELECT (.*) FROM "users"
+		WHERE "users"."deleted_at" IS NULL AND \(\("users"."id" = 888\)\)
+		ORDER BY "users"."id" ASC LIMIT 1
+	`).WillReturnRows(row1)
+
+	row2 := sqlmock.NewRows([]string{"id", "group", "name"}).AddRow(999, "foo", "bar")
+	mock.ExpectQuery(`SELECT (.*) FROM "environments"
+		WHERE "environments"."deleted_at" IS NULL AND \(\("environments"."id" = 999\)\)
+		ORDER BY "environments"."id" ASC LIMIT 1
+	`).WillReturnRows(row2)
+
+	mock.ExpectExec(`INSERT INTO "user_environment" \("user_id","environment_id"\) SELECT (.*)  WHERE NOT EXISTS 
+			\(SELECT (.*) FROM "user_environment" WHERE "user_id" = (.*) AND "environment_id" = (.*)\)`).
+		WithArgs(888, 999, 888, 999).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	e := userDAO.AssociateEnvironmentUser(888, 999)
+	assert.NoError(t, e)
+
+	mock.ExpectationsWereMet()
+}
