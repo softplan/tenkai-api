@@ -78,7 +78,7 @@ func (appContext *AppContext) deleteHelmRelease(w http.ResponseWriter, r *http.R
 
 	environment, err := appContext.Repositories.EnvironmentDAO.GetByID(int(envID))
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -109,14 +109,14 @@ func (appContext *AppContext) rollback(w http.ResponseWriter, r *http.Request) {
 	var payload model.GetRevisionRequest
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	//Locate Environment
 	environment, err := appContext.Repositories.EnvironmentDAO.GetByID(payload.EnvironmentID)
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -124,7 +124,7 @@ func (appContext *AppContext) rollback(w http.ResponseWriter, r *http.Request) {
 
 	err = appContext.HelmServiceAPI.RollbackRelease(kubeConfig, payload.ReleaseName, payload.Revision)
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -146,7 +146,7 @@ func (appContext *AppContext) revision(w http.ResponseWriter, r *http.Request) {
 	//Locate Environment
 	environment, err := appContext.Repositories.EnvironmentDAO.GetByID(payload.EnvironmentID)
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -174,7 +174,7 @@ func (appContext *AppContext) listReleaseHistory(w http.ResponseWriter, r *http.
 	//Locate Environment
 	environment, err := appContext.Repositories.EnvironmentDAO.GetByID(payload.EnvironmentID)
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -200,7 +200,7 @@ func (appContext *AppContext) listHelmDeploymentsByEnvironment(w http.ResponseWr
 	//Locate Environment
 	environment, err := appContext.Repositories.EnvironmentDAO.GetByID(id)
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -294,7 +294,7 @@ func (appContext *AppContext) getHelmCommand(w http.ResponseWriter, r *http.Requ
 		//Locate Environment
 		environment, err := appContext.Repositories.EnvironmentDAO.GetByID(element.EnvironmentID)
 		if err != nil {
-			http.Error(w, err.Error(), 501)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -334,7 +334,7 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 	//Locate Environment
 	environment, err := appContext.Repositories.EnvironmentDAO.GetByID(payload.EnvironmentID)
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -393,7 +393,7 @@ func (appContext *AppContext) install(w http.ResponseWriter, r *http.Request) {
 	//Locate Environment
 	environment, err := appContext.Repositories.EnvironmentDAO.GetByID(payload.EnvironmentID)
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -425,7 +425,7 @@ func (appContext *AppContext) helmDryRun(w http.ResponseWriter, r *http.Request)
 	//Locate Environment
 	environment, err := appContext.Repositories.EnvironmentDAO.GetByID(payload.EnvironmentID)
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 

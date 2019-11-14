@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -101,6 +102,57 @@ func TestRollback(t *testing.T) {
 	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 1)
 
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
+}
+
+func TestRollback_GetByIDError(t *testing.T) {
+	payloadStr, _ := json.Marshal(getRevision())
+	req, err := http.NewRequest("POST", "/rollback", bytes.NewBuffer(payloadStr))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	appContext := AppContext{}
+	mockEnvDao := mockGetByIDError(&appContext)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.rollback)
+	handler.ServeHTTP(rr, req)
+
+	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestRollback_UnmarshalPayloadError(t *testing.T) {
+	appContext := AppContext{}
+	rr := testUnmarshalPayloadError(t, "/rollback", appContext.rollback)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestRollback_RollbackReleaseError(t *testing.T) {
+	payloadStr, _ := json.Marshal(getRevision())
+	req, err := http.NewRequest("POST", "/rollback", bytes.NewBuffer(payloadStr))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	appContext := AppContext{}
+	mockEnvDao := mockGetByID(&appContext)
+
+	mockHelmSvc := &mockSvc.HelmServiceInterface{}
+	mockHelmSvc.On("RollbackRelease", "./config/foo_bar", "foo", 800).Return(errors.New("some error"))
+
+	mockConvention := mockConventionInterface(&appContext)
+
+	appContext.HelmServiceAPI = mockHelmSvc
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.rollback)
+	handler.ServeHTTP(rr, req)
+
+	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
+	mockHelmSvc.AssertNumberOfCalls(t, "RollbackRelease", 1)
+	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 1)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
 
 func TestRevision(t *testing.T) {
