@@ -51,19 +51,19 @@ func (appContext *AppContext) deleteHelmRelease(w http.ResponseWriter, r *http.R
 
 	environmentIDs, ok := r.URL.Query()["environmentID"]
 	if !ok || len(environmentIDs[0]) < 1 {
-		http.Error(w, errors.New("param environmentID is required").Error(), 501)
+		http.Error(w, errors.New("param environmentID is required").Error(), http.StatusInternalServerError)
 		return
 	}
 
 	releasesName, ok := r.URL.Query()["releaseName"]
 	if !ok || len(releasesName[0]) < 1 {
-		http.Error(w, errors.New("param releasesName is required").Error(), 501)
+		http.Error(w, errors.New("param releasesName is required").Error(), http.StatusInternalServerError)
 		return
 	}
 
 	purges, ok := r.URL.Query()["purge"]
 	if !ok || len(purges[0]) < 1 {
-		http.Error(w, errors.New("param purges, is required").Error(), 501)
+		http.Error(w, errors.New("param purges, is required").Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -87,7 +87,7 @@ func (appContext *AppContext) deleteHelmRelease(w http.ResponseWriter, r *http.R
 	purge, _ := strconv.ParseBool(purges[0])
 	err = appContext.HelmServiceAPI.DeleteHelmRelease(kubeConfig, releasesName[0], purge)
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
