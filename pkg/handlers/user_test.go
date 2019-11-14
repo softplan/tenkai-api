@@ -1,8 +1,7 @@
 package handlers
 
 import (
-	"bytes"
-	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -11,17 +10,15 @@ import (
 	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestNewUser(t *testing.T) {
-
-	var payload model.User
-	payload.Email = "alfa@beta.com.br"
-	payload.DefaultEnvironmentID = 1
-	payload.Environments = make([]model.Environment, 0)
-
-	payS, _ := json.Marshal(payload)
+	var p model.User
+	p.Email = "alfa@beta.com.br"
+	p.DefaultEnvironmentID = 1
+	p.Environments = make([]model.Environment, 0)
 
 	appContext := AppContext{}
 
@@ -29,10 +26,8 @@ func TestNewUser(t *testing.T) {
 	userDAO.On("CreateUser", mock.Anything).Return(nil)
 	appContext.Repositories.UserDAO = &userDAO
 
-	req, err := http.NewRequest("POST", "/user", bytes.NewBuffer(payS))
-	if err != nil {
-		t.Fatal(err)
-	}
+	req, err := http.NewRequest("POST", "/user", payload(p))
+	assert.NoError(t, err)
 
 	mockPrincipal(req, constraints.TenkaiAdmin)
 
@@ -40,23 +35,62 @@ func TestNewUser(t *testing.T) {
 	handler := http.HandlerFunc(appContext.newUser)
 	handler.ServeHTTP(rr, req)
 
-	// Check the status code is what we expect.
-	if status := rr.Code; status != http.StatusCreated {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusCreated)
-	}
+	userDAO.AssertNumberOfCalls(t, "CreateUser", 1)
+	assert.Equal(t, http.StatusCreated, rr.Code, "Response should be 201.")
+}
+
+func TestNewUser_Unauthorized(t *testing.T) {
+	appContext := AppContext{}
+
+	req, err := http.NewRequest("POST", "/user", nil)
+	assert.NoError(t, err)
+
+	mockPrincipal(req, "tenkai-user")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.newUser)
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusUnauthorized, rr.Code, "Response should be unauthorized.")
+}
+
+func TestNewUser_UnmarshalPayloadError(t *testing.T) {
+	appContext := AppContext{}
+	rr := testUnmarshalPayloadErrorWithPrincipal(t, "/user", appContext.newUser, "tenkai-admin")
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestNewUser_Error(t *testing.T) {
+	var p model.User
+	p.Email = "alfa@beta.com.br"
+	p.DefaultEnvironmentID = 1
+	p.Environments = make([]model.Environment, 0)
+
+	appContext := AppContext{}
+
+	userDAO := mocks.UserDAOInterface{}
+	userDAO.On("CreateUser", mock.Anything).Return(errors.New("some error"))
+	appContext.Repositories.UserDAO = &userDAO
+
+	req, err := http.NewRequest("POST", "/user", payload(p))
+	assert.NoError(t, err)
+
+	mockPrincipal(req, constraints.TenkaiAdmin)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.newUser)
+	handler.ServeHTTP(rr, req)
 
 	userDAO.AssertNumberOfCalls(t, "CreateUser", 1)
-
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
 
 func TestCreateOrUpdateUser(t *testing.T) {
 
-	var payload model.User
-	payload.Email = "alfa@beta.com.br"
-	payload.DefaultEnvironmentID = 1
-	payload.Environments = make([]model.Environment, 0)
-
-	payS, _ := json.Marshal(payload)
+	var p model.User
+	p.Email = "alfa@beta.com.br"
+	p.DefaultEnvironmentID = 1
+	p.Environments = make([]model.Environment, 0)
 
 	appContext := AppContext{}
 
@@ -64,28 +98,48 @@ func TestCreateOrUpdateUser(t *testing.T) {
 	userDAO.On("CreateOrUpdateUser", mock.Anything).Return(nil)
 	appContext.Repositories.UserDAO = &userDAO
 
-	req, err := http.NewRequest("POST", "/users/createOrUpdate", bytes.NewBuffer(payS))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	mockPrincipal(req, constraints.TenkaiAdmin)
+	req, err := http.NewRequest("POST", "/users/createOrUpdate", payload(p))
+	assert.NoError(t, err)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.createOrUpdateUser)
 	handler.ServeHTTP(rr, req)
 
-	// Check the status code is what we expect.
-	if status := rr.Code; status != http.StatusCreated {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusCreated)
-	}
+	userDAO.AssertNumberOfCalls(t, "CreateOrUpdateUser", 1)
+	assert.Equal(t, http.StatusCreated, rr.Code, "Response should be 201.")
+}
+
+func TestCreateOrUpdateUser_UnmarshalPayloadError(t *testing.T) {
+	appContext := AppContext{}
+	rr := testUnmarshalPayloadError(t, "/users/createOrUpdate", appContext.createOrUpdateUser)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestCreateOrUpdateUser_Error(t *testing.T) {
+
+	var p model.User
+	p.Email = "alfa@beta.com.br"
+	p.DefaultEnvironmentID = 1
+	p.Environments = make([]model.Environment, 0)
+
+	appContext := AppContext{}
+
+	userDAO := mocks.UserDAOInterface{}
+	userDAO.On("CreateOrUpdateUser", mock.Anything).Return(errors.New("some error"))
+	appContext.Repositories.UserDAO = &userDAO
+
+	req, err := http.NewRequest("POST", "/users/createOrUpdate", payload(p))
+	assert.NoError(t, err)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.createOrUpdateUser)
+	handler.ServeHTTP(rr, req)
 
 	userDAO.AssertNumberOfCalls(t, "CreateOrUpdateUser", 1)
-
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
 
 func TestListUsers(t *testing.T) {
-
 	appContext := AppContext{}
 
 	userDAO := mocks.UserDAOInterface{}
@@ -95,23 +149,33 @@ func TestListUsers(t *testing.T) {
 	appContext.Repositories.UserDAO = &userDAO
 
 	req, err := http.NewRequest("GET", "/users", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	mockPrincipal(req, constraints.TenkaiAdmin)
+	assert.NoError(t, err)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.listUsers)
 	handler.ServeHTTP(rr, req)
 
-	// Check the status code is what we expect.
-	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
-	}
+	userDAO.AssertNumberOfCalls(t, "ListAllUsers", 1)
+	assert.Equal(t, http.StatusOK, rr.Code, "Response should be ok.")
+}
+
+func TestListUsers_Error(t *testing.T) {
+	appContext := AppContext{}
+
+	userDAO := mocks.UserDAOInterface{}
+
+	userDAO.On("ListAllUsers").Return(nil, errors.New("some error"))
+	appContext.Repositories.UserDAO = &userDAO
+
+	req, err := http.NewRequest("GET", "/users", nil)
+	assert.NoError(t, err)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.listUsers)
+	handler.ServeHTTP(rr, req)
 
 	userDAO.AssertNumberOfCalls(t, "ListAllUsers", 1)
-
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
 
 func TestDeleteUser(t *testing.T) {
@@ -124,9 +188,7 @@ func TestDeleteUser(t *testing.T) {
 	appContext.Repositories.UserDAO = &userDAO
 
 	req, err := http.NewRequest("DELETE", "/users/9999", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 
 	mockPrincipal(req, constraints.TenkaiAdmin)
 
@@ -135,11 +197,50 @@ func TestDeleteUser(t *testing.T) {
 	r.HandleFunc("/users/{id}", appContext.deleteUser).Methods("DELETE")
 	r.ServeHTTP(rr, req)
 
-	// Check the status code is what we expect.
-	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
-	}
+	userDAO.AssertNumberOfCalls(t, "DeleteUser", 1)
+	assert.Equal(t, http.StatusOK, rr.Code, "Response should be ok.")
+}
+
+func TestDeleteUser_Unauthorized(t *testing.T) {
+
+	appContext := AppContext{}
+
+	userDAO := mocks.UserDAOInterface{}
+
+	userDAO.On("DeleteUser", mock.AnythingOfType("int")).Return(nil)
+	appContext.Repositories.UserDAO = &userDAO
+
+	req, err := http.NewRequest("DELETE", "/users/9999", nil)
+	assert.NoError(t, err)
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/users/{id}", appContext.deleteUser).Methods("DELETE")
+	r.ServeHTTP(rr, req)
 
 	userDAO.AssertNumberOfCalls(t, "DeleteUser", 1)
+	assert.Equal(t, http.StatusUnauthorized, rr.Code, "Response should be unauthorized.")
+}
 
+func TestDeleteUser_Error(t *testing.T) {
+
+	appContext := AppContext{}
+
+	userDAO := mocks.UserDAOInterface{}
+
+	userDAO.On("DeleteUser", mock.AnythingOfType("int")).Return(errors.New("some error"))
+	appContext.Repositories.UserDAO = &userDAO
+
+	req, err := http.NewRequest("DELETE", "/users/9999", nil)
+	assert.NoError(t, err)
+
+	mockPrincipal(req, constraints.TenkaiAdmin)
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/users/{id}", appContext.deleteUser).Methods("DELETE")
+	r.ServeHTTP(rr, req)
+
+	userDAO.AssertNumberOfCalls(t, "DeleteUser", 1)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
