@@ -184,6 +184,30 @@ func TestRevision(t *testing.T) {
 	assert.Equal(t, "\"foo: bar\"", string(rr.Body.Bytes()), "Response is not correct.")
 }
 
+func TestRevision_UnmarshalPayloadError(t *testing.T) {
+	appContext := AppContext{}
+	rr := testUnmarshalPayloadError(t, "/revision", appContext.revision)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestRevision_GetByIDError(t *testing.T) {
+	payloadStr, _ := json.Marshal(getRevision())
+	req, err := http.NewRequest("POST", "/revision", bytes.NewBuffer(payloadStr))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	appContext := AppContext{}
+	mockEnvDao := mockGetByIDError(&appContext)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.revision)
+	handler.ServeHTTP(rr, req)
+
+	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
 func TestListReleaseHistory(t *testing.T) {
 	var payload model.HistoryRequest
 	payload.EnvironmentID = 999
@@ -222,6 +246,33 @@ func TestListReleaseHistory(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 	assert.Equal(t, getExpecHistory(), string(rr.Body.Bytes()), "Response is not correct.")
+}
+
+func TestListReleaseHistory_UnmarshalPayloadError(t *testing.T) {
+	appContext := AppContext{}
+	rr := testUnmarshalPayloadError(t, "/listReleaseHistory", appContext.listReleaseHistory)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestListReleaseHistory_GetByIDError(t *testing.T) {
+	var payload model.HistoryRequest
+	payload.EnvironmentID = 999
+	payload.ReleaseName = "foo"
+	payloadStr, _ := json.Marshal(payload)
+
+	req, err := http.NewRequest("POST", "/listReleaseHistory", bytes.NewBuffer(payloadStr))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	appContext := AppContext{}
+	mockEnvDao := mockGetByIDError(&appContext)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.listReleaseHistory)
+	handler.ServeHTTP(rr, req)
+
+	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
 
 func TestListHelmDeploymentsByEnvironment(t *testing.T) {
