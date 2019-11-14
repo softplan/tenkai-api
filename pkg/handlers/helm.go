@@ -139,7 +139,7 @@ func (appContext *AppContext) revision(w http.ResponseWriter, r *http.Request) {
 	var payload model.GetRevisionRequest
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -167,7 +167,7 @@ func (appContext *AppContext) listReleaseHistory(w http.ResponseWriter, r *http.
 	var payload model.HistoryRequest
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
