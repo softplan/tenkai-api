@@ -77,6 +77,135 @@ func TestDeleteHelmRelease(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 }
 
+func TestDeleteHelmRelease_EnvironmentIDQueryError(t *testing.T) {
+	appContext := AppContext{}
+	req, err := http.NewRequest("DELETE", "/deleteHelmRelease?xxxxYYYY=999&releaseName=foo&purge=false", nil)
+	assert.NoError(t, err)
+
+	mockPrincipal(req, "tenkai-helm-upgrade")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.deleteHelmRelease)
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestDeleteHelmRelease_ReleaseNameQueryError(t *testing.T) {
+	appContext := AppContext{}
+	req, err := http.NewRequest("DELETE", "/deleteHelmRelease?environmentID=999&xxxxYYYY=foo&purge=false", nil)
+	assert.NoError(t, err)
+
+	mockPrincipal(req, "tenkai-helm-upgrade")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.deleteHelmRelease)
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestDeleteHelmRelease_PurgeQueryError(t *testing.T) {
+	appContext := AppContext{}
+	req, err := http.NewRequest("DELETE", "/deleteHelmRelease?environmentID=999&releaseName=foo&xxxxYYYY=false", nil)
+	assert.NoError(t, err)
+
+	mockPrincipal(req, "tenkai-helm-upgrade")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.deleteHelmRelease)
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestDeleteHelmRelease_HasAccessError(t *testing.T) {
+	appContext := AppContext{}
+	req, err := http.NewRequest("DELETE", "/deleteHelmRelease?environmentID=999&releaseName=foo&purge=false", nil)
+	assert.NoError(t, err)
+
+	var envs []model.Environment
+	envs = append(envs, mockGetEnv())
+	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
+	mockEnvDao.On("GetAllEnvironments", "beta@alfa.com").Return(nil, errors.New("Record not found"))
+
+	appContext.Repositories = Repositories{}
+	appContext.Repositories.EnvironmentDAO = mockEnvDao
+
+	mockPrincipal(req, "tenkai-helm-upgrade")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.deleteHelmRelease)
+	handler.ServeHTTP(rr, req)
+
+	mockEnvDao.AssertNumberOfCalls(t, "GetAllEnvironments", 1)
+
+	assert.Equal(t, http.StatusUnauthorized, rr.Code, "Response should be unauthorized.")
+}
+
+func TestDeleteHelmRelease_GetByIDError(t *testing.T) {
+	appContext := AppContext{}
+	req, err := http.NewRequest("DELETE", "/deleteHelmRelease?environmentID=999&releaseName=foo&purge=false", nil)
+	assert.NoError(t, err)
+
+	var envs []model.Environment
+	envs = append(envs, mockGetEnv())
+	mockEnvDao := mockGetByIDError(&appContext)
+	mockEnvDao.On("GetAllEnvironments", "beta@alfa.com").Return(envs, nil)
+
+	appContext.Repositories = Repositories{}
+	appContext.Repositories.EnvironmentDAO = mockEnvDao
+
+	mockPrincipal(req, "tenkai-helm-upgrade")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.deleteHelmRelease)
+	handler.ServeHTTP(rr, req)
+
+	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
+	mockEnvDao.AssertNumberOfCalls(t, "GetAllEnvironments", 1)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestDeleteHelmRelease_DeleteHelmReleaseError(t *testing.T) {
+	appContext := AppContext{}
+	req, err := http.NewRequest("DELETE", "/deleteHelmRelease?environmentID=999&releaseName=foo&purge=false", nil)
+	assert.NoError(t, err)
+
+	var envs []model.Environment
+	envs = append(envs, mockGetEnv())
+	mockEnvDao := mockGetByID(&appContext)
+	mockEnvDao.On("GetAllEnvironments", "beta@alfa.com").Return(envs, nil)
+
+	mockHelmSvc := &mockSvc.HelmServiceInterface{}
+	mockHelmSvc.On("DeleteHelmRelease", "./config/foo_bar", "foo", false).Return(errors.New("some error"))
+
+	auditValues := make(map[string]string)
+	auditValues["environment"] = "bar"
+	auditValues["purge"] = "false"
+	auditValues["name"] = "foo"
+
+	mockConvention := mockConventionInterface(&appContext)
+
+	appContext.Repositories = Repositories{}
+	appContext.Repositories.EnvironmentDAO = mockEnvDao
+	appContext.HelmServiceAPI = mockHelmSvc
+
+	mockPrincipal(req, "tenkai-helm-upgrade")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.deleteHelmRelease)
+	handler.ServeHTTP(rr, req)
+
+	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
+	mockEnvDao.AssertNumberOfCalls(t, "GetAllEnvironments", 1)
+	mockHelmSvc.AssertNumberOfCalls(t, "DeleteHelmRelease", 1)
+	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 1)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
 func TestRollback(t *testing.T) {
 	payloadStr, _ := json.Marshal(getRevision())
 	req, err := http.NewRequest("POST", "/rollback", bytes.NewBuffer(payloadStr))
@@ -478,6 +607,24 @@ func TestGetHelmCommand_Unauthorized(t *testing.T) {
 func TestGetHelmCommand_UnmarshalPayloadError(t *testing.T) {
 	appContext := AppContext{}
 	rr := testUnmarshalPayloadErrorWithPrincipal(t, "/getHelmCommand", appContext.getHelmCommand, "tenkai-helm-upgrade")
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestGetHelmCommand_GetByIDError(t *testing.T) {
+	req, err := http.NewRequest("POST", "/getHelmCommand", getMultipleInstallPayload())
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	appContext := AppContext{}
+	mockEnvDao := mockGetByIDError(&appContext)
+
+	mockPrincipal(req, "tenkai-helm-upgrade")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.getHelmCommand)
+	handler.ServeHTTP(rr, req)
+
+	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
 
