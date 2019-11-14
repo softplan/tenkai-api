@@ -300,6 +300,64 @@ func TestListHelmDeploymentsByEnvironment(t *testing.T) {
 	assert.Equal(t, string(j), string(rr.Body.Bytes()), "Response is not correct.")
 }
 
+func TestListHelmDeploymentsByEnvironment_StringConvError(t *testing.T) {
+
+	req, err := http.NewRequest("GET", "/listHelmDeploymentsByEnvironment/qwert", bytes.NewBuffer(nil))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	appContext := AppContext{}
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/listHelmDeploymentsByEnvironment/{id}", appContext.listHelmDeploymentsByEnvironment).Methods("GET")
+	r.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestListHelmDeploymentsByEnvironment_GetByIDError(t *testing.T) {
+
+	req, err := http.NewRequest("GET", "/listHelmDeploymentsByEnvironment/999", bytes.NewBuffer(nil))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	appContext := AppContext{}
+	mockEnvDao := mockGetByIDError(&appContext)
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/listHelmDeploymentsByEnvironment/{id}", appContext.listHelmDeploymentsByEnvironment).Methods("GET")
+	r.ServeHTTP(rr, req)
+
+	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestListHelmDeploymentsByEnvironment_ListHelmDeploymentsError(t *testing.T) {
+
+	req, err := http.NewRequest("GET", "/listHelmDeploymentsByEnvironment/999", bytes.NewBuffer(nil))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	appContext := AppContext{}
+	mockEnvDao := mockGetByID(&appContext)
+	mockConvention := mockConventionInterface(&appContext)
+	mockHelmSvc := mockListHelmDeploymentsError(&appContext)
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/listHelmDeploymentsByEnvironment/{id}", appContext.listHelmDeploymentsByEnvironment).Methods("GET")
+	r.ServeHTTP(rr, req)
+
+	mockHelmSvc.AssertNumberOfCalls(t, "ListHelmDeployments", 1)
+	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
+	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 1)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
 func TestHasConfigMap(t *testing.T) {
 	req, err := http.NewRequest("POST", "/hasConfigMap", getPayloadChartRequest())
 	assert.NoError(t, err)
@@ -343,8 +401,33 @@ func TestGetChartVariables(t *testing.T) {
 
 	mockHelmSvc.AssertNumberOfCalls(t, "GetTemplate", 1)
 
-	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
+	assert.Equal(t, http.StatusOK, rr.Code, "Response should be Ok.")
 	assert.Equal(t, partialResult, string(rr.Body.Bytes()), "Response is not correct.")
+}
+
+func TestGetChartVariables_UnmarshalPayloadError(t *testing.T) {
+	appContext := AppContext{}
+	rr := testUnmarshalPayloadError(t, "/getChartVariables", appContext.getChartVariables)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestGetChartVariables_GetTemplateError(t *testing.T) {
+	req, err := http.NewRequest("POST", "/getChartVariables", getPayloadChartRequest())
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockHelmSvc := &mockSvc.HelmServiceInterface{}
+	mockHelmSvc.On("GetTemplate", mock.Anything, "foo", "0.1.0", "values").Return(nil, errors.New("some error"))
+
+	appContext := AppContext{}
+	appContext.HelmServiceAPI = mockHelmSvc
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.getChartVariables)
+	handler.ServeHTTP(rr, req)
+
+	mockHelmSvc.AssertNumberOfCalls(t, "GetTemplate", 1)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
 
 func TestGetHelmCommand(t *testing.T) {
@@ -367,11 +450,35 @@ func TestGetHelmCommand(t *testing.T) {
 	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 1)
 	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironmentAndScope", 2)
 
+	assert.Equal(t, http.StatusOK, rr.Code, "Response should be Ok.")
+
 	response := string(rr.Body.Bytes())
 	assert.Contains(t, response, "helm upgrade --install my-foo-dev")
 	assert.Contains(t, response, "--set \"app.username=user")
 	assert.Contains(t, response, "istio.virtualservices.gateways[0]=my-gateway.istio-system.svc.cluster.local")
 	assert.Contains(t, response, "foo --namespace=dev")
+}
+
+func TestGetHelmCommand_Unauthorized(t *testing.T) {
+	req, err := http.NewRequest("POST", "/getHelmCommand", getMultipleInstallPayload())
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	appContext := AppContext{}
+
+	mockPrincipal(req, "tenkai-user")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.getHelmCommand)
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusUnauthorized, rr.Code, "Response should be 401.")
+}
+
+func TestGetHelmCommand_UnmarshalPayloadError(t *testing.T) {
+	appContext := AppContext{}
+	rr := testUnmarshalPayloadErrorWithPrincipal(t, "/getHelmCommand", appContext.getHelmCommand, "tenkai-helm-upgrade")
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
 
 func TestMultipleInstall(t *testing.T) {
