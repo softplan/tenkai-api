@@ -16,20 +16,6 @@ func getUser() model.User {
 	return item
 }
 
-// func getUser() model.User {
-// 	var envs []model.Environment
-// 	e := getEnvironmentTestData()
-// 	e.ID = 999
-// 	envs = append(envs, e)
-
-// 	item := model.User{}
-// 	item.ID = 998
-// 	item.Email = "musk@mars.com"
-// 	item.DefaultEnvironmentID = 999
-// 	item.Environments = envs
-// 	return item
-// }
-
 func TestCreateUser(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	mock.MatchExpectationsInOrder(false)
@@ -84,48 +70,6 @@ func TestDeleteUser(t *testing.T) {
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	e := userDAO.DeleteUser(int(payload.ID))
-	assert.NoError(t, e)
-
-	mock.ExpectationsWereMet()
-}
-
-func TestAssociateEnvironmentUser(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	mock.MatchExpectationsInOrder(false)
-	assert.Nil(t, err)
-
-	gormDB, err := gorm.Open("postgres", db)
-	defer gormDB.Close()
-
-	userDAO := UserDAOImpl{}
-	userDAO.Db = gormDB
-
-	payload := getUser()
-	payload.ID = 888
-
-	env := getEnvironmentTestData()
-	env.ID = 999
-
-	payload.Environments = append(payload.Environments, env)
-
-	row1 := sqlmock.NewRows([]string{"id", "email", "default_environment_id"}).AddRow(payload.ID, payload.Email, payload.DefaultEnvironmentID)
-	mock.ExpectQuery(`SELECT (.*) FROM "users"
-		WHERE "users"."deleted_at" IS NULL AND \(\("users"."id" = 888\)\)
-		ORDER BY "users"."id" ASC LIMIT 1
-	`).WillReturnRows(row1)
-
-	row2 := sqlmock.NewRows([]string{"id", "group", "name"}).AddRow(888, "foo", "bar")
-	mock.ExpectQuery(`SELECT (.*) FROM "environments"
-		WHERE "environments"."deleted_at" IS NULL AND \(\("environments"."id" = 999\)\)
-		ORDER BY "environments"."id" ASC LIMIT 1
-	`).WillReturnRows(row2)
-
-	row3 := sqlmock.NewRows([]string{"id"}).AddRow(888)
-	mock.ExpectQuery(`INSERT INTO "user_environment"`).
-		WithArgs(888, 999, 888, 999).
-		WillReturnRows(row3)
-
-	e := userDAO.AssociateEnvironmentUser(888, 999)
 	assert.NoError(t, e)
 
 	mock.ExpectationsWereMet()
