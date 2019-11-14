@@ -261,6 +261,14 @@ func mockListHelmDeployments(appContext *AppContext) *mockSvc.HelmServiceInterfa
 	return mockHelmSvc
 }
 
+func mockListHelmDeploymentsError(appContext *AppContext) *mockSvc.HelmServiceInterface {
+	mockHelmSvc := &mockSvc.HelmServiceInterface{}
+	mockHelmSvc.On("ListHelmDeployments", mock.Anything, "dev").Return(nil, errors.New("some error"))
+
+	appContext.HelmServiceAPI = mockHelmSvc
+	return mockHelmSvc
+}
+
 func payload(v interface{}) *bytes.Buffer {
 	payloadStr, _ := json.Marshal(v)
 	return bytes.NewBuffer(payloadStr)

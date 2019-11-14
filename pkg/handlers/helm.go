@@ -193,7 +193,7 @@ func (appContext *AppContext) listHelmDeploymentsByEnvironment(w http.ResponseWr
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -211,7 +211,7 @@ func (appContext *AppContext) listHelmDeploymentsByEnvironment(w http.ResponseWr
 	result, err := appContext.HelmServiceAPI.ListHelmDeployments(kubeConfig, environment.Namespace)
 
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -254,14 +254,14 @@ func (appContext *AppContext) getChartVariables(w http.ResponseWriter, r *http.R
 	var payload model.GetChartRequest
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	result, err := appContext.HelmServiceAPI.GetTemplate(&appContext.Mutex, payload.ChartName, payload.ChartVersion, "values")
 
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -282,7 +282,7 @@ func (appContext *AppContext) getHelmCommand(w http.ResponseWriter, r *http.Requ
 	var payload model.MultipleInstallPayload
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
