@@ -21,7 +21,7 @@ import (
 func getCharts() *[]model.SearchResult {
 	charts := make([]model.SearchResult, 0)
 	searchResult := model.SearchResult{}
-	searchResult.Name = "alfa"
+	searchResult.Name = "foo"
 	searchResult.Description = "alfaChart"
 	searchResult.ChartVersion = "1.0"
 	charts = append(charts, searchResult)
@@ -530,6 +530,7 @@ func TestGetChartVariables(t *testing.T) {
 
 	partialResult := "{\"app\": {\"dateHour\": 0,\"pullSecret\": \"foo\"} }"
 	mockHelmSvc.On("GetTemplate", mock.Anything, "foo", "0.1.0", "values").Return([]byte(partialResult), nil)
+	mockHelmSvc.On("SearchCharts", mock.Anything, false).Return(getCharts())
 
 	appContext := AppContext{}
 	appContext.HelmServiceAPI = mockHelmSvc
@@ -557,6 +558,7 @@ func TestGetChartVariables_GetTemplateError(t *testing.T) {
 
 	mockHelmSvc := &mockSvc.HelmServiceInterface{}
 	mockHelmSvc.On("GetTemplate", mock.Anything, "foo", "0.1.0", "values").Return(nil, errors.New("some error"))
+	mockHelmSvc.On("SearchCharts", mock.Anything, false).Return(getCharts())
 
 	appContext := AppContext{}
 	appContext.HelmServiceAPI = mockHelmSvc
