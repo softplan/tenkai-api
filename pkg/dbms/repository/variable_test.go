@@ -23,14 +23,7 @@ func TestEditVariable(t *testing.T) {
 
 	mock.MatchExpectationsInOrder(false)
 
-	v := model.Variable{}
-	v.EnvironmentID = 10
-	v.Description = "Description value"
-	v.Secret = false
-	v.Value = "value value"
-	v.Name = "name value"
-	v.Scope = "serviceA"
-	v.ID = 1
+	v := getVariable()
 
 	mock.ExpectExec(`UPDATE "variables" SET (.*) WHERE (.*)`).
 		WithArgs(AnyTime{}, nil, v.Scope, v.Name, v.Value, v.Secret, v.Description, v.EnvironmentID, v.ID).WillReturnResult(sqlmock.NewResult(1, 1))
@@ -57,14 +50,7 @@ func TestCreateVariable(t *testing.T) {
 
 	mock.MatchExpectationsInOrder(false)
 
-	v := model.Variable{}
-	v.EnvironmentID = 10
-	v.Description = "Description value"
-	v.Secret = false
-	v.Value = "value value"
-	v.Name = "name value"
-	v.Scope = "serviceA"
-	v.ID = 999
+	v := getVariable()
 
 	rows := sqlmock.NewRows([]string{"id"}).AddRow(1)
 
@@ -98,14 +84,7 @@ func TestCreateVariable_Audit(t *testing.T) {
 
 	mock.MatchExpectationsInOrder(false)
 
-	v := model.Variable{}
-	v.EnvironmentID = 10
-	v.Description = "Description value"
-	v.Secret = false
-	v.Value = "value value"
-	v.Name = "name value"
-	v.Scope = "serviceA"
-	v.ID = 999
+	v := getVariable()
 
 	rows1 := sqlmock.NewRows([]string{"id", "scope", "name", "value", "description", "environment_id", "secret"}).
 		AddRow(v.ID, v.Scope, v.Name, "new value", v.Description, v.EnvironmentID, v.Secret)
@@ -124,4 +103,51 @@ func TestCreateVariable_Audit(t *testing.T) {
 	assert.True(t, updated)
 
 	mock.ExpectationsWereMet()
+}
+
+func TestGetAllVariablesByEnvironment(t *testing.T) {
+
+	db, mock, err := sqlmock.New()
+
+	assert.Nil(t, err)
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	dao := VariableDAOImpl{}
+	dao.Db = gormDB
+
+	mock.MatchExpectationsInOrder(false)
+
+	rows1 := sqlmock.NewRows([]string{"id", "group", "name"}).
+		AddRow(10, "my-group", "env-name")
+
+	mock.ExpectQuery(`SELECT (.*) FROM "environments" WHERE (.*) ORDER BY (.*) ASC LIMIT 1`).
+		WillReturnRows(rows1)
+
+	v := getVariable()
+
+	rows2 := sqlmock.NewRows([]string{"id", "scope", "name", "value", "description", "environment_id", "secret"}).
+		AddRow(v.ID, v.Scope, v.Name, "new value", v.Description, v.EnvironmentID, v.Secret)
+
+	mock.ExpectQuery(`SELECT (.*) FROM "variables" WHERE (.*) ORDER BY (.*)`).
+		WithArgs(10).
+		WillReturnRows(rows2)
+
+	result, err := dao.GetAllVariablesByEnvironment(10)
+	assert.Nil(t, err)
+	assert.NotNil(t, result)
+}
+
+func getVariable() model.Variable {
+	v := model.Variable{}
+	v.EnvironmentID = 10
+	v.Description = "Description value"
+	v.Secret = false
+	v.Value = "value value"
+	v.Name = "name value"
+	v.Scope = "serviceA"
+	v.ID = 999
+
+	return v
 }
