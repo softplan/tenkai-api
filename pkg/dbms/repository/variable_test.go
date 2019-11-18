@@ -151,3 +151,53 @@ func getVariable() model.Variable {
 
 	return v
 }
+
+func TestGetAllVariablesByEnvironmentAndScopeWithContext(t *testing.T) {
+
+	db, mock, err := sqlmock.New()
+	assert.Nil(t, err)
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	dao := VariableDAOImpl{}
+	dao.Db = gormDB
+
+	mock.MatchExpectationsInOrder(false)
+
+	rows1 := sqlmock.NewRows([]string{"id", "scope", "name", "value", "description", "environment_id", "secret"}).
+		AddRow(10, "xpto/alfa", "env-name", "env-value", "description_value", 999, false)
+
+	mock.ExpectQuery(`SELECT (.*) FROM "variables" WHERE (.*)`).WithArgs("xpto/alfa", 999).WillReturnRows(rows1)
+
+	variables, err := dao.GetAllVariablesByEnvironmentAndScope(999, "xpto/alfa")
+	assert.Nil(t, err)
+	assert.NotNil(t, variables)
+
+	mock.ExpectationsWereMet()
+
+}
+
+func TestGetAllVariablesByEnvironmentAndScopeWithoutContext(t *testing.T) {
+
+	db, mock, err := sqlmock.New()
+	assert.Nil(t, err)
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	dao := VariableDAOImpl{}
+	dao.Db = gormDB
+
+	mock.MatchExpectationsInOrder(false)
+
+	rows1 := sqlmock.NewRows([]string{"id", "scope", "name", "value", "description", "environment_id", "secret"}).
+		AddRow(10, "xpto/alfa", "env-name", "env-value", "description_value", 999, false)
+
+	mock.ExpectQuery(`SELECT (.*) FROM "variables" WHERE "variables"."deleted_at" IS NULL AND \(\(environment_id = (.*) AND scope LIKE (.*)\)\)`).WithArgs(999, "%alfa").WillReturnRows(rows1)
+
+	variables, err := dao.GetAllVariablesByEnvironmentAndScope(999, "alfa")
+	assert.Nil(t, err)
+	assert.NotNil(t, variables)
+
+	mock.ExpectationsWereMet()
+
+}

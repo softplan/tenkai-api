@@ -51,3 +51,11 @@ func TestGetHTTPClient(t *testing.T) {
 	c := getHTTPClient()
 	assert.NotNil(t, c)
 }
+
+func TestDoRequest(t *testing.T) {
+	dockerSvc := DockerService{}
+	dockerSvc.httpClient = &HTTPClientImpl{}
+	bytes, e := dockerSvc.httpClient.doRequest("http://google.com.br", "alfa", "beta")
+	assert.Nil(t, e)
+	assert.NotNil(t, bytes)
+}

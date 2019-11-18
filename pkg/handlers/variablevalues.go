@@ -165,13 +165,15 @@ func (appContext *AppContext) getVariablesNotUsed(w http.ResponseWriter, r *http
 }
 
 func scopeRunning(helmList *helmapi.HelmListResult, scope string, namespace string) bool {
-
 	result := false
-
 	if strings.Contains(scope, "gcm") {
 		scope = scope + "-" + namespace
 	} else {
-		scope = strings.ReplaceAll(scope, "saj6/", "")
+		i := strings.Index(scope, "/")
+		if i > 0 {
+			beforeBar := scope[:i+1]
+			scope = strings.ReplaceAll(scope, beforeBar, "")
+		}
 	}
 
 	for _, e := range helmList.Releases {
