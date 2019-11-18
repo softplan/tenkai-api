@@ -96,6 +96,38 @@ func TestSetDefaultRepo(t *testing.T) {
 
 }
 
+func TestSetDefaultRepo_UnmarshalPayloadError(t *testing.T) {
+	appContext := AppContext{}
+	rr := testUnmarshalPayloadError(t, "/repo/default", appContext.setDefaultRepo)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestSetDefaultRepo_Error(t *testing.T) {
+
+	appContext := AppContext{}
+
+	var payload model.DefaultRepoRequest
+	payload.Reponame = "abacaxi"
+
+	payloadStr, _ := json.Marshal(payload)
+
+	mockConfigDAO := mocks.ConfigDAOInterface{}
+	mockConfigDAO.On("CreateOrUpdateConfig", mock.Anything).Return(0, errors.New("some error"))
+	appContext.Repositories.ConfigDAO = &mockConfigDAO
+
+	req, err := http.NewRequest("POST", "/repo/default", bytes.NewBuffer(payloadStr))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/repo/default", appContext.setDefaultRepo).Methods("POST")
+	r.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+	mockConfigDAO.AssertNumberOfCalls(t, "CreateOrUpdateConfig", 1)
+}
+
 func TestGetDefaultRepo(t *testing.T) {
 	appContext := AppContext{}
 
