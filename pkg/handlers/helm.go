@@ -397,8 +397,6 @@ func (appContext *AppContext) install(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//TODO Verify if chart exists
-
 	_, err = appContext.simpleInstall(environment, payload, out, false, false)
 	if err != nil {
 		fmt.Println(out.String())
@@ -429,7 +427,6 @@ func (appContext *AppContext) helmDryRun(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	//TODO Verify if chart exists
 	_, err = appContext.simpleInstall(environment, payload, out, true, false)
 
 	if err != nil {
