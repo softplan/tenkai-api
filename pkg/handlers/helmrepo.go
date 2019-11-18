@@ -101,6 +101,7 @@ func (appContext *AppContext) deleteRepository(w http.ResponseWriter, r *http.Re
 	principal := util.GetPrincipal(r)
 	if !util.Contains(principal.Roles, constraints.TenkaiAdmin) {
 		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
+		return
 	}
 
 	vars := mux.Vars(r)
