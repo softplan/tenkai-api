@@ -152,7 +152,7 @@ func TestListAllUsers(t *testing.T) {
 	mock.ExpectationsWereMet()
 }
 
-func TestCreateOrUpdateUser(t *testing.T) {
+func TestCreateOrUpdateUser_Update(t *testing.T) {
 
 	db, mock, err := sqlmock.New()
 	mock.MatchExpectationsInOrder(false)
@@ -190,6 +190,51 @@ func TestCreateOrUpdateUser(t *testing.T) {
 
 	mock.ExpectExec(`INSERT INTO "user_environment" (.*)`).
 		WithArgs(user.ID, user.DefaultEnvironmentID, user.ID, user.DefaultEnvironmentID).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	e := userDAO.CreateOrUpdateUser(user)
+	assert.NoError(t, e)
+
+	mock.ExpectationsWereMet()
+}
+
+func TestCreateOrUpdateUser_Create(t *testing.T) {
+
+	db, mock, err := sqlmock.New()
+	mock.MatchExpectationsInOrder(false)
+	assert.Nil(t, err)
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	userDAO := UserDAOImpl{}
+	userDAO.Db = gormDB
+
+	user := getUser()
+	env := getEnvironmentTestData()
+	env.ID = 999
+	user.Environments = append(user.Environments, env)
+
+	mock.ExpectQuery(`SELECT (.*) FROM "users" WHERE (.*)`).
+		WithArgs(user.Email).WillReturnRows(sqlmock.NewRows([]string{}))
+
+	row1 := sqlmock.NewRows([]string{"id"}).
+		AddRow(888)
+
+	mock.ExpectQuery(`INSERT INTO "users"`).
+		WithArgs(AnyTime{}, AnyTime{}, nil, user.Email, user.DefaultEnvironmentID).
+		WillReturnRows(row1)
+
+	row2 := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "deleted_at",
+		"group", "name", "cluster_uri", "ca_certificate", "token", "namespace", "gateway"}).
+		AddRow(env.ID, env.CreatedAt, env.UpdatedAt, env.DeletedAt, env.Group,
+			env.Name, env.ClusterURI, env.CACertificate, env.Token, env.Namespace, env.Gateway)
+
+	mock.ExpectQuery(`SELECT (.*) FROM "environments" WHERE (.*) ORDER BY (.*) ASC LIMIT 1`).
+		WillReturnRows(row2)
+
+	mock.ExpectExec(`INSERT INTO "user_environment" (.*)`).
+		WithArgs(888, user.DefaultEnvironmentID, 888, user.DefaultEnvironmentID).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	e := userDAO.CreateOrUpdateUser(user)
