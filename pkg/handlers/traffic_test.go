@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/stretchr/testify/mock"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -27,6 +28,7 @@ func TestDeployTrafficRule(t *testing.T) {
 
 	mockConvention := mockConventionInterface(&appContext)
 	mockHelmSvc := mockHelmSvcWithLotOfThings(&appContext)
+	mockHelmSvc.On("SearchCharts", mock.Anything, false).Return(getCharts())
 
 	envDAO := mockGetByID(&appContext)
 

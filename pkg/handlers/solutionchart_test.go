@@ -16,7 +16,7 @@ import (
 func TestNewSolutionChart(t *testing.T) {
 
 	var payload model.SolutionChart
-	payload.ChartName = "saj6/beta3"
+	payload.ChartName = "xpto/beta3"
 	payload.SolutionID = 3
 	payloadStr, _ := json.Marshal(payload)
 

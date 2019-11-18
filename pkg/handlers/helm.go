@@ -397,8 +397,6 @@ func (appContext *AppContext) install(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//TODO Verify if chart exists
-
 	_, err = appContext.simpleInstall(environment, payload, out, false, false)
 	if err != nil {
 		fmt.Println(out.String())
@@ -429,7 +427,6 @@ func (appContext *AppContext) helmDryRun(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	//TODO Verify if chart exists
 	_, err = appContext.simpleInstall(environment, payload, out, true, false)
 
 	if err != nil {
@@ -508,6 +505,17 @@ func (appContext *AppContext) simpleInstall(environment *model.Environment, inst
 }
 
 func (appContext *AppContext) doUpgrade(upgradeRequest helmapi.UpgradeRequest, out *bytes.Buffer) (string, error) {
+
+	searchTerms := []string{upgradeRequest.Chart}
+	searchResult := appContext.HelmServiceAPI.SearchCharts(searchTerms, false)
+
+	if len(*searchResult) > 0 {
+		r := *searchResult
+		upgradeRequest.Chart = r[0].Name
+	} else {
+		return "", errors.New("Chart does not exists")
+	}
+
 	err := appContext.HelmServiceAPI.Upgrade(upgradeRequest, out)
 	if err != nil {
 		return "", err
