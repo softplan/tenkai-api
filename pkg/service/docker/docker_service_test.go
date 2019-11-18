@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"sync"
 	"testing"
+	"time"
 )
 
 //HTTPClientMock HTTPClientMock
@@ -58,4 +59,73 @@ func TestDoRequest(t *testing.T) {
 	bytes, e := dockerSvc.httpClient.doRequest("http://google.com.br", "alfa", "beta")
 	assert.Nil(t, e)
 	assert.NotNil(t, bytes)
+}
+
+func TestDefineTagResponseFromCache(t *testing.T) {
+
+	cacheInfo := CacheInfo{}
+	cacheInfo.globalCache = &sync.Map{}
+	cacheInfo.dateFrom = time.Now()
+	cacheInfo.matchFromDate = false
+	tagResult := model.ListDockerTagsResult{}
+	tagResult.TagResponse = make([]model.TagResponse, 0)
+
+	cacheInfo.result = &tagResult
+
+	repo := model.DockerRepo{}
+	cacheInfo.repo = &repo
+	cacheInfo.imageName = "image"
+
+	defineTagResponseFromCache("docker.io/alfa", "latest", time.Now(), cacheInfo)
+
+	assert.NotNil(t, cacheInfo.result.TagResponse)
+
+}
+
+func TestDefineTagResponseFromCacheMatch(t *testing.T) {
+
+	date2 := time.Now()
+	date1 := time.Now()
+
+	cacheInfo := CacheInfo{}
+	cacheInfo.globalCache = &sync.Map{}
+	cacheInfo.globalCache.Store("docker.io/alfa", date1)
+
+	cacheInfo.dateFrom = time.Now()
+	cacheInfo.matchFromDate = true
+	tagResult := model.ListDockerTagsResult{}
+	tagResult.TagResponse = make([]model.TagResponse, 0)
+
+	cacheInfo.result = &tagResult
+
+	repo := model.DockerRepo{}
+	cacheInfo.repo = &repo
+	cacheInfo.imageName = "image"
+
+	defineTagResponseFromCache("docker.io/alfa", "latest", date2, cacheInfo)
+
+	assert.NotNil(t, cacheInfo.result.TagResponse)
+
+}
+
+func TestDefineTagResponseFromCacheMatchNot(t *testing.T) {
+
+	cacheInfo := CacheInfo{}
+	cacheInfo.globalCache = &sync.Map{}
+
+	cacheInfo.dateFrom = time.Now()
+	cacheInfo.matchFromDate = true
+	tagResult := model.ListDockerTagsResult{}
+	tagResult.TagResponse = make([]model.TagResponse, 0)
+
+	cacheInfo.result = &tagResult
+
+	repo := model.DockerRepo{}
+	cacheInfo.repo = &repo
+	cacheInfo.imageName = "image"
+
+	defineTagResponseFromCache("docker.io/alfa", "latest", time.Now(), cacheInfo)
+
+	assert.NotNil(t, cacheInfo.result.TagResponse)
+
 }
