@@ -68,10 +68,7 @@ func TestCreateVariable(t *testing.T) {
 
 	rows := sqlmock.NewRows([]string{"id"}).AddRow(1)
 
-	mock.ExpectQuery(`SELECT (.*) FROM "variables" 
-		WHERE "variables"."deleted_at" IS NULL AND \(\("variables"."scope" = (.*)\) 
-		AND \("variables"."name" = (.*)\) AND \("variables"."environment_id" = (.*)\)\) 
-		ORDER BY "variables"."id" ASC LIMIT 1`).
+	mock.ExpectQuery(`SELECT (.*) FROM "variables" WHERE (.*) ORDER BY (.*) ASC LIMIT 1`).
 		WithArgs(v.Scope, v.Name, v.EnvironmentID).
 		WillReturnError(errors.New("mock error"))
 
@@ -113,10 +110,7 @@ func TestCreateVariable_Audit(t *testing.T) {
 	rows1 := sqlmock.NewRows([]string{"id", "scope", "name", "value", "description", "environment_id", "secret"}).
 		AddRow(v.ID, v.Scope, v.Name, "new value", v.Description, v.EnvironmentID, v.Secret)
 
-	mock.ExpectQuery(`SELECT (.*) FROM "variables" 
-	WHERE "variables"."deleted_at" IS NULL AND \(\("variables"."scope" = (.*)\) 
-	AND \("variables"."name" = (.*)\) AND \("variables"."environment_id" = (.*)\)\) 
-	ORDER BY "variables"."id" ASC LIMIT 1`).
+	mock.ExpectQuery(`SELECT (.*) FROM "variables" WHERE (.*) ORDER BY (.*) ASC LIMIT 1`).
 		WithArgs(v.Scope, v.Name, v.EnvironmentID).
 		WillReturnRows(rows1)
 

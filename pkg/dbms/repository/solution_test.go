@@ -94,8 +94,6 @@ func TestDeleteSolutionError(t *testing.T) {
 	s := buildSolution()
 	s.ID = 1
 
-	//rows := sqlmock.NewRows([]string{"id"}).AddRow(1)
-
 	mock.ExpectQuery(`DELETE FROM "solutions"`).WillReturnError(errors.New("error"))
 
 	err = dao.DeleteSolution(int(s.ID))
