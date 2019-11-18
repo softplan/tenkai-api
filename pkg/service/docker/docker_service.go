@@ -107,16 +107,18 @@ func defineTagResponseFromCache(img string, tag string, createDate interface{}, 
 	if cacheInfo.matchFromDate {
 		var object interface{}
 		var dateTime time.Time
-		object, _ = cacheInfo.globalCache.Load(img)
-		dateTime = object.(time.Time)
-		major := dateTime.After(cacheInfo.dateFrom)
-		if major {
-			cacheInfo.result.TagResponse = append(cacheInfo.result.TagResponse, model.TagResponse{Tag: tag, Created: createDate.(time.Time)})
+		object, ok := cacheInfo.globalCache.Load(img)
+		if ok && object != nil {
+			dateTime = object.(time.Time)
+			major := dateTime.After(cacheInfo.dateFrom)
+			if major {
+				cacheInfo.result.TagResponse = append(cacheInfo.result.TagResponse, model.TagResponse{Tag: tag, Created: createDate.(time.Time)})
+			}
 		}
+
 	} else {
 		cacheInfo.result.TagResponse = append(cacheInfo.result.TagResponse, model.TagResponse{Tag: tag, Created: createDate.(time.Time)})
 	}
-
 }
 
 func (docker DockerService) defineTagResponse(img string, tag string, cacheInfo CacheInfo) error {
