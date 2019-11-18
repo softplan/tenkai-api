@@ -94,20 +94,18 @@ func TestAssociateEnvironmentUser(t *testing.T) {
 
 	payload.Environments = append(payload.Environments, env)
 
-	row1 := sqlmock.NewRows([]string{"id", "email", "default_environment_id"}).AddRow(payload.ID, payload.Email, payload.DefaultEnvironmentID)
-	mock.ExpectQuery(`SELECT (.*) FROM "users"
-		WHERE "users"."deleted_at" IS NULL AND \(\("users"."id" = 888\)\)
-		ORDER BY "users"."id" ASC LIMIT 1
-	`).WillReturnRows(row1)
+	row1 := sqlmock.NewRows([]string{"id", "email", "default_environment_id"}).
+		AddRow(payload.ID, payload.Email, payload.DefaultEnvironmentID)
+
+	mock.ExpectQuery(`SELECT (.*) FROM "users" WHERE (.*) ORDER BY (.*) ASC LIMIT 1`).
+		WillReturnRows(row1)
 
 	row2 := sqlmock.NewRows([]string{"id", "group", "name"}).AddRow(999, "foo", "bar")
-	mock.ExpectQuery(`SELECT (.*) FROM "environments"
-		WHERE "environments"."deleted_at" IS NULL AND \(\("environments"."id" = 999\)\)
-		ORDER BY "environments"."id" ASC LIMIT 1
-	`).WillReturnRows(row2)
 
-	mock.ExpectExec(`INSERT INTO "user_environment" \("user_id","environment_id"\) SELECT (.*)  WHERE NOT EXISTS 
-			\(SELECT (.*) FROM "user_environment" WHERE "user_id" = (.*) AND "environment_id" = (.*)\)`).
+	mock.ExpectQuery(`SELECT (.*) FROM "environments" WHERE (.*) ORDER BY (.*) ASC LIMIT 1`).
+		WillReturnRows(row2)
+
+	mock.ExpectExec(`INSERT INTO "user_environment"`).
 		WithArgs(888, 999, 888, 999).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
