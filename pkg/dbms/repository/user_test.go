@@ -234,7 +234,7 @@ func TestCreateOrUpdateUser_Create(t *testing.T) {
 		WillReturnRows(row2)
 
 	mock.ExpectExec(`INSERT INTO "user_environment" (.*)`).
-		WithArgs(888, user.DefaultEnvironmentID, 888, user.DefaultEnvironmentID).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	e := userDAO.CreateOrUpdateUser(user)
