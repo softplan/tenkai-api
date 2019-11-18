@@ -151,3 +151,49 @@ func TestListAllUsers(t *testing.T) {
 
 	mock.ExpectationsWereMet()
 }
+
+func TestCreateOrUpdateUser(t *testing.T) {
+
+	db, mock, err := sqlmock.New()
+	mock.MatchExpectationsInOrder(false)
+	assert.Nil(t, err)
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	userDAO := UserDAOImpl{}
+	userDAO.Db = gormDB
+
+	user := getUser()
+	user.ID = 888
+	env := getEnvironmentTestData()
+	env.ID = 999
+	user.Environments = append(user.Environments, env)
+
+	row1 := sqlmock.NewRows([]string{"id", "email", "default_environment_id"}).
+		AddRow(user.ID, user.Email, user.DefaultEnvironmentID)
+
+	mock.ExpectQuery(`SELECT (.*) FROM "users" WHERE (.*)`).
+		WithArgs(user.Email).WillReturnRows(row1)
+
+	mock.ExpectExec(`DELETE FROM "user_environment" WHERE (.*)`).
+		WithArgs(user.ID).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	row2 := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "deleted_at",
+		"group", "name", "cluster_uri", "ca_certificate", "token", "namespace", "gateway"}).
+		AddRow(env.ID, env.CreatedAt, env.UpdatedAt, env.DeletedAt, env.Group,
+			env.Name, env.ClusterURI, env.CACertificate, env.Token, env.Namespace, env.Gateway)
+
+	mock.ExpectQuery(`SELECT (.*) FROM "environments" WHERE (.*) ORDER BY (.*) ASC LIMIT 1`).
+		WillReturnRows(row2)
+
+	mock.ExpectExec(`INSERT INTO "user_environment" (.*)`).
+		WithArgs(user.ID, user.DefaultEnvironmentID, user.ID, user.DefaultEnvironmentID).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	e := userDAO.CreateOrUpdateUser(user)
+	assert.NoError(t, e)
+
+	mock.ExpectationsWereMet()
+}
