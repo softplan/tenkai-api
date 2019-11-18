@@ -22,6 +22,7 @@ func doTest(t *testing.T, mode string) {
 	mockVariableDAO := mockVariableDAOWithLotOfThings(&appContext)
 
 	mockHelmSvc := mockHelmSvcWithLotOfThings(&appContext)
+	mockHelmSvc.On("SearchCharts", mock.Anything, false).Return(getCharts())
 
 	auditSvc := &mockAudit.AuditingInterface{}
 	auditSvc.On("DoAudit", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything)

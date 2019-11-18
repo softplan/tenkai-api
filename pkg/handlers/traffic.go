@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"errors"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/global"
 	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
@@ -35,7 +36,7 @@ func (appContext *AppContext) deployTrafficRule(w http.ResponseWriter, r *http.R
 	headerReleaseName := strings.Replace(payload.HeaderReleaseName, namespaceInterpolateVariable, environment.Namespace, -1)
 
 	//
-	chart := "saj6/tenkai-canary"
+	chart := "tenkai-canary"
 	name := "canary-" + serviceName
 	out := &bytes.Buffer{}
 
@@ -79,6 +80,18 @@ func (appContext *AppContext) deployTrafficRule(w http.ResponseWriter, r *http.R
 	upgradeRequest.Variables = variables
 	upgradeRequest.Dryrun = false
 	upgradeRequest.Release = name
+
+	//
+	searchTerms := []string{upgradeRequest.Chart}
+	searchResult := appContext.HelmServiceAPI.SearchCharts(searchTerms, false)
+
+	if len(*searchResult) > 0 {
+		r := *searchResult
+		upgradeRequest.Chart = r[0].Name
+	} else {
+		http.Error(w, errors.New("Chart does not exists").Error(), http.StatusInternalServerError)
+	}
+	//
 
 	err = appContext.HelmServiceAPI.Upgrade(upgradeRequest, out)
 	if err != nil {

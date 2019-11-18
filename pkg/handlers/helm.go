@@ -508,6 +508,17 @@ func (appContext *AppContext) simpleInstall(environment *model.Environment, inst
 }
 
 func (appContext *AppContext) doUpgrade(upgradeRequest helmapi.UpgradeRequest, out *bytes.Buffer) (string, error) {
+
+	searchTerms := []string{upgradeRequest.Chart}
+	searchResult := appContext.HelmServiceAPI.SearchCharts(searchTerms, false)
+
+	if len(*searchResult) > 0 {
+		r := *searchResult
+		upgradeRequest.Chart = r[0].Name
+	} else {
+		return "", errors.New("Chart does not exists")
+	}
+
 	err := appContext.HelmServiceAPI.Upgrade(upgradeRequest, out)
 	if err != nil {
 		return "", err
