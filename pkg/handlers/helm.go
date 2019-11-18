@@ -258,7 +258,13 @@ func (appContext *AppContext) getChartVariables(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	result, err := appContext.HelmServiceAPI.GetTemplate(&appContext.Mutex, payload.ChartName, payload.ChartVersion, "values")
+	chartName, err := appContext.getChartName(payload.ChartName)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	result, err := appContext.HelmServiceAPI.GetTemplate(&appContext.Mutex, chartName, payload.ChartVersion, "values")
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -334,7 +340,11 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 	//Locate Environment
 	environment, err := appContext.Repositories.EnvironmentDAO.GetByID(payload.EnvironmentID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		msg := err.Error()
+		if err.Error() == "record not found" {
+			msg = "Environment " + strconv.Itoa(payload.EnvironmentID) + " not found"
+		}
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
@@ -504,19 +514,27 @@ func (appContext *AppContext) simpleInstall(environment *model.Environment, inst
 	return "", nil
 }
 
-func (appContext *AppContext) doUpgrade(upgradeRequest helmapi.UpgradeRequest, out *bytes.Buffer) (string, error) {
+func (appContext *AppContext) getChartName(name string) (string, error) {
 
-	searchTerms := []string{upgradeRequest.Chart}
+	searchTerms := []string{name}
 	searchResult := appContext.HelmServiceAPI.SearchCharts(searchTerms, false)
 
 	if len(*searchResult) > 0 {
 		r := *searchResult
-		upgradeRequest.Chart = r[0].Name
+		return r[0].Name, nil
 	} else {
 		return "", errors.New("Chart does not exists")
 	}
 
-	err := appContext.HelmServiceAPI.Upgrade(upgradeRequest, out)
+}
+
+func (appContext *AppContext) doUpgrade(upgradeRequest helmapi.UpgradeRequest, out *bytes.Buffer) (string, error) {
+	var err error
+	upgradeRequest.Chart, err = appContext.getChartName(upgradeRequest.Chart)
+	if err != nil {
+		return "", err
+	}
+	err = appContext.HelmServiceAPI.Upgrade(upgradeRequest, out)
 	if err != nil {
 		return "", err
 	}
