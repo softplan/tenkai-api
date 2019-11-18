@@ -18,6 +18,16 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+func getCharts() *[]model.SearchResult {
+	charts := make([]model.SearchResult, 0)
+	searchResult := model.SearchResult{}
+	searchResult.Name = "alfa"
+	searchResult.Description = "alfaChart"
+	searchResult.ChartVersion = "1.0"
+	charts = append(charts, searchResult)
+	return &charts
+}
+
 func TestListCharts(t *testing.T) {
 	appContext := AppContext{}
 	appContext.K8sConfigPath = "/tmp/"
@@ -635,11 +645,14 @@ func TestMultipleInstall(t *testing.T) {
 
 	mockPrincipal(req, "tenkai-helm-upgrade")
 
+	charts := getCharts()
+
 	appContext := AppContext{}
 	mockEnvDao := mockGetByID(&appContext)
 	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
 	mockConvention := mockConventionInterface(&appContext)
 	mockHelmSvc := mockUpgrade(&appContext)
+	mockHelmSvc.On("SearchCharts", mock.Anything, false).Return(charts)
 
 	var p model.ProductVersion
 	p.ID = uint(777)
@@ -676,11 +689,14 @@ func TestInstall(t *testing.T) {
 
 	mockPrincipal(req, "tenkai-helm-upgrade")
 
+	charts := getCharts()
+
 	appContext := AppContext{}
 	mockEnvDao := mockGetByID(&appContext)
 	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
 	mockConvention := mockConventionInterface(&appContext)
 	mockHelmSvc := mockUpgrade(&appContext)
+	mockHelmSvc.On("SearchCharts", mock.Anything, false).Return(charts)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.install)
@@ -704,6 +720,7 @@ func TestDryRun(t *testing.T) {
 	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
 	mockConvention := mockConventionInterface(&appContext)
 	mockHelmSvc := mockUpgrade(&appContext)
+	mockHelmSvc.On("SearchCharts", mock.Anything, false).Return(getCharts())
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.helmDryRun)
