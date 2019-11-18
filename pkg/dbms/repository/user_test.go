@@ -106,7 +106,7 @@ func TestAssociateEnvironmentUser(t *testing.T) {
 		WillReturnRows(row2)
 
 	mock.ExpectExec(`INSERT INTO "user_environment"`).
-		WithArgs(888, 999, 888, 999).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	e := userDAO.AssociateEnvironmentUser(888, 999)

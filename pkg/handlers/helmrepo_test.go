@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -11,6 +12,7 @@ import (
 	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
+	mockSvc "github.com/softplan/tenkai-api/pkg/service/_helm/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -92,4 +94,115 @@ func TestSetDefaultRepo(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 	mockConfigDAO.AssertNumberOfCalls(t, "CreateOrUpdateConfig", 1)
 
+}
+
+func TestGetDefaultRepo(t *testing.T) {
+	appContext := AppContext{}
+
+	result := model.ConfigMap{}
+	result.Value = "abc"
+	result.Name = "xpto"
+
+	configDAO := mocks.ConfigDAOInterface{}
+	configDAO.On("GetConfigByName", mock.Anything).Return(result, nil)
+	appContext.Repositories.ConfigDAO = &configDAO
+
+	req, err := http.NewRequest("GET", "/repo/default", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, "tenkai-user")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.getDefaultRepo)
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code, "Response should be Ok.")
+
+	response := string(rr.Body.Bytes())
+	assert.Contains(t, response, `{"ID":0,`)
+	assert.Contains(t, response, `"name":"xpto","value":"abc"}`)
+	configDAO.AssertNumberOfCalls(t, "GetConfigByName", 1)
+}
+
+func TestGetDefaultRepo_GetConfigByNameError(t *testing.T) {
+	appContext := AppContext{}
+
+	configDAO := mocks.ConfigDAOInterface{}
+	configDAO.On("GetConfigByName", mock.Anything).Return(model.ConfigMap{}, errors.New("some error"))
+	appContext.Repositories.ConfigDAO = &configDAO
+
+	req, err := http.NewRequest("GET", "/repo/default", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, "tenkai-user")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.getDefaultRepo)
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+	configDAO.AssertNumberOfCalls(t, "GetConfigByName", 1)
+}
+
+func TestDeleteRepository(t *testing.T) {
+	appContext := AppContext{}
+
+	mockHelmSvc := &mockSvc.HelmServiceInterface{}
+	mockHelmSvc.On("RemoveRepository", "xyz").Return(nil)
+	appContext.HelmServiceAPI = mockHelmSvc
+
+	req, err := http.NewRequest("DELETE", "/repositories/xyz", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, "tenkai-admin")
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/repositories/{name}", appContext.deleteRepository).Methods("DELETE")
+	r.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code, "Response should be Ok.")
+	mockHelmSvc.AssertNumberOfCalls(t, "RemoveRepository", 1)
+}
+
+func TestDeleteRepository_Unauthorized(t *testing.T) {
+	appContext := AppContext{}
+
+	req, err := http.NewRequest("DELETE", "/repositories/xyz", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, "tenkai")
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/repositories/{name}", appContext.deleteRepository).Methods("DELETE")
+	r.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusUnauthorized, rr.Code, "Response should be 401.")
+}
+
+func TestDeleteRepository_RemoveRepositoryError(t *testing.T) {
+	appContext := AppContext{}
+
+	mockHelmSvc := &mockSvc.HelmServiceInterface{}
+	mockHelmSvc.On("RemoveRepository", "xyz").Return(errors.New("some error"))
+	appContext.HelmServiceAPI = mockHelmSvc
+
+	req, err := http.NewRequest("DELETE", "/repositories/xyz", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, "tenkai-admin")
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/repositories/{name}", appContext.deleteRepository).Methods("DELETE")
+	r.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+	mockHelmSvc.AssertNumberOfCalls(t, "RemoveRepository", 1)
 }
