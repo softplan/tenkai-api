@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/jinzhu/gorm"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
@@ -142,6 +143,137 @@ func TestEdit(t *testing.T) {
 
 	err = produtDAO.EditProductVersionService(productVersionService)
 	assert.Nil(t, err)
+
+	mock.ExpectationsWereMet()
+}
+
+func TestListProducts(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	mock.MatchExpectationsInOrder(false)
+	assert.Nil(t, err)
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	produtDAO := ProductDAOImpl{}
+	produtDAO.Db = gormDB
+
+	rows1 := sqlmock.NewRows([]string{"id", "name"}).AddRow(999, "my product")
+
+	mock.ExpectQuery(`SELECT (.*) FROM "products"`).
+		WillReturnRows(rows1)
+
+	result, err := produtDAO.ListProducts()
+	assert.Nil(t, err)
+	assert.NotNil(t, result)
+
+	mock.ExpectationsWereMet()
+}
+
+func TestListProducts_ErrorNotFound(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	mock.MatchExpectationsInOrder(false)
+	assert.Nil(t, err)
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	produtDAO := ProductDAOImpl{}
+	produtDAO.Db = gormDB
+
+	mock.ExpectQuery(`SELECT (.*) FROM "products"`).
+		WillReturnError(gorm.ErrRecordNotFound)
+
+	result, err := produtDAO.ListProducts()
+	assert.Nil(t, err)
+	assert.NotNil(t, result)
+
+	mock.ExpectationsWereMet()
+}
+
+func TestListProducts_Error(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	mock.MatchExpectationsInOrder(false)
+	assert.Nil(t, err)
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	produtDAO := ProductDAOImpl{}
+	produtDAO.Db = gormDB
+
+	mock.ExpectQuery(`SELECT (.*) FROM "products"`).
+		WillReturnError(errors.New("mock error"))
+
+	_, err = produtDAO.ListProducts()
+	assert.Error(t, err)
+
+	mock.ExpectationsWereMet()
+}
+
+func TestListProductsVersions(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	mock.MatchExpectationsInOrder(false)
+	assert.Nil(t, err)
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	produtDAO := ProductDAOImpl{}
+	produtDAO.Db = gormDB
+
+	rows1 := sqlmock.NewRows([]string{"id", "product_id", "version"}).AddRow(888, 999, "19.3.0-0")
+
+	mock.ExpectQuery(`SELECT (.*) FROM "product_versions"`).
+		WithArgs(999).
+		WillReturnRows(rows1)
+
+	result, err := produtDAO.ListProductsVersions(999)
+	assert.Nil(t, err)
+	assert.NotNil(t, result)
+
+	mock.ExpectationsWereMet()
+}
+
+func TestListProductsVersions_ErrorNotFound(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	mock.MatchExpectationsInOrder(false)
+	assert.Nil(t, err)
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	produtDAO := ProductDAOImpl{}
+	produtDAO.Db = gormDB
+
+	mock.ExpectQuery(`SELECT (.*) FROM "product_versions"`).
+		WithArgs(999).
+		WillReturnError(gorm.ErrRecordNotFound)
+
+	result, err := produtDAO.ListProductsVersions(999)
+	assert.Nil(t, err)
+	assert.Empty(t, result)
+
+	mock.ExpectationsWereMet()
+}
+
+func TestListProductsVersions_Error(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	mock.MatchExpectationsInOrder(false)
+	assert.Nil(t, err)
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	produtDAO := ProductDAOImpl{}
+	produtDAO.Db = gormDB
+
+	mock.ExpectQuery(`SELECT (.*) FROM "product_versions"`).
+		WithArgs(999).
+		WillReturnError(errors.New("mock error"))
+
+	_, err = produtDAO.ListProductsVersions(999)
+	assert.Error(t, err)
 
 	mock.ExpectationsWereMet()
 }
