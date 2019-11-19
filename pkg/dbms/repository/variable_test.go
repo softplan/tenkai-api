@@ -70,6 +70,38 @@ func TestCreateVariable(t *testing.T) {
 	mock.ExpectationsWereMet()
 }
 
+func TestCreateVariable_Error(t *testing.T) {
+
+	db, mock, err := sqlmock.New()
+
+	assert.Nil(t, err)
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	dao := VariableDAOImpl{}
+	dao.Db = gormDB
+
+	mock.MatchExpectationsInOrder(false)
+
+	v := getVariable()
+
+	mock.ExpectQuery(`SELECT (.*) FROM "variables" WHERE (.*) ORDER BY (.*) ASC LIMIT 1`).
+		WithArgs(v.Scope, v.Name, v.EnvironmentID).
+		WillReturnError(errors.New("mock error"))
+
+	mock.ExpectQuery(`INSERT INTO "variables"`).
+		WithArgs(999, AnyTime{}, AnyTime{}, nil, v.Scope, v.Name, v.Value, v.Secret, v.Description, v.EnvironmentID).
+		WillReturnError(errors.New("mock error"))
+
+	audit, updated, err := dao.CreateVariable(v)
+	assert.Error(t, err)
+	assert.NotNil(t, audit)
+	assert.False(t, updated)
+
+	mock.ExpectationsWereMet()
+}
+
 func TestCreateVariable_Audit(t *testing.T) {
 
 	db, mock, err := sqlmock.New()
@@ -101,6 +133,41 @@ func TestCreateVariable_Audit(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, audit)
 	assert.True(t, updated)
+
+	mock.ExpectationsWereMet()
+}
+
+func TestCreateVariable_AuditSaveError(t *testing.T) {
+
+	db, mock, err := sqlmock.New()
+
+	assert.Nil(t, err)
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	dao := VariableDAOImpl{}
+	dao.Db = gormDB
+
+	mock.MatchExpectationsInOrder(false)
+
+	v := getVariable()
+
+	rows1 := sqlmock.NewRows([]string{"id", "scope", "name", "value", "description", "environment_id", "secret"}).
+		AddRow(v.ID, v.Scope, v.Name, "new value", v.Description, v.EnvironmentID, v.Secret)
+
+	mock.ExpectQuery(`SELECT (.*) FROM "variables" WHERE (.*) ORDER BY (.*) ASC LIMIT 1`).
+		WithArgs(v.Scope, v.Name, v.EnvironmentID).
+		WillReturnRows(rows1)
+
+	mock.ExpectExec(`UPDATE "variables" SET (.*) WHERE (.*)`).
+		WithArgs(AnyTime{}, nil, v.Scope, v.Name, v.Value, v.Secret, v.Description, v.EnvironmentID, v.ID).
+		WillReturnError(errors.New("mock error"))
+
+	audit, updated, err := dao.CreateVariable(v)
+	assert.Error(t, err)
+	assert.NotNil(t, audit)
+	assert.False(t, updated)
 
 	mock.ExpectationsWereMet()
 }
@@ -137,6 +204,55 @@ func TestGetAllVariablesByEnvironment(t *testing.T) {
 	result, err := dao.GetAllVariablesByEnvironment(10)
 	assert.Nil(t, err)
 	assert.NotNil(t, result)
+}
+
+func TestGetAllVariablesByEnvironment_Error1(t *testing.T) {
+
+	db, mock, err := sqlmock.New()
+
+	assert.Nil(t, err)
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	dao := VariableDAOImpl{}
+	dao.Db = gormDB
+
+	mock.MatchExpectationsInOrder(false)
+
+	mock.ExpectQuery(`SELECT (.*) FROM "environments" WHERE (.*) ORDER BY (.*) ASC LIMIT 1`).
+		WillReturnError(errors.New("mock error"))
+
+	_, err = dao.GetAllVariablesByEnvironment(10)
+	assert.Error(t, err)
+}
+
+func TestGetAllVariablesByEnvironment_Error2(t *testing.T) {
+
+	db, mock, err := sqlmock.New()
+
+	assert.Nil(t, err)
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	dao := VariableDAOImpl{}
+	dao.Db = gormDB
+
+	mock.MatchExpectationsInOrder(false)
+
+	rows1 := sqlmock.NewRows([]string{"id", "group", "name"}).
+		AddRow(10, "my-group", "env-name")
+
+	mock.ExpectQuery(`SELECT (.*) FROM "environments" WHERE (.*) ORDER BY (.*) ASC LIMIT 1`).
+		WillReturnRows(rows1)
+
+	mock.ExpectQuery(`SELECT (.*) FROM "variables" WHERE (.*) ORDER BY (.*)`).
+		WithArgs(10).
+		WillReturnError(errors.New("mock error"))
+
+	_, err = dao.GetAllVariablesByEnvironment(10)
+	assert.Error(t, err)
 }
 
 func getVariable() model.Variable {
@@ -177,6 +293,29 @@ func TestGetAllVariablesByEnvironmentAndScopeWithContext(t *testing.T) {
 
 }
 
+func TestGetAllVariablesByEnvironmentAndScopeWithContext_Error(t *testing.T) {
+
+	db, mock, err := sqlmock.New()
+	assert.Nil(t, err)
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	dao := VariableDAOImpl{}
+	dao.Db = gormDB
+
+	mock.MatchExpectationsInOrder(false)
+
+	mock.ExpectQuery(`SELECT (.*) FROM "variables" WHERE (.*)`).WithArgs("xpto/alfa", 999).
+		WillReturnError(errors.New("mock error"))
+
+	variables, err := dao.GetAllVariablesByEnvironmentAndScope(999, "xpto/alfa")
+	assert.Error(t, err)
+	assert.Nil(t, variables)
+
+	mock.ExpectationsWereMet()
+
+}
+
 func TestGetAllVariablesByEnvironmentAndScopeWithoutContext(t *testing.T) {
 
 	db, mock, err := sqlmock.New()
@@ -200,4 +339,67 @@ func TestGetAllVariablesByEnvironmentAndScopeWithoutContext(t *testing.T) {
 
 	mock.ExpectationsWereMet()
 
+}
+
+func TestGetAllVariablesByEnvironmentAndScopeWithoutContext_Error(t *testing.T) {
+
+	db, mock, err := sqlmock.New()
+	assert.Nil(t, err)
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	dao := VariableDAOImpl{}
+	dao.Db = gormDB
+
+	mock.MatchExpectationsInOrder(false)
+
+	mock.ExpectQuery(`SELECT (.*) FROM "variables" WHERE "variables"."deleted_at" IS NULL AND \(\(environment_id = (.*) AND scope LIKE (.*)\)\)`).WithArgs(999, "%alfa").WillReturnError(errors.New("mock error"))
+
+	variables, err := dao.GetAllVariablesByEnvironmentAndScope(999, "alfa")
+	assert.Error(t, err)
+	assert.Nil(t, variables)
+
+	mock.ExpectationsWereMet()
+
+}
+
+func TestDeleteVariable(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.Nil(t, err)
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	dao := VariableDAOImpl{}
+	dao.Db = gormDB
+
+	mock.MatchExpectationsInOrder(false)
+
+	mock.ExpectExec(`DELETE FROM "variables" WHERE (.*)`).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	err = dao.DeleteVariable(999)
+	assert.Nil(t, err)
+
+	mock.ExpectationsWereMet()
+}
+
+func TestDeleteVariableByEnvironmentID(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.Nil(t, err)
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	dao := VariableDAOImpl{}
+	dao.Db = gormDB
+
+	mock.MatchExpectationsInOrder(false)
+
+	mock.ExpectExec(`DELETE FROM "variables" WHERE (.*)`).
+		WithArgs(999).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	err = dao.DeleteVariableByEnvironmentID(999)
+	assert.Nil(t, err)
+
+	mock.ExpectationsWereMet()
 }
