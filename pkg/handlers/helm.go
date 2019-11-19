@@ -522,10 +522,8 @@ func (appContext *AppContext) getChartName(name string) (string, error) {
 	if len(*searchResult) > 0 {
 		r := *searchResult
 		return r[0].Name, nil
-	} else {
-		return "", errors.New("Chart does not exists")
 	}
-
+	return "", errors.New("Chart does not exists")
 }
 
 func (appContext *AppContext) doUpgrade(upgradeRequest helmapi.UpgradeRequest, out *bytes.Buffer) (string, error) {
