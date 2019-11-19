@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -71,6 +72,34 @@ func TestCreateEnvironment(t *testing.T) {
 
 	mock.ExpectationsWereMet()
 
+}
+
+func TestCreateEnvironment_Error(t *testing.T) {
+
+	db, mock, err := sqlmock.New()
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	assert.Nil(t, err)
+
+	envDAO := EnvironmentDAOImpl{}
+	envDAO.Db = gormDB
+
+	mock.MatchExpectationsInOrder(false)
+
+	item := getEnvironmentTestData()
+
+	mock.ExpectQuery(`INSERT INTO "environments"`).
+		WithArgs(item.CreatedAt, item.UpdatedAt, item.DeletedAt, item.Group,
+			item.Name, item.ClusterURI, item.CACertificate, item.Token,
+			item.Namespace, item.Gateway, item.ProductVersion).
+		WillReturnError(errors.New("mock error"))
+
+	_, e := envDAO.CreateEnvironment(item)
+	assert.Error(t, e)
+
+	mock.ExpectationsWereMet()
 }
 
 func TestEditEnvironment(t *testing.T) {
@@ -197,6 +226,94 @@ func TestGetAllEnvironmentsWithoutPrincipal(t *testing.T) {
 	mock.ExpectationsWereMet()
 }
 
+func TestGetAllEnvironmentsWithoutPrincipal_ErrorNotFound(t *testing.T) {
+	db, mock, err := sqlmock.New()
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	assert.Nil(t, err)
+
+	envDAO := EnvironmentDAOImpl{}
+	envDAO.Db = gormDB
+
+	mock.MatchExpectationsInOrder(false)
+
+	mock.ExpectQuery(`SELECT (.*) FROM "environments" WHERE "environments"."deleted_at" IS NULL`).
+		WillReturnError(gorm.ErrRecordNotFound)
+
+	result, err := envDAO.GetAllEnvironments("")
+	assert.Nil(t, err)
+	assert.Empty(t, result)
+
+	mock.ExpectationsWereMet()
+}
+
+func TestGetAllEnvironments_ErrorNotFound1(t *testing.T) {
+
+	db, mock, err := sqlmock.New()
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	assert.Nil(t, err)
+
+	envDAO := EnvironmentDAOImpl{}
+	envDAO.Db = gormDB
+
+	mock.MatchExpectationsInOrder(false)
+
+	user := getUserTestData()
+
+	mock.ExpectQuery(`SELECT (.*) FROM "users"
+		WHERE "users"."deleted_at" IS NULL AND \(\("users"."email" = (.*)\)\)
+		ORDER BY "users"."id" ASC LIMIT 1`).
+		WithArgs(user.Email).
+		WillReturnError(gorm.ErrRecordNotFound)
+
+	result, err := envDAO.GetAllEnvironments(user.Email)
+	assert.Nil(t, err)
+	assert.Empty(t, result)
+
+	mock.ExpectationsWereMet()
+}
+
+func TestGetAllEnvironments_ErrorNotFound2(t *testing.T) {
+
+	db, mock, err := sqlmock.New()
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	assert.Nil(t, err)
+
+	envDAO := EnvironmentDAOImpl{}
+	envDAO.Db = gormDB
+
+	mock.MatchExpectationsInOrder(false)
+
+	user := getUserTestData()
+	row1 := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "deleted_at", "email", "default_environment_id"}).
+		AddRow(user.ID, user.CreatedAt, user.UpdatedAt, user.DeletedAt, user.Email, user.DefaultEnvironmentID)
+
+	mock.ExpectQuery(`SELECT (.*) FROM "users" 
+		WHERE "users"."deleted_at" IS NULL AND \(\("users"."email" = (.*)\)\)
+		ORDER BY "users"."id" ASC LIMIT 1`).
+		WithArgs(user.Email).
+		WillReturnRows(row1)
+
+	mock.ExpectQuery(`SELECT (.*) FROM "environments"
+		INNER JOIN "user_environment" ON "user_environment"."environment_id" = "environments"."id"
+		WHERE "environments"."deleted_at" IS NULL AND \(\("user_environment"."user_id" IN (.*)\)\)`).
+		WillReturnError(gorm.ErrRecordNotFound)
+
+	result, err := envDAO.GetAllEnvironments(user.Email)
+	assert.Nil(t, err)
+	assert.Empty(t, result)
+
+	mock.ExpectationsWereMet()
+}
+
 func TestGetByID(t *testing.T) {
 	db, mock, err := sqlmock.New()
 
@@ -222,6 +339,29 @@ func TestGetByID(t *testing.T) {
 	result, err := envDAO.GetByID(999)
 	assert.Nil(t, err)
 	assert.Equal(t, e.ID, result.ID)
+
+	mock.ExpectationsWereMet()
+}
+
+func TestGetByID_Error(t *testing.T) {
+	db, mock, err := sqlmock.New()
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	assert.Nil(t, err)
+
+	envDAO := EnvironmentDAOImpl{}
+	envDAO.Db = gormDB
+
+	mock.MatchExpectationsInOrder(false)
+
+	mock.ExpectQuery(`SELECT (.*) FROM "environments" WHERE "environments"."deleted_at" IS NULL
+		AND \(\("environments"."id" = 999\)\) ORDER BY "environments"."id" ASC LIMIT 1`).
+		WillReturnError(errors.New("mock error"))
+
+	_, err = envDAO.GetByID(999)
+	assert.Error(t, err)
 
 	mock.ExpectationsWereMet()
 }
