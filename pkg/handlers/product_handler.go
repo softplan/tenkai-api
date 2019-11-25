@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"sort"
@@ -10,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/global"
 
 	"github.com/gorilla/mux"
@@ -208,6 +210,66 @@ func (appContext *AppContext) listProductVersions(w http.ResponseWriter, r *http
 	w.Write(data)
 	fmt.Println(string(data))
 
+}
+
+func (appContext *AppContext) lockProductVersion(w http.ResponseWriter, r *http.Request) {
+	principal := util.GetPrincipal(r)
+	if !util.Contains(principal.Roles, constraints.TenkaiLockVersion) {
+		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
+		return
+	}
+
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	pv, e := appContext.Repositories.ProductDAO.ListProductVersionsByID(id)
+	if e != nil {
+		http.Error(w, e.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	pv.Locked = true
+
+	if err := appContext.Repositories.ProductDAO.EditProductVersion(*pv); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (appContext *AppContext) unlockProductVersion(w http.ResponseWriter, r *http.Request) {
+	principal := util.GetPrincipal(r)
+	if !util.Contains(principal.Roles, constraints.TenkaiLockVersion) {
+		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
+		return
+	}
+
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	pv, e := appContext.Repositories.ProductDAO.ListProductVersionsByID(id)
+	if e != nil {
+		http.Error(w, e.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	pv.Locked = false
+
+	if err := appContext.Repositories.ProductDAO.EditProductVersion(*pv); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (appContext *AppContext) listProductVersionServices(w http.ResponseWriter, r *http.Request) {
