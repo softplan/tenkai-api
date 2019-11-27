@@ -858,6 +858,32 @@ func TestNewProductVersionService_Error3(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be Created.")
 }
 
+func TestNewProductVersionService_Error4(t *testing.T) {
+	appContext := AppContext{}
+
+	pvs := getProductVersionSvc()
+	mockProductDAO := &mockRepo.ProductDAOInterface{}
+
+	pv := getProductVersionWithoutID(false)
+	pv.ID = 999
+	pv.Version = "19.0.2-0"
+	mockProductDAO.On("ListProductVersionsByID", 999).Return(&pv, nil)
+
+	appContext.Repositories.ProductDAO = mockProductDAO
+
+	req, err := http.NewRequest("POST", "/productVersionServices", payload(pvs))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.newProductVersionService)
+	handler.ServeHTTP(rr, req)
+
+	mockProductDAO.AssertNumberOfCalls(t, "ListProductVersionsByID", 1)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
 func TestEditProductVersionService(t *testing.T) {
 	appContext := AppContext{}
 
@@ -1206,6 +1232,90 @@ func TestVerifyNewVersion_NoNewVersion(t *testing.T) {
 	assert.Equal(t, "", version)
 
 	mockDockerSvc.AssertNumberOfCalls(t, "GetDockerTagsWithDate", 1)
+}
+
+func TestValidateVersion_Valid1(t *testing.T) {
+	appContext := AppContext{}
+	valid := appContext.validateVersion("19.3.1-0", "19.3.1-1")
+	assert.True(t, valid)
+}
+
+func TestValidateVersion_Valid2(t *testing.T) {
+	appContext := AppContext{}
+	valid := appContext.validateVersion("19.3.1-0", "19.3.1")
+	assert.True(t, valid)
+}
+
+func TestValidateVersion_Valid3(t *testing.T) {
+	appContext := AppContext{}
+	valid := appContext.validateVersion("19.3.1", "19.3.1-1")
+	assert.True(t, valid)
+}
+
+func TestValidateVersion_Valid4(t *testing.T) {
+	appContext := AppContext{}
+	valid := appContext.validateVersion("19.3.1", "19.3.1")
+	assert.True(t, valid)
+}
+
+func TestValidateVersion_Valid5(t *testing.T) {
+	appContext := AppContext{}
+	valid := appContext.validateVersion("19.3.1-0", "19.3.1-0")
+	assert.True(t, valid)
+}
+
+func TestValidateVersion_Invalid1(t *testing.T) {
+	appContext := AppContext{}
+	valid := appContext.validateVersion("19.3.1-0", "20.3.1-1")
+	assert.False(t, valid)
+}
+
+func TestValidateVersion_Invalid2(t *testing.T) {
+	appContext := AppContext{}
+	valid := appContext.validateVersion("19.3.1-0", "19.4.1")
+	assert.False(t, valid)
+}
+
+func TestValidateVersion_Invalid3(t *testing.T) {
+	appContext := AppContext{}
+	valid := appContext.validateVersion("19.3.1", "19.3.5-1")
+	assert.False(t, valid)
+}
+
+func TestValidateVersion_Invalid4(t *testing.T) {
+	appContext := AppContext{}
+	valid := appContext.validateVersion("19.3.1", "19.3.11")
+	assert.False(t, valid)
+}
+
+func TestValidateVersion_Invalid5(t *testing.T) {
+	appContext := AppContext{}
+	valid := appContext.validateVersion("19.3.1-0", "19.33.1-0")
+	assert.False(t, valid)
+}
+
+func TestValidateVersion_Invalid6(t *testing.T) {
+	appContext := AppContext{}
+	valid := appContext.validateVersion("19.3.1-0", "19.3.11-0")
+	assert.False(t, valid)
+}
+
+func TestValidateVersion_Invalid7(t *testing.T) {
+	appContext := AppContext{}
+	valid := appContext.validateVersion("19.3.1-0", "19.33.11-0")
+	assert.False(t, valid)
+}
+
+func TestValidateVersion_Invalid8(t *testing.T) {
+	appContext := AppContext{}
+	valid := appContext.validateVersion("19.3.1.0", "1.33.11.0")
+	assert.False(t, valid)
+}
+
+func TestValidateVersion_Invalid9(t *testing.T) {
+	appContext := AppContext{}
+	valid := appContext.validateVersion("19.31", "19")
+	assert.False(t, valid)
 }
 
 func mockGetDockerTagsWithDate(appContext *AppContext, result *model.ListDockerTagsResult) *mocks.DockerServiceInterface {

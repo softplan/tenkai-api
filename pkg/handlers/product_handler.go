@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"sort"
 	"strconv"
@@ -159,6 +158,11 @@ func (appContext *AppContext) newProductVersionService(w http.ResponseWriter, r 
 		return
 	}
 
+	if !appContext.validateVersion(pv.Version, payload.DockerImageTag) {
+		http.Error(w, "Wrong version", http.StatusInternalServerError)
+		return
+	}
+
 	if _, err := appContext.Repositories.ProductDAO.CreateProductVersionService(payload); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -248,8 +252,6 @@ func (appContext *AppContext) listProductVersions(w http.ResponseWriter, r *http
 	data, _ := json.Marshal(result)
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
-	fmt.Println(string(data))
-
 }
 
 func (appContext *AppContext) lockProductVersion(w http.ResponseWriter, r *http.Request) {
@@ -528,4 +530,19 @@ func getNumberOfTag(tag string) uint64 {
 	result, _ := strconv.ParseUint(resultStr, 10, 64)
 
 	return result
+}
+
+func (appContext *AppContext) validateVersion(productVersion string, currentVersion string) bool {
+	a := strings.Split(normalize(productVersion), ".")
+	b := strings.Split(normalize(currentVersion), ".")
+
+	if len(a) >= 3 && len(b) >= 3 {
+		return a[0] == b[0] && a[1] == b[1] && a[2] == b[2]
+	}
+
+	return false
+}
+
+func normalize(s string) string {
+	return strings.ReplaceAll(s, "-", ".")
 }
