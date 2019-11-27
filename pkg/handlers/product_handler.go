@@ -19,6 +19,8 @@ import (
 	"github.com/softplan/tenkai-api/pkg/util"
 )
 
+const pvLockMsg = "Product version locked"
+
 func (appContext *AppContext) newProduct(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set(global.ContentType, global.JSONContentType)
@@ -154,7 +156,7 @@ func (appContext *AppContext) newProductVersionService(w http.ResponseWriter, r 
 	}
 
 	if pv.Locked {
-		http.Error(w, "Product version locked", http.StatusInternalServerError)
+		http.Error(w, pvLockMsg, http.StatusInternalServerError)
 		return
 	}
 
@@ -192,7 +194,7 @@ func (appContext *AppContext) editProductVersionService(w http.ResponseWriter, r
 	}
 
 	if pv.Locked {
-		http.Error(w, "Product version locked", http.StatusInternalServerError)
+		http.Error(w, pvLockMsg, http.StatusInternalServerError)
 		return
 	}
 
@@ -219,7 +221,7 @@ func (appContext *AppContext) deleteProductVersionService(w http.ResponseWriter,
 	}
 
 	if pv.Locked {
-		http.Error(w, "Product version locked", http.StatusInternalServerError)
+		http.Error(w, pvLockMsg, http.StatusInternalServerError)
 		return
 	}
 
@@ -254,23 +256,30 @@ func (appContext *AppContext) listProductVersions(w http.ResponseWriter, r *http
 	w.Write(data)
 }
 
-func (appContext *AppContext) lockProductVersion(w http.ResponseWriter, r *http.Request) {
+func (appContext *AppContext) lockUnlockCommon(w http.ResponseWriter, r *http.Request) (*model.ProductVersion, int, error) {
 	principal := util.GetPrincipal(r)
 	if !util.Contains(principal.Roles, constraints.TenkaiLockVersion) {
-		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
-		return
+		return nil, http.StatusUnauthorized, errors.New(global.AccessDenied)
 	}
 
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return nil, http.StatusInternalServerError, err
 	}
 
 	pv, e := appContext.Repositories.ProductDAO.ListProductVersionsByID(id)
 	if e != nil {
-		http.Error(w, e.Error(), http.StatusInternalServerError)
+		return nil, http.StatusInternalServerError, e
+	}
+
+	return pv, http.StatusOK, nil
+}
+
+func (appContext *AppContext) lockProductVersion(w http.ResponseWriter, r *http.Request) {
+	pv, httpCode, err := appContext.lockUnlockCommon(w, r)
+	if err != nil {
+		http.Error(w, err.Error(), httpCode)
 		return
 	}
 
@@ -285,22 +294,9 @@ func (appContext *AppContext) lockProductVersion(w http.ResponseWriter, r *http.
 }
 
 func (appContext *AppContext) unlockProductVersion(w http.ResponseWriter, r *http.Request) {
-	principal := util.GetPrincipal(r)
-	if !util.Contains(principal.Roles, constraints.TenkaiLockVersion) {
-		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
-		return
-	}
-
-	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["id"])
+	pv, httpCode, err := appContext.lockUnlockCommon(w, r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	pv, e := appContext.Repositories.ProductDAO.ListProductVersionsByID(id)
-	if e != nil {
-		http.Error(w, e.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), httpCode)
 		return
 	}
 
