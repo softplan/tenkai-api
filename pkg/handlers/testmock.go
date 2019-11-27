@@ -292,6 +292,7 @@ func getProductVersionWithoutID(copyRelease bool) model.ProductVersion {
 	p.Version = "19.0.1-0"
 	p.ProductID = 999
 	p.CopyLatestRelease = copyRelease
+	p.Locked = false
 	return p
 }
 

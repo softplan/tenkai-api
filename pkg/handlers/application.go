@@ -108,6 +108,8 @@ func defineRotes(r *mux.Router, appContext *AppContext) {
 	r.HandleFunc("/productVersions", appContext.listProductVersions).Methods("GET")
 	r.HandleFunc("/productVersions", appContext.newProductVersion).Methods("POST")
 	r.HandleFunc("/productVersions/{id}", appContext.deleteProductVersion).Methods("DELETE")
+	r.HandleFunc("/productVersions/lock/{id}", appContext.lockProductVersion).Methods("GET")
+	r.HandleFunc("/productVersions/unlock/{id}", appContext.unlockProductVersion).Methods("GET")
 
 	r.HandleFunc("/productVersionServices", appContext.listProductVersionServices).Methods("GET")
 	r.HandleFunc("/productVersionServices", appContext.newProductVersionService).Methods("POST")

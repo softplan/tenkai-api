@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"net/http"
 	"sort"
 	"strconv"
@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/global"
 
 	"github.com/gorilla/mux"
@@ -17,6 +18,8 @@ import (
 	analyser "github.com/softplan/tenkai-api/pkg/service/analyser"
 	"github.com/softplan/tenkai-api/pkg/util"
 )
+
+const pvLockMsg = "Product version locked"
 
 func (appContext *AppContext) newProduct(w http.ResponseWriter, r *http.Request) {
 
@@ -146,6 +149,22 @@ func (appContext *AppContext) newProductVersionService(w http.ResponseWriter, r 
 		return
 	}
 
+	pv, err := appContext.Repositories.ProductDAO.ListProductVersionsByID(payload.ProductVersionID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if pv.Locked {
+		http.Error(w, pvLockMsg, http.StatusInternalServerError)
+		return
+	}
+
+	if !appContext.validateVersion(pv.Version, payload.DockerImageTag) {
+		http.Error(w, "Wrong version", http.StatusInternalServerError)
+		return
+	}
+
 	if _, err := appContext.Repositories.ProductDAO.CreateProductVersionService(payload); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -163,8 +182,19 @@ func (appContext *AppContext) editProductVersionService(w http.ResponseWriter, r
 		return
 	}
 
+	pv, err := appContext.Repositories.ProductDAO.ListProductVersionsByID(payload.ProductVersionID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	if err := appContext.Repositories.ProductDAO.EditProductVersionService(payload); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if pv.Locked {
+		http.Error(w, pvLockMsg, http.StatusInternalServerError)
 		return
 	}
 
@@ -177,6 +207,24 @@ func (appContext *AppContext) deleteProductVersionService(w http.ResponseWriter,
 	sl := vars["id"]
 	id, _ := strconv.Atoi(sl)
 	w.Header().Set(global.ContentType, global.JSONContentType)
+
+	pvs, err := appContext.Repositories.ProductDAO.ListProductVersionsServiceByID(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	pv, err := appContext.Repositories.ProductDAO.ListProductVersionsByID(pvs.ProductVersionID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if pv.Locked {
+		http.Error(w, pvLockMsg, http.StatusInternalServerError)
+		return
+	}
+
 	if err := appContext.Repositories.ProductDAO.DeleteProductVersionService(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -206,8 +254,60 @@ func (appContext *AppContext) listProductVersions(w http.ResponseWriter, r *http
 	data, _ := json.Marshal(result)
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
-	fmt.Println(string(data))
+}
 
+func (appContext *AppContext) lockUnlockCommon(w http.ResponseWriter, r *http.Request) (*model.ProductVersion, int, error) {
+	principal := util.GetPrincipal(r)
+	if !util.Contains(principal.Roles, constraints.TenkaiLockVersion) {
+		return nil, http.StatusUnauthorized, errors.New(global.AccessDenied)
+	}
+
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		return nil, http.StatusInternalServerError, err
+	}
+
+	pv, e := appContext.Repositories.ProductDAO.ListProductVersionsByID(id)
+	if e != nil {
+		return nil, http.StatusInternalServerError, e
+	}
+
+	return pv, http.StatusOK, nil
+}
+
+func (appContext *AppContext) lockProductVersion(w http.ResponseWriter, r *http.Request) {
+	pv, httpCode, err := appContext.lockUnlockCommon(w, r)
+	if err != nil {
+		http.Error(w, err.Error(), httpCode)
+		return
+	}
+
+	pv.Locked = true
+
+	if err := appContext.Repositories.ProductDAO.EditProductVersion(*pv); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (appContext *AppContext) unlockProductVersion(w http.ResponseWriter, r *http.Request) {
+	pv, httpCode, err := appContext.lockUnlockCommon(w, r)
+	if err != nil {
+		http.Error(w, err.Error(), httpCode)
+		return
+	}
+
+	pv.Locked = false
+
+	if err := appContext.Repositories.ProductDAO.EditProductVersion(*pv); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (appContext *AppContext) listProductVersionServices(w http.ResponseWriter, r *http.Request) {
@@ -426,4 +526,19 @@ func getNumberOfTag(tag string) uint64 {
 	result, _ := strconv.ParseUint(resultStr, 10, 64)
 
 	return result
+}
+
+func (appContext *AppContext) validateVersion(productVersion string, currentVersion string) bool {
+	a := strings.Split(normalize(productVersion), ".")
+	b := strings.Split(normalize(currentVersion), ".")
+
+	if len(a) >= 3 && len(b) >= 3 {
+		return a[0] == b[0] && a[1] == b[1] && a[2] == b[2]
+	}
+
+	return false
+}
+
+func normalize(s string) string {
+	return strings.ReplaceAll(s, "-", ".")
 }
