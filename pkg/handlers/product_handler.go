@@ -148,6 +148,17 @@ func (appContext *AppContext) newProductVersionService(w http.ResponseWriter, r 
 		return
 	}
 
+	pv, err := appContext.Repositories.ProductDAO.ListProductVersionsByID(payload.ProductVersionID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if pv.Locked {
+		http.Error(w, "Product version locked", http.StatusInternalServerError)
+		return
+	}
+
 	if _, err := appContext.Repositories.ProductDAO.CreateProductVersionService(payload); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -165,8 +176,19 @@ func (appContext *AppContext) editProductVersionService(w http.ResponseWriter, r
 		return
 	}
 
+	pv, err := appContext.Repositories.ProductDAO.ListProductVersionsByID(payload.ProductVersionID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	if err := appContext.Repositories.ProductDAO.EditProductVersionService(payload); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if pv.Locked {
+		http.Error(w, "Product version locked", http.StatusInternalServerError)
 		return
 	}
 
@@ -179,6 +201,24 @@ func (appContext *AppContext) deleteProductVersionService(w http.ResponseWriter,
 	sl := vars["id"]
 	id, _ := strconv.Atoi(sl)
 	w.Header().Set(global.ContentType, global.JSONContentType)
+
+	pvs, err := appContext.Repositories.ProductDAO.ListProductVersionsServiceByID(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	pv, err := appContext.Repositories.ProductDAO.ListProductVersionsByID(pvs.ProductVersionID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if pv.Locked {
+		http.Error(w, "Product version locked", http.StatusInternalServerError)
+		return
+	}
+
 	if err := appContext.Repositories.ProductDAO.DeleteProductVersionService(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

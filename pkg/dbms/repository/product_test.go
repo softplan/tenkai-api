@@ -542,3 +542,48 @@ func TestListProductVersionServicesLatest_Error(t *testing.T) {
 
 	mock.ExpectationsWereMet()
 }
+
+func TestListProductVersionsServiceByID(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	mock.MatchExpectationsInOrder(false)
+	assert.Nil(t, err)
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	produtDAO := ProductDAOImpl{}
+	produtDAO.Db = gormDB
+
+	rows1 := sqlmock.NewRows([]string{"id", "product_version_id", "service_name",
+		"docker_image_tag"}).AddRow(999, 888, "my-svc", "19.3.0-0")
+
+	mock.ExpectQuery(`SELECT (.*) FROM "product_version_services"`).
+		WillReturnRows(rows1)
+
+	result, err := produtDAO.ListProductVersionsServiceByID(999)
+	assert.Nil(t, err)
+	assert.NotNil(t, result)
+
+	mock.ExpectationsWereMet()
+}
+
+func TestListProductVersionsServiceByID_Error(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	mock.MatchExpectationsInOrder(false)
+	assert.Nil(t, err)
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	produtDAO := ProductDAOImpl{}
+	produtDAO.Db = gormDB
+
+	mock.ExpectQuery(`SELECT (.*) FROM "product_version_services"`).
+		WillReturnError(errors.New("some error"))
+
+	result, err := produtDAO.ListProductVersionsServiceByID(999)
+	assert.Error(t, err)
+	assert.Nil(t, result)
+
+	mock.ExpectationsWereMet()
+}
