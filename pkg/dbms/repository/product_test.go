@@ -20,6 +20,7 @@ func getProductVersion() *model.ProductVersion {
 	item.Date = now
 	item.Version = "1.0"
 	item.CopyLatestRelease = true
+	item.Locked = false
 	return &item
 }
 
@@ -40,7 +41,7 @@ func TestCreateProductVersionCopying(t *testing.T) {
 	rows := sqlmock.NewRows([]string{"id"}).AddRow(1)
 
 	mock.ExpectQuery(`INSERT INTO "product_versions"`).
-		WithArgs(payload.CreatedAt, payload.UpdatedAt, payload.DeletedAt, payload.ProductID, payload.Date, payload.Version).
+		WithArgs(payload.CreatedAt, payload.UpdatedAt, payload.DeletedAt, payload.ProductID, payload.Date, payload.Version, payload.Locked).
 		WillReturnRows(rows)
 
 	rows2 := sqlmock.NewRows([]string{"id", "product_version_id"}).AddRow(1, 1)
@@ -110,8 +111,7 @@ func TestEdit(t *testing.T) {
 
 	product := model.Product{}
 	product.Name = "xpto"
-	product.Model.ID = 99
-	product.ID = 1
+	product.ID = 99
 
 	mock.ExpectExec(`UPDATE "products" SET (.*) WHERE (.*)`).
 		WithArgs(AnyTime{}, nil, product.Name, product.ID).WillReturnResult(sqlmock.NewResult(1, 1))
@@ -120,12 +120,15 @@ func TestEdit(t *testing.T) {
 	assert.Nil(t, err)
 
 	productVersion := model.ProductVersion{}
-	productVersion.Version = "200"
+	productVersion.Version = "19.3.0-0"
 	productVersion.ProductID = 99
-	productVersion.Model.ID = 1
+	productVersion.ID = 1
+	productVersion.Locked = false
 
-	mock.ExpectExec(`UPDATE "product_versions" SET (.*) WHERE (.*)`).
-		WithArgs(AnyTime{}, nil, productVersion.ProductID, productVersion.Date, productVersion.Version, productVersion.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(`UPDATE "product_versions"`).
+		WithArgs(AnyTime{}, nil, product.ID, AnyTime{},
+			productVersion.Version, productVersion.Locked, productVersion.ID).
+		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	err = produtDAO.EditProductVersion(productVersion)
 	assert.Nil(t, err)
@@ -139,7 +142,9 @@ func TestEdit(t *testing.T) {
 	productVersionService.ChartLatestVersion = "latest"
 
 	mock.ExpectExec(`UPDATE "product_version_services" SET (.*) WHERE (.*)`).
-		WithArgs(AnyTime{}, nil, productVersionService.ProductVersionID, productVersionService.ServiceName, productVersionService.DockerImageTag, productVersionService.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+		WithArgs(AnyTime{}, nil, productVersionService.ProductVersionID, productVersionService.ServiceName,
+			productVersionService.DockerImageTag, productVersionService.ID).
+		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	err = produtDAO.EditProductVersionService(productVersionService)
 	assert.Nil(t, err)
@@ -534,6 +539,51 @@ func TestListProductVersionServicesLatest_Error(t *testing.T) {
 
 	_, err = produtDAO.ListProductVersionServicesLatest(productID, productVersionID)
 	assert.Error(t, err)
+
+	mock.ExpectationsWereMet()
+}
+
+func TestListProductVersionsServiceByID(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	mock.MatchExpectationsInOrder(false)
+	assert.Nil(t, err)
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	produtDAO := ProductDAOImpl{}
+	produtDAO.Db = gormDB
+
+	rows1 := sqlmock.NewRows([]string{"id", "product_version_id", "service_name",
+		"docker_image_tag"}).AddRow(999, 888, "my-svc", "19.3.0-0")
+
+	mock.ExpectQuery(`SELECT (.*) FROM "product_version_services"`).
+		WillReturnRows(rows1)
+
+	result, err := produtDAO.ListProductVersionsServiceByID(999)
+	assert.Nil(t, err)
+	assert.NotNil(t, result)
+
+	mock.ExpectationsWereMet()
+}
+
+func TestListProductVersionsServiceByID_Error(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	mock.MatchExpectationsInOrder(false)
+	assert.Nil(t, err)
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	produtDAO := ProductDAOImpl{}
+	produtDAO.Db = gormDB
+
+	mock.ExpectQuery(`SELECT (.*) FROM "product_version_services"`).
+		WillReturnError(errors.New("some error"))
+
+	result, err := produtDAO.ListProductVersionsServiceByID(999)
+	assert.Error(t, err)
+	assert.Nil(t, result)
 
 	mock.ExpectationsWereMet()
 }
