@@ -31,6 +31,8 @@ type Repositories struct {
 	SolutionChartDAO repository.SolutionChartDAOInterface
 	UserDAO          repository.UserDAOInterface
 	VariableDAO      repository.VariableDAOInterface
+	ValueRuleDAO     repository.ValueRuleDAOInterface
+	VariableRuleDAO  repository.VariableRuleDAOInterface
 }
 
 //AppContext AppContext
@@ -141,10 +143,21 @@ func defineRotes(r *mux.Router, appContext *AppContext) {
 
 	r.HandleFunc("/listDockerTags", appContext.listDockerTags).Methods("POST")
 
-	r.HandleFunc("/permissions/users/{userId}/environments/{environmentId}", appContext.newEnvironmentPermission).Methods("GET")
+	r.HandleFunc("/permissions/users/{userId}/environments/{environmentId}",
+		appContext.newEnvironmentPermission).Methods("GET")
 
 	r.HandleFunc("/settings", appContext.addSettings).Methods("POST")
 	r.HandleFunc("/getSettingList", appContext.getSettingList).Methods("POST")
+
+	r.HandleFunc("/valuerules", appContext.listValueRules).Methods("GET")
+	r.HandleFunc("/valuerules", appContext.newValueRule).Methods("POST")
+	r.HandleFunc("/valuerules/edit", appContext.editValueRule).Methods("POST")
+	r.HandleFunc("/valuerules/{id}", appContext.deleteValueRule).Methods("DELETE")
+
+	r.HandleFunc("/variablerules", appContext.listVariableRules).Methods("GET")
+	r.HandleFunc("/variablerules", appContext.newVariableRule).Methods("POST")
+	r.HandleFunc("/variablerules/edit", appContext.editVariableRule).Methods("POST")
+	r.HandleFunc("/variablerules/{id}", appContext.deleteVariableRule).Methods("DELETE")
 
 	r.HandleFunc("/", appContext.rootHandler)
 
