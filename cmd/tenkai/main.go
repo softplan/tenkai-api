@@ -81,6 +81,8 @@ func initRepository(database *dbms.Database) handlers.Repositories {
 	repositories.SolutionChartDAO = &repository.SolutionChartDAOImpl{Db: database.Db}
 	repositories.UserDAO = &repository.UserDAOImpl{Db: database.Db}
 	repositories.VariableDAO = &repository.VariableDAOImpl{Db: database.Db}
+	repositories.VariableRuleDAO = &repository.VariableRuleDAOImpl{Db: database.Db}
+	repositories.ValueRuleDAO = &repository.ValueRuleDAOImpl{Db: database.Db}
 	return repositories
 }
 
