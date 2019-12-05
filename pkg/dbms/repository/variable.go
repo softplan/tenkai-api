@@ -3,6 +3,7 @@ package repository
 import (
 	"github.com/jinzhu/gorm"
 	model2 "github.com/softplan/tenkai-api/pkg/dbms/model"
+	"strings"
 )
 
 //VariableDAOInterface VariableDAOInterface
@@ -87,12 +88,18 @@ func (dao VariableDAOImpl) GetAllVariablesByEnvironment(envID int) ([]model2.Var
 
 //GetAllVariablesByEnvironmentAndScope - Retrieve all variables
 func (dao VariableDAOImpl) GetAllVariablesByEnvironmentAndScope(envID int, scope string) ([]model2.Variable, error) {
+
 	variables := make([]model2.Variable, 0)
 
-	if err := dao.Db.Where(&model2.Variable{EnvironmentID: envID,
-		Scope: scope,
-	}).Find(&variables).Error; err != nil {
-		return nil, err
+	barIndex := strings.Index(scope, "/")
+	if barIndex > -1 {
+		if err := dao.Db.Where(&model2.Variable{EnvironmentID: envID, Scope: scope}).Find(&variables).Error; err != nil {
+			return nil, err
+		}
+	} else {
+		if err := dao.Db.Where("environment_id = ? AND scope LIKE ?", envID, "%"+scope).Find(&variables).Error; err != nil {
+			return nil, err
+		}
 	}
 
 	return variables, nil

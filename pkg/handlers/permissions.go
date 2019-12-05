@@ -21,21 +21,21 @@ func (appContext *AppContext) newEnvironmentPermission(w http.ResponseWriter, r 
 	w.Header().Set(global.ContentType, global.JSONContentType)
 
 	vars := mux.Vars(r)
-	userID, err := strconv.Atoi(vars["userID"])
+	userID, err := strconv.Atoi(vars["userId"])
 
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	environmentID, err := strconv.Atoi(vars["environmentId"])
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	if err := appContext.Repositories.UserDAO.AssociateEnvironmentUser(userID, environmentID); err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 

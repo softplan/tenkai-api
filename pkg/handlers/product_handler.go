@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"sort"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/global"
 
 	"github.com/gorilla/mux"
@@ -16,6 +18,8 @@ import (
 	analyser "github.com/softplan/tenkai-api/pkg/service/analyser"
 	"github.com/softplan/tenkai-api/pkg/util"
 )
+
+const pvLockMsg = "Product version locked"
 
 func (appContext *AppContext) newProduct(w http.ResponseWriter, r *http.Request) {
 
@@ -145,6 +149,22 @@ func (appContext *AppContext) newProductVersionService(w http.ResponseWriter, r 
 		return
 	}
 
+	pv, err := appContext.Repositories.ProductDAO.ListProductVersionsByID(payload.ProductVersionID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if pv.Locked {
+		http.Error(w, pvLockMsg, http.StatusInternalServerError)
+		return
+	}
+
+	if !appContext.validateVersion(pv.Version, payload.DockerImageTag) {
+		http.Error(w, "Wrong version", http.StatusInternalServerError)
+		return
+	}
+
 	if _, err := appContext.Repositories.ProductDAO.CreateProductVersionService(payload); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -162,8 +182,19 @@ func (appContext *AppContext) editProductVersionService(w http.ResponseWriter, r
 		return
 	}
 
+	pv, err := appContext.Repositories.ProductDAO.ListProductVersionsByID(payload.ProductVersionID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	if err := appContext.Repositories.ProductDAO.EditProductVersionService(payload); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if pv.Locked {
+		http.Error(w, pvLockMsg, http.StatusInternalServerError)
 		return
 	}
 
@@ -176,6 +207,24 @@ func (appContext *AppContext) deleteProductVersionService(w http.ResponseWriter,
 	sl := vars["id"]
 	id, _ := strconv.Atoi(sl)
 	w.Header().Set(global.ContentType, global.JSONContentType)
+
+	pvs, err := appContext.Repositories.ProductDAO.ListProductVersionsServiceByID(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	pv, err := appContext.Repositories.ProductDAO.ListProductVersionsByID(pvs.ProductVersionID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if pv.Locked {
+		http.Error(w, pvLockMsg, http.StatusInternalServerError)
+		return
+	}
+
 	if err := appContext.Repositories.ProductDAO.DeleteProductVersionService(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -205,7 +254,60 @@ func (appContext *AppContext) listProductVersions(w http.ResponseWriter, r *http
 	data, _ := json.Marshal(result)
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
+}
 
+func (appContext *AppContext) lockUnlockCommon(w http.ResponseWriter, r *http.Request) (*model.ProductVersion, int, error) {
+	principal := util.GetPrincipal(r)
+	if !util.Contains(principal.Roles, constraints.TenkaiLockVersion) {
+		return nil, http.StatusUnauthorized, errors.New(global.AccessDenied)
+	}
+
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		return nil, http.StatusInternalServerError, err
+	}
+
+	pv, e := appContext.Repositories.ProductDAO.ListProductVersionsByID(id)
+	if e != nil {
+		return nil, http.StatusInternalServerError, e
+	}
+
+	return pv, http.StatusOK, nil
+}
+
+func (appContext *AppContext) lockProductVersion(w http.ResponseWriter, r *http.Request) {
+	pv, httpCode, err := appContext.lockUnlockCommon(w, r)
+	if err != nil {
+		http.Error(w, err.Error(), httpCode)
+		return
+	}
+
+	pv.Locked = true
+
+	if err := appContext.Repositories.ProductDAO.EditProductVersion(*pv); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (appContext *AppContext) unlockProductVersion(w http.ResponseWriter, r *http.Request) {
+	pv, httpCode, err := appContext.lockUnlockCommon(w, r)
+	if err != nil {
+		http.Error(w, err.Error(), httpCode)
+		return
+	}
+
+	pv.Locked = false
+
+	if err := appContext.Repositories.ProductDAO.EditProductVersion(*pv); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (appContext *AppContext) listProductVersionServices(w http.ResponseWriter, r *http.Request) {
@@ -305,13 +407,21 @@ func (appContext *AppContext) getChartLatestVersion(serviceName string, charts [
 	return ""
 }
 
-func (appContext *AppContext) verifyNewVersion(serviceName string, dockerImageTag string) (string, error) {
+func getCreateDateOfCurrentTag(tags []model.TagResponse, dockerImageTag string) time.Time {
+	var currentDate time.Time
+	for _, e := range tags {
+		if e.Tag == dockerImageTag {
+			currentDate = e.Created
+			break
+		}
+	}
+	return currentDate
+}
 
-	currentTag := getNumberOfTag(dockerImageTag)
+func (appContext *AppContext) getImageName(serviceName string) (string, error) {
 
-	var payload model.ListDockerTagsRequest
+	var result string
 
-	//imageCache := appContext.chartImageCache[pvs.ServiceName]
 	object, ok := appContext.ChartImageCache.Load(serviceName)
 	var imageCache string
 	if ok {
@@ -321,21 +431,32 @@ func (appContext *AppContext) verifyNewVersion(serviceName string, dockerImageTa
 	if !ok || imageCache == "" {
 		var err error
 
-		payload.ImageName, err = analyser.GetImageFromService(appContext.HelmServiceAPI, serviceName, &appContext.Mutex)
+		result, err = analyser.GetImageFromService(appContext.HelmServiceAPI, serviceName, &appContext.Mutex)
 		if err != nil {
 			return "", err
 		}
 
-		appContext.ChartImageCache.Store(serviceName, payload.ImageName)
-
-		//appContext.chartImageCache[pvs.ServiceName] = payload.ImageName
+		appContext.ChartImageCache.Store(serviceName, result)
 
 	} else {
-		//payload.ImageName = appContext.chartImageCache[pvs.ServiceName]
 		object, ok := appContext.ChartImageCache.Load(serviceName)
 		if ok {
-			payload.ImageName = object.(string)
+			result = object.(string)
 		}
+	}
+	return result, nil
+}
+
+func (appContext *AppContext) verifyNewVersion(serviceName string, dockerImageTag string) (string, error) {
+
+	currentTag := getNumberOfTag(dockerImageTag)
+
+	var payload model.ListDockerTagsRequest
+	var err error
+
+	payload.ImageName, err = appContext.getImageName(serviceName)
+	if err != nil {
+		return "", err
 	}
 
 	//Get version tags
@@ -347,13 +468,7 @@ func (appContext *AppContext) verifyNewVersion(serviceName string, dockerImageTa
 	var currentDate time.Time
 	majorList := make([]model.TagResponse, 0)
 
-	//Get create date of current tag
-	for _, e := range result.TagResponse {
-		if e.Tag == dockerImageTag {
-			currentDate = e.Created
-			break
-		}
-	}
+	currentDate = getCreateDateOfCurrentTag(result.TagResponse, dockerImageTag)
 
 	//Get all tags created after current tag
 	for _, e := range result.TagResponse {
@@ -411,4 +526,19 @@ func getNumberOfTag(tag string) uint64 {
 	result, _ := strconv.ParseUint(resultStr, 10, 64)
 
 	return result
+}
+
+func (appContext *AppContext) validateVersion(productVersion string, currentVersion string) bool {
+	a := strings.Split(normalize(productVersion), ".")
+	b := strings.Split(normalize(currentVersion), ".")
+
+	if len(a) >= 3 && len(b) >= 3 {
+		return a[0] == b[0] && a[1] == b[1] && a[2] == b[2]
+	}
+
+	return false
+}
+
+func normalize(s string) string {
+	return strings.ReplaceAll(s, "-", ".")
 }

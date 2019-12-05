@@ -26,7 +26,7 @@ func TestSaveVariableValues(t *testing.T) {
 	req, err := http.NewRequest("POST", "/saveVariableValues", bytes.NewBuffer(payloadStr))
 	assert.NoError(t, err)
 
-	mockPrincipal(req, []string{"tenkai-variables-save"})
+	mockPrincipal(req, "tenkai-variables-save")
 
 	var envs []model.Environment
 	envs = append(envs, mockGetEnv())
@@ -70,7 +70,7 @@ func TestSaveVariableValues_Unauthorized(t *testing.T) {
 	req, err := http.NewRequest("POST", "/saveVariableValues", bytes.NewBuffer(payloadStr))
 	assert.NoError(t, err)
 
-	mockPrincipal(req, []string{"role-unauthorized"})
+	mockPrincipal(req, "role-unauthorized")
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.saveVariableValues)
@@ -90,7 +90,7 @@ func TestSaveVariableValues_GetByIDError(t *testing.T) {
 	req, err := http.NewRequest("POST", "/saveVariableValues", bytes.NewBuffer(payloadStr))
 	assert.NoError(t, err)
 
-	mockPrincipal(req, []string{"tenkai-variables-save"})
+	mockPrincipal(req, "tenkai-variables-save")
 
 	var envs []model.Environment
 	envs = append(envs, mockGetEnv())
@@ -115,7 +115,7 @@ func TestSaveVariableValues_HasAccessError(t *testing.T) {
 
 func TestSaveVariableValues_UnmarshalPayloadError(t *testing.T) {
 	appContext := AppContext{}
-	rr := commonTestUnmarshalPayloadError(t, "/saveVariableValues", appContext.saveVariableValues)
+	rr := testUnmarshalPayloadErrorWithPrincipal(t, "/saveVariableValues", appContext.saveVariableValues, "tenkai-variables-save")
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
 
@@ -130,7 +130,7 @@ func TestSaveVariableValues_CreateVariableError(t *testing.T) {
 	req, err := http.NewRequest("POST", "/saveVariableValues", bytes.NewBuffer(payloadStr))
 	assert.NoError(t, err)
 
-	mockPrincipal(req, []string{"tenkai-variables-save"})
+	mockPrincipal(req, "tenkai-variables-save")
 
 	var envs []model.Environment
 	envs = append(envs, mockGetEnv())
@@ -160,7 +160,7 @@ func TestGetVariablesByEnvironmentAndScope(t *testing.T) {
 	req, err := http.NewRequest("POST", "/listVariables", getVarByEnvAndScopePayload())
 	assert.NoError(t, err)
 
-	mockPrincipal(req, []string{"tenkai-user"})
+	mockPrincipal(req, "tenkai-user")
 
 	mockEnvDao := mockGetAllEnvironments(&appContext)
 	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
@@ -182,7 +182,7 @@ func TestGetVariablesByEnvironmentAndScope(t *testing.T) {
 
 func TestGetVariablesByEnvironmentAndScope_UnmarshalPayloadError(t *testing.T) {
 	appContext := AppContext{}
-	rr := commonTestUnmarshalPayloadError(t, "/listVariables", appContext.getVariablesByEnvironmentAndScope)
+	rr := testUnmarshalPayloadError(t, "/listVariables", appContext.getVariablesByEnvironmentAndScope)
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
 
@@ -198,7 +198,7 @@ func TestGetVariablesByEnvironmentAndScope_Error(t *testing.T) {
 	req, err := http.NewRequest("POST", "/listVariables", getVarByEnvAndScopePayload())
 	assert.NoError(t, err)
 
-	mockPrincipal(req, []string{"tenkai-user"})
+	mockPrincipal(req, "tenkai-user")
 
 	mockEnvDao := mockGetAllEnvironments(&appContext)
 	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScopeError(&appContext)
@@ -215,11 +215,7 @@ func TestGetVariablesByEnvironmentAndScope_Error(t *testing.T) {
 func TestGetVariablesNotUsed(t *testing.T) {
 	appContext := AppContext{}
 
-	var variables []model.Variable
-	variables = append(variables, mockGlobalVariable())
-	variables = append(variables, mockVariable()) // Not used variable
-	mockVariableDAO := &mockRepo.VariableDAOInterface{}
-	mockVariableDAO.On("GetAllVariablesByEnvironment", mock.Anything).Return(variables, nil)
+	mockVariableDAO := mockGetAllVariablesByEnvironment(&appContext)
 
 	mockEnvDao := mockGetByID(&appContext)
 	appContext.Repositories.VariableDAO = mockVariableDAO

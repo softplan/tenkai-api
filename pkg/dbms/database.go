@@ -4,6 +4,7 @@ package dbms
 
 import (
 	"github.com/jinzhu/gorm"
+	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	model2 "github.com/softplan/tenkai-api/pkg/dbms/model"
 
 	//postgres
@@ -41,5 +42,9 @@ func (database *Database) Connect(dbmsURI string, local bool) {
 	database.Db.AutoMigrate(&model2.Product{})
 	database.Db.AutoMigrate(&model2.ProductVersion{})
 	database.Db.AutoMigrate(&model2.ProductVersionService{})
+	database.Db.AutoMigrate(&model2.ValueRule{})
+	database.Db.AutoMigrate(&model2.VariableRule{})
 
+	database.Db.Model(&model.ValueRule{}).
+		AddForeignKey("variable_rule_id", "variable_rules(id)", "CASCADE", "CASCADE")
 }

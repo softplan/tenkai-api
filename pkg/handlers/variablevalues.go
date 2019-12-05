@@ -63,6 +63,8 @@ func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.
 
 func (appContext *AppContext) getVariablesByEnvironmentAndScope(w http.ResponseWriter, r *http.Request) {
 
+	w.Header().Set(global.ContentType, global.JSONContentType)
+
 	principal := util.GetPrincipal(r)
 
 	type Payload struct {
@@ -91,6 +93,16 @@ func (appContext *AppContext) getVariablesByEnvironmentAndScope(w http.ResponseW
 		return
 	}
 
+	appContext.decodeSecrets(variableResult)
+
+	data, _ := json.Marshal(variableResult)
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+
+}
+
+func (appContext *AppContext) decodeSecrets(variableResult *model.VariablesResult) {
 	for i, e := range variableResult.Variables {
 		if e.Secret {
 			byteValues, _ := hex.DecodeString(e.Value)
@@ -100,12 +112,6 @@ func (appContext *AppContext) getVariablesByEnvironmentAndScope(w http.ResponseW
 			}
 		}
 	}
-
-	data, _ := json.Marshal(variableResult)
-	w.Header().Set(global.ContentType, global.JSONContentType)
-	w.WriteHeader(http.StatusOK)
-	w.Write(data)
-
 }
 
 func (appContext *AppContext) getVariablesNotUsed(w http.ResponseWriter, r *http.Request) {
@@ -159,13 +165,15 @@ func (appContext *AppContext) getVariablesNotUsed(w http.ResponseWriter, r *http
 }
 
 func scopeRunning(helmList *helmapi.HelmListResult, scope string, namespace string) bool {
-
 	result := false
-
 	if strings.Contains(scope, "gcm") {
 		scope = scope + "-" + namespace
 	} else {
-		scope = strings.ReplaceAll(scope, "saj6/", "")
+		i := strings.Index(scope, "/")
+		if i > 0 {
+			beforeBar := scope[:i+1]
+			scope = strings.ReplaceAll(scope, beforeBar, "")
+		}
 	}
 
 	for _, e := range helmList.Releases {

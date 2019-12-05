@@ -18,6 +18,7 @@ type ProductDAOInterface interface {
 	DeleteProductVersionService(id int) error
 	ListProducts() ([]model2.Product, error)
 	ListProductsVersions(id int) ([]model2.ProductVersion, error)
+	ListProductVersionsServiceByID(id int) (*model2.ProductVersionService, error)
 	ListProductsVersionServices(id int) ([]model2.ProductVersionService, error)
 	ListProductVersionServicesLatest(productID, productVersionID int) ([]model2.ProductVersionService, error)
 	CreateProductVersionCopying(payload model2.ProductVersion) (int, error)
@@ -120,6 +121,15 @@ func (dao ProductDAOImpl) ListProducts() ([]model2.Product, error) {
 		return nil, err
 	}
 	return list, nil
+}
+
+//ListProductVersionsServiceByID - ListProductVersionsServiceByID
+func (dao ProductDAOImpl) ListProductVersionsServiceByID(id int) (*model2.ProductVersionService, error) {
+	var result model2.ProductVersionService
+	if err := dao.Db.First(&result, id).Error; err != nil {
+		return nil, err
+	}
+	return &result, nil
 }
 
 //ListProductsVersions - List products versions

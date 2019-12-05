@@ -67,6 +67,8 @@ func (appContext *AppContext) editVariable(w http.ResponseWriter, r *http.Reques
 
 func (appContext *AppContext) getVariables(w http.ResponseWriter, r *http.Request) {
 
+	w.Header().Set(global.ContentType, global.JSONContentType)
+
 	principal := util.GetPrincipal(r)
 
 	vars := mux.Vars(r)
@@ -86,18 +88,9 @@ func (appContext *AppContext) getVariables(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	for i, e := range variableResult.Variables {
-		if e.Secret {
-			byteValues, _ := hex.DecodeString(e.Value)
-			value, err := util.Decrypt(byteValues, appContext.Configuration.App.Passkey)
-			if err == nil {
-				variableResult.Variables[i].Value = string(value)
-			}
-		}
-	}
+	appContext.decodeSecrets(variableResult)
 
 	data, _ := json.Marshal(variableResult)
-	w.Header().Set(global.ContentType, global.JSONContentType)
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 

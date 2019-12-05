@@ -13,15 +13,74 @@ import (
 	"strings"
 )
 
-//TODO - FIND A WAY TO DEFINE THE RIGHT REPOSITORY
-const (
-	defaultRepo string = "saj6/"
-)
-
 type releaseToDeploy struct {
 	Name         string
 	Chart        string
 	ChartVersion string
+}
+
+func (appContext *AppContext) validateAndExtractParams(w http.ResponseWriter, r *http.Request) (string, int64, int64, error) {
+
+	modes, ok := r.URL.Query()["mode"]
+
+	if !ok || len(modes[0]) < 1 {
+		error := errors.New("Url Param 'mode' is missing")
+		http.Error(w, error.Error(), http.StatusInternalServerError)
+		return "", -1, -1, error
+	}
+
+	mode := modes[0]
+
+	srcEnvID, ok := r.URL.Query()["srcEnvID"]
+	if !ok || len(srcEnvID[0]) < 1 || srcEnvID[0] == "undefined" {
+		error := errors.New("param srcEnvID is required")
+		http.Error(w, error.Error(), http.StatusInternalServerError)
+		return "", -1, -1, error
+	}
+
+	targetEnvID, ok := r.URL.Query()["targetEnvID"]
+	if !ok || len(targetEnvID[0]) < 1 || targetEnvID[0] == "undefined" {
+		error := errors.New("param targetEnvID is required")
+		http.Error(w, error.Error(), http.StatusInternalServerError)
+		return "", -1, -1, error
+	}
+
+	srcEnvIDi, _ := strconv.ParseInt(srcEnvID[0], 10, 64)
+	targetEnvIDi, _ := strconv.ParseInt(targetEnvID[0], 10, 64)
+
+	return mode, srcEnvIDi, targetEnvIDi, nil
+
+}
+
+func (appContext *AppContext) retrieveSrcAndTargetEnv(w http.ResponseWriter, principal model.Principal, srcEnvIDi int64, targetEnvIDi int64) (*model.Environment, *model.Environment, error) {
+	srcEnvironment, err := appContext.Repositories.EnvironmentDAO.GetByID(int(srcEnvIDi))
+	if err != nil {
+		http.Error(w, err.Error(), 501)
+		return nil, nil, err
+	}
+
+	targetEnvironment, err := appContext.Repositories.EnvironmentDAO.GetByID(int(targetEnvIDi))
+	if err != nil {
+		http.Error(w, err.Error(), 501)
+		return nil, nil, err
+	}
+
+	has, err := appContext.hasAccess(principal.Email, int(srcEnvironment.ID))
+	if err != nil || !has {
+		newErr := errors.New("Access Denied in environment " + srcEnvironment.Namespace)
+		http.Error(w, newErr.Error(), http.StatusUnauthorized)
+		return nil, nil, newErr
+	}
+
+	has, err = appContext.hasAccess(principal.Email, int(targetEnvironment.ID))
+	if err != nil || !has {
+		newErr := errors.New("Access Denied in environment " + targetEnvironment.Namespace)
+		http.Error(w, newErr.Error(), http.StatusUnauthorized)
+		return nil, nil, newErr
+	}
+
+	return srcEnvironment, targetEnvironment, nil
+
 }
 
 func (appContext *AppContext) promote(w http.ResponseWriter, r *http.Request) {
@@ -35,51 +94,13 @@ func (appContext *AppContext) promote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	modes, ok := r.URL.Query()["mode"]
-
-	if !ok || len(modes[0]) < 1 {
-		http.Error(w, errors.New("Url Param 'mode' is missing").Error(), http.StatusUnauthorized)
-		return
-	}
-
-	mode := modes[0]
-
-	srcEnvID, ok := r.URL.Query()["srcEnvID"]
-	if !ok || len(srcEnvID[0]) < 1 || srcEnvID[0] == "undefined" {
-		http.Error(w, errors.New("param srcEnvID is required").Error(), 501)
-		return
-	}
-
-	targetEnvID, ok := r.URL.Query()["targetEnvID"]
-	if !ok || len(targetEnvID[0]) < 1 || targetEnvID[0] == "undefined" {
-		http.Error(w, errors.New("param targetEnvID is required").Error(), 501)
-		return
-	}
-
-	srcEnvIDi, _ := strconv.ParseInt(srcEnvID[0], 10, 64)
-	targetEnvIDi, _ := strconv.ParseInt(targetEnvID[0], 10, 64)
-
-	srcEnvironment, err := appContext.Repositories.EnvironmentDAO.GetByID(int(srcEnvIDi))
+	mode, srcEnvIDi, targetEnvIDi, err := appContext.validateAndExtractParams(w, r)
 	if err != nil {
-		http.Error(w, err.Error(), 501)
 		return
 	}
 
-	targetEnvironment, err := appContext.Repositories.EnvironmentDAO.GetByID(int(targetEnvIDi))
-	if err != nil {
-		http.Error(w, err.Error(), 501)
-		return
-	}
-
-	has, err := appContext.hasAccess(principal.Email, int(srcEnvironment.ID))
-	if err != nil || !has {
-		http.Error(w, errors.New("Access Denied in environment "+srcEnvironment.Namespace).Error(), http.StatusUnauthorized)
-		return
-	}
-
-	has, err = appContext.hasAccess(principal.Email, int(targetEnvironment.ID))
-	if err != nil || !has {
-		http.Error(w, errors.New("Access Denied in environment "+targetEnvironment.Namespace).Error(), http.StatusUnauthorized)
+	srcEnvironment, targetEnvironment, envErr := appContext.retrieveSrcAndTargetEnv(w, principal, srcEnvIDi, targetEnvIDi)
+	if envErr != nil {
 		return
 	}
 
@@ -148,12 +169,23 @@ func (appContext *AppContext) doIt(kubeConfig string, targetEnvironment *model.E
 
 	for _, e := range toDeploy {
 		global.Logger.Info(logFields, "deploying: "+e.Name+" - "+e.Chart)
-		_, err := appContext.simpleInstall(targetEnvironment, e.Chart, e.ChartVersion, e.Name, out, false, false)
+
+		installPayload := convertPayload(e)
+
+		_, err := appContext.simpleInstall(targetEnvironment, installPayload, out, false, false)
 		if err != nil {
 			global.Logger.Error(logFields, "error: "+err.Error())
 		}
 	}
 
+}
+
+func convertPayload(e releaseToDeploy) model.InstallPayload {
+	p := model.InstallPayload{}
+	p.Chart = e.Chart
+	p.ChartVersion = e.ChartVersion
+	p.Name = e.Name
+	return p
 }
 
 func (appContext *AppContext) purgeAll(kubeConfig string, envs []releaseToDeploy) error {
@@ -236,7 +268,7 @@ func retrieveReleasesToDeploy(hsi helmapi.HelmServiceInterface, kubeConfig strin
 		name := strings.ReplaceAll(e.Name, "-"+srcNamespace, "")
 		lastHifen := strings.LastIndex(e.Chart, "-")
 
-		chart := defaultRepo + e.Chart[:lastHifen]
+		chart := e.Chart[:lastHifen]
 		result = append(result, releaseToDeploy{Name: name, Chart: chart})
 	}
 	return result, nil
@@ -259,7 +291,7 @@ func retrieveReleasesToPurge(hsi helmapi.HelmServiceInterface, kubeConfig string
 
 		lastHifen := strings.LastIndex(e.Chart, "-")
 
-		chart := defaultRepo + e.Chart[:lastHifen]
+		chart := e.Chart[:lastHifen]
 		result = append(result, releaseToDeploy{Name: e.Name, Chart: chart})
 	}
 	return result, nil
