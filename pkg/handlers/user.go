@@ -3,11 +3,12 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	"github.com/softplan/tenkai-api/pkg/constraints"
-	"github.com/softplan/tenkai-api/pkg/global"
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/softplan/tenkai-api/pkg/constraints"
+	"github.com/softplan/tenkai-api/pkg/global"
 
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
@@ -19,6 +20,7 @@ func (appContext *AppContext) newUser(w http.ResponseWriter, r *http.Request) {
 	principal := util.GetPrincipal(r)
 	if !util.Contains(principal.Roles, constraints.TenkaiAdmin) {
 		http.Error(w, errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
+		return
 	}
 
 	w.Header().Set(global.ContentType, global.JSONContentType)
@@ -26,12 +28,12 @@ func (appContext *AppContext) newUser(w http.ResponseWriter, r *http.Request) {
 	var payload model.User
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	if err := appContext.Repositories.UserDAO.CreateUser(payload); err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -46,12 +48,12 @@ func (appContext *AppContext) createOrUpdateUser(w http.ResponseWriter, r *http.
 	var payload model.User
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	if err := appContext.Repositories.UserDAO.CreateOrUpdateUser(payload); err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -65,7 +67,7 @@ func (appContext *AppContext) listUsers(w http.ResponseWriter, r *http.Request) 
 	var err error
 
 	if result.Users, err = appContext.Repositories.UserDAO.ListAllUsers(); err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 

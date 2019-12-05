@@ -19,6 +19,7 @@ type ProductVersion struct {
 	Date              time.Time `json:"date"`
 	Version           string    `json:"version"`
 	CopyLatestRelease bool      `gorm:"-" json:"copyLatestRelease"`
+	Locked            bool      `json:"locked"`
 }
 
 //ProductVersionService struct

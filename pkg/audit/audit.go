@@ -2,7 +2,6 @@ package audit
 
 import (
 	"context"
-	"fmt"
 	"github.com/olivere/elastic"
 	"github.com/olivere/elastic/config"
 	"time"
@@ -53,45 +52,36 @@ func (a ElkImpl) NewClient(config *config.Config) (*elastic.Client, error) {
 
 //ElkClient return a new ElkClient
 func (a AuditingImpl) ElkClient(url string, username string, password string) (*elastic.Client, error) {
+	config := buildConfig(url, username, password)
+	return a.Elk.NewClient(config)
+}
 
+//DoAudit create new audit log into elk
+func (a AuditingImpl) DoAudit(ctx context.Context, client *elastic.Client, username string, operation string, values map[string]string) {
+	if client != nil {
+		bulk := client.Bulk().Index("tenkai1audit").Type("audit")
+		doc := buildDoc(username, operation, values)
+		bulk.Add(elastic.NewBulkIndexRequest().Doc(doc)).Do(ctx)
+	}
+}
+
+func buildDoc(username string, operation string, values map[string]string) map[string]string {
+	doc := make(map[string]string)
+	doc["username"] = username
+	doc["operation"] = operation
+	doc["createat"] = time.Now().UTC().Format("2006-01-02T15:04:05-0700")
+	for k, v := range values {
+		doc[k] = v
+	}
+	return doc
+}
+
+func buildConfig(url string, username string, password string) *config.Config {
 	config := &config.Config{
 		URL:      url,
 		Username: username,
 		Password: password,
 		Index:    "tenkai1audit",
 	}
-
-	elasticClient, err := a.Elk.NewClient(config)
-	if err != nil {
-		return nil, err
-	}
-
-	return elasticClient, nil
-
-}
-
-//DoAudit create new audit log into elk
-func (a AuditingImpl) DoAudit(ctx context.Context, client *elastic.Client, username string, operation string, values map[string]string) {
-
-	if client != nil {
-
-		bulk := client.Bulk().Index("tenkai1audit").Type("audit")
-
-		doc := make(map[string]string)
-
-		doc["username"] = username
-		doc["operation"] = operation
-		doc["createat"] = time.Now().UTC().Format("2006-01-02T15:04:05-0700")
-
-		for k, v := range values {
-			doc[k] = v
-		}
-
-		_, err := bulk.Add(elastic.NewBulkIndexRequest().Doc(doc)).Do(ctx)
-		if err != nil {
-			fmt.Println("error doing audit")
-		}
-
-	}
-
+	return config
 }

@@ -19,7 +19,7 @@ import (
 )
 
 //mockPrincipal injects a http header with the specified role to be used only for testing.
-func mockPrincipal(req *http.Request, roles []string) {
+func mockPrincipal(req *http.Request, roles ...string) {
 	principal := model.Principal{Name: "alfa", Email: "beta@alfa.com", Roles: roles}
 	pSe, _ := json.Marshal(principal)
 	req.Header.Set("principal", string(pSe))
@@ -30,6 +30,17 @@ func mockGetByID(appContext *AppContext) *mockRepo.EnvironmentDAOInterface {
 	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
 	env := mockGetEnv()
 	mockEnvDao.On("GetByID", int(env.ID)).Return(&env, nil)
+	appContext.Repositories.EnvironmentDAO = mockEnvDao
+	return mockEnvDao
+}
+
+func mockEnvDaoWithLotOfThings(appContext *AppContext) *mockRepo.EnvironmentDAOInterface {
+	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
+	env := mockGetEnv()
+	mockEnvDao.On("GetByID", mock.Anything).Return(&env, nil)
+	var envs []model.Environment
+	envs = append(envs, mockGetEnv())
+	mockEnvDao.On("GetAllEnvironments", mock.Anything).Return(envs, nil)
 	appContext.Repositories.EnvironmentDAO = mockEnvDao
 	return mockEnvDao
 }
@@ -50,7 +61,7 @@ func mockGetEnv() model.Environment {
 	env.Name = "bar"
 	env.ClusterURI = "https://rancher-k8s-my-domain.com/k8s/clusters/c-kbfxr"
 	env.CACertificate = "my-certificate"
-	env.Token = "my-token"
+	env.Token = "kubeconfig-user-ph111:abbkdd57t68tq2lppg6lwb65sb69282jhsmh3ndwn4vhjtt8blmhh2"
 	env.Namespace = "dev"
 	env.Gateway = "my-gateway.istio-system.svc.cluster.local"
 	return env
@@ -101,6 +112,40 @@ func mockGetAllVariablesByEnvironmentAndScope(appContext *AppContext) *mockRepo.
 	return mockVariableDAO
 }
 
+func mockVariableDAOWithLotOfThings(appContext *AppContext) *mockRepo.VariableDAOInterface {
+	mockVariableDAO := &mockRepo.VariableDAOInterface{}
+	var variables []model.Variable
+	variable := mockGlobalVariable()
+	variables = append(variables, variable)
+	mockVariableDAO.On("GetAllVariablesByEnvironmentAndScope", int(variable.EnvironmentID), mock.Anything).Return(variables, nil)
+	mockVariableDAO.On("DeleteVariableByEnvironmentID", mock.Anything).Return(nil)
+	mockVariableDAO.On("GetAllVariablesByEnvironment", mock.Anything).Return(variables, nil)
+	mockVariableDAO.On("CreateVariable", mock.Anything).Return(nil, true, nil)
+
+	appContext.Repositories.VariableDAO = mockVariableDAO
+
+	return mockVariableDAO
+}
+
+func mockGetAllVariablesByEnvironment(appContext *AppContext) *mockRepo.VariableDAOInterface {
+	var variables []model.Variable
+	variables = append(variables, mockGlobalVariable())
+	variables = append(variables, mockVariable()) // Not used variable
+	mockVariableDAO := &mockRepo.VariableDAOInterface{}
+	mockVariableDAO.On("GetAllVariablesByEnvironment", mock.Anything).Return(variables, nil)
+
+	appContext.Repositories.VariableDAO = mockVariableDAO
+
+	return mockVariableDAO
+}
+
+func mockGetAllVariablesByEnvironmentError(appContext *AppContext) *mockRepo.VariableDAOInterface {
+	mockVariableDAO := &mockRepo.VariableDAOInterface{}
+	mockVariableDAO.On("GetAllVariablesByEnvironment", mock.Anything).Return(nil, errors.New("some error"))
+	appContext.Repositories.VariableDAO = mockVariableDAO
+	return mockVariableDAO
+}
+
 func mockGetAllVariablesByEnvironmentAndScopeError(appContext *AppContext) *mockRepo.VariableDAOInterface {
 	variable := mockGlobalVariable()
 	mockVariableDAO := &mockRepo.VariableDAOInterface{}
@@ -114,11 +159,22 @@ func mockGetAllVariablesByEnvironmentAndScopeError(appContext *AppContext) *mock
 //testHandlerFunc should be used only for testing.
 type testHandlerFunc func(http.ResponseWriter, *http.Request)
 
-func commonTestUnmarshalPayloadError(t *testing.T, endpoint string, handFunc testHandlerFunc) *httptest.ResponseRecorder {
+func testUnmarshalPayloadError(t *testing.T, endpoint string, handFunc testHandlerFunc) *httptest.ResponseRecorder {
 	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer([]byte(`["invalid": 123]`)))
 	assert.NoError(t, err)
 
-	mockPrincipal(req, []string{"tenkai-variables-save"})
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(handFunc)
+	handler.ServeHTTP(rr, req)
+
+	return rr
+}
+
+func testUnmarshalPayloadErrorWithPrincipal(t *testing.T, endpoint string, handFunc testHandlerFunc, role string) *httptest.ResponseRecorder {
+	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer([]byte(`["invalid": 123]`)))
+	assert.NoError(t, err)
+
+	mockPrincipal(req, role)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(handFunc)
@@ -131,7 +187,7 @@ func commonTestHasAccessError(t *testing.T, endpoint string, handFunc testHandle
 	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer([]byte(`{"data":[{"environmentId":999}]}`)))
 	assert.NoError(t, err)
 
-	mockPrincipal(req, []string{"tenkai-variables-save"})
+	mockPrincipal(req, "tenkai-variables-save")
 
 	var envs []model.Environment
 	envs = append(envs, mockGetEnv())
@@ -148,10 +204,21 @@ func commonTestHasAccessError(t *testing.T, endpoint string, handFunc testHandle
 }
 
 func mockGetAllEnvironments(appContext *AppContext) *mockRepo.EnvironmentDAOInterface {
+	return mockGetAllEnvironmentsPrincipal(appContext, "beta@alfa.com")
+}
+
+func mockGetAllEnvironmentsPrincipal(appContext *AppContext, principal string) *mockRepo.EnvironmentDAOInterface {
 	var envs []model.Environment
 	envs = append(envs, mockGetEnv())
 	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
-	mockEnvDao.On("GetAllEnvironments", "beta@alfa.com").Return(envs, nil)
+	mockEnvDao.On("GetAllEnvironments", principal).Return(envs, nil)
+	appContext.Repositories.EnvironmentDAO = mockEnvDao
+	return mockEnvDao
+}
+
+func mockGetAllEnvironmentsError(appContext *AppContext) *mockRepo.EnvironmentDAOInterface {
+	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
+	mockEnvDao.On("GetAllEnvironments", mock.Anything).Return(nil, errors.New("some error"))
 	appContext.Repositories.EnvironmentDAO = mockEnvDao
 	return mockEnvDao
 }
@@ -192,4 +259,119 @@ func mockListHelmDeployments(appContext *AppContext) *mockSvc.HelmServiceInterfa
 
 	appContext.HelmServiceAPI = mockHelmSvc
 	return mockHelmSvc
+}
+
+func mockListHelmDeploymentsError(appContext *AppContext) *mockSvc.HelmServiceInterface {
+	mockHelmSvc := &mockSvc.HelmServiceInterface{}
+	mockHelmSvc.On("ListHelmDeployments", mock.Anything, "dev").Return(nil, errors.New("some error"))
+
+	appContext.HelmServiceAPI = mockHelmSvc
+	return mockHelmSvc
+}
+
+func payload(v interface{}) *bytes.Buffer {
+	payloadStr, _ := json.Marshal(v)
+	return bytes.NewBuffer(payloadStr)
+}
+
+func getProduct() model.Product {
+	var payload model.Product
+	payload.ID = 999
+	payload.Name = "my-product"
+	return payload
+}
+
+func getProductWithoutID() model.Product {
+	var payload model.Product
+	payload.Name = "my-product"
+	return payload
+}
+
+func getProductVersionWithoutID(copyRelease bool) model.ProductVersion {
+	var p model.ProductVersion
+	p.Version = "19.0.1-0"
+	p.ProductID = 999
+	p.CopyLatestRelease = copyRelease
+	p.Locked = false
+	return p
+}
+
+func getProductVersionSvc() model.ProductVersionService {
+	var pvs model.ProductVersionService
+	pvs.ID = 888
+	pvs.ServiceName = "repo/my-chart - 0.1.0"
+	pvs.ProductVersionID = 999
+	pvs.DockerImageTag = "19.0.1-0"
+	return pvs
+}
+
+func getProductVersionSvcReqResp() *model.ProductVersionServiceRequestReponse {
+	childs := &model.ProductVersionServiceRequestReponse{}
+	childs.List = append(childs.List, getProductVersionSvc())
+	return childs
+}
+
+func getProductVersionReqResp() *model.ProductVersionRequestReponse {
+	pv := getProductVersionWithoutID(false)
+	pv.ID = 777
+	l := &model.ProductVersionRequestReponse{}
+	l.List = append(l.List, pv)
+	return l
+}
+
+func getHelmSearchResult() []model.SearchResult {
+	data := make([]model.SearchResult, 1)
+	data[0].Name = "repo/my-chart"
+	data[0].ChartVersion = "1.0"
+	data[0].Description = "Test only"
+	data[0].AppVersion = "1.0"
+	return data
+}
+
+func mockHelmSearchCharts(appContext *AppContext) *mockSvc.HelmServiceInterface {
+	mockHelmSvc := &mockSvc.HelmServiceInterface{}
+	data := getHelmSearchResult()
+	mockHelmSvc.On("SearchCharts", mock.Anything, true).Return(&data)
+	appContext.HelmServiceAPI = mockHelmSvc
+	return mockHelmSvc
+}
+
+func mockEditVariableError(appContext *AppContext) *mockRepo.VariableDAOInterface {
+	mockVariableDAO := &mockRepo.VariableDAOInterface{}
+	mockVariableDAO.On("EditVariable", mock.Anything).Return(errors.New("some error"))
+	appContext.Repositories.VariableDAO = mockVariableDAO
+	return mockVariableDAO
+}
+
+func mockVariableRule() model.VariableRule {
+	var item model.VariableRule
+	item.Name = "uriApi*"
+	return item
+}
+
+func mockVariableRuleWithID() model.VariableRule {
+	vr := mockValueRuleWithID()
+
+	var item model.VariableRule
+	item.ID = 999
+	item.Name = "uriApi*"
+	item.ValueRules = append(item.ValueRules, &vr)
+	return item
+}
+
+func mockValueRule() model.ValueRule {
+	var vr model.ValueRule
+	vr.Value = "http"
+	vr.Type = "StartsWith"
+	vr.VariableRuleID = 999
+	return vr
+}
+
+func mockValueRuleWithID() model.ValueRule {
+	var vr model.ValueRule
+	vr.ID = 888
+	vr.Value = "http"
+	vr.Type = "StartsWith"
+	vr.VariableRuleID = 999
+	return vr
 }

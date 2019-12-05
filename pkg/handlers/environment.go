@@ -5,13 +5,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"github.com/softplan/tenkai-api/pkg/constraints"
-	"github.com/softplan/tenkai-api/pkg/global"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/softplan/tenkai-api/pkg/constraints"
+	"github.com/softplan/tenkai-api/pkg/global"
 
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
@@ -23,6 +24,7 @@ func (appContext *AppContext) deleteEnvironment(w http.ResponseWriter, r *http.R
 	principal := util.GetPrincipal(r)
 	if !util.Contains(principal.Roles, constraints.TenkaiAdmin) {
 		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
+		return
 	}
 
 	vars := mux.Vars(r)
@@ -35,9 +37,9 @@ func (appContext *AppContext) deleteEnvironment(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	env, error := appContext.Repositories.EnvironmentDAO.GetByID(id)
-	if error != nil {
-		log.Println("Error retrieving environment by ID: ", error)
+	env, err := appContext.Repositories.EnvironmentDAO.GetByID(id)
+	if err != nil {
+		log.Println("Error retrieving environment by ID: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -62,6 +64,7 @@ func (appContext *AppContext) editEnvironment(w http.ResponseWriter, r *http.Req
 	principal := util.GetPrincipal(r)
 	if !util.Contains(principal.Roles, constraints.TenkaiAdmin) {
 		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
+		return
 	}
 
 	var payload model.DataElement
@@ -98,6 +101,7 @@ func (appContext *AppContext) duplicateEnvironments(w http.ResponseWriter, r *ht
 	principal := util.GetPrincipal(r)
 	if !util.Contains(principal.Roles, constraints.TenkaiAdmin) {
 		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
+		return
 	}
 
 	vars := mux.Vars(r)
@@ -246,12 +250,6 @@ func (appContext *AppContext) getAllEnvironments(w http.ResponseWriter, r *http.
 
 	w.Header().Set(global.ContentType, global.JSONContentType)
 
-	//principal := util.GetPrincipal(r)
-
-	//if !contains(principal.Roles, TenkaiAdmin) {
-	//	http.Error(w, errors.New("Acccess Defined").Error(), http.StatusUnauthorized)
-	//}
-
 	envResult := &model.EnvResult{}
 
 	var err error
@@ -263,7 +261,6 @@ func (appContext *AppContext) getAllEnvironments(w http.ResponseWriter, r *http.
 	w.WriteHeader(http.StatusOK)
 	data, _ := json.Marshal(envResult)
 	w.Write(data)
-
 }
 
 func removeEnvironmentFile(fileName string) error {

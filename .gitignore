@@ -16,3 +16,6 @@ cmd/tenkai/config
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 coverage.html
+
+# Ignore vscode workspace file
+*.code-workspace

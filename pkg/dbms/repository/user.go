@@ -57,7 +57,7 @@ func (dao UserDAOImpl) AssociateEnvironmentUser(userID int, environmentID int) e
 	if err := dao.Db.First(&environment, environmentID).Error; err != nil {
 		return err
 	}
-	if err := dao.Db.Model(&user).Association("Environments").Append(&environment).Error; err == nil {
+	if err := dao.Db.Model(&user).Association("Environments").Append(&environment).Error; err != nil {
 		return err
 	}
 

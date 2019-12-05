@@ -51,19 +51,19 @@ func (appContext *AppContext) deleteHelmRelease(w http.ResponseWriter, r *http.R
 
 	environmentIDs, ok := r.URL.Query()["environmentID"]
 	if !ok || len(environmentIDs[0]) < 1 {
-		http.Error(w, errors.New("param environmentID is required").Error(), 501)
+		http.Error(w, errors.New("param environmentID is required").Error(), http.StatusInternalServerError)
 		return
 	}
 
 	releasesName, ok := r.URL.Query()["releaseName"]
 	if !ok || len(releasesName[0]) < 1 {
-		http.Error(w, errors.New("param releasesName is required").Error(), 501)
+		http.Error(w, errors.New("param releasesName is required").Error(), http.StatusInternalServerError)
 		return
 	}
 
 	purges, ok := r.URL.Query()["purge"]
 	if !ok || len(purges[0]) < 1 {
-		http.Error(w, errors.New("param purges, is required").Error(), 501)
+		http.Error(w, errors.New("param purges, is required").Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -78,7 +78,7 @@ func (appContext *AppContext) deleteHelmRelease(w http.ResponseWriter, r *http.R
 
 	environment, err := appContext.Repositories.EnvironmentDAO.GetByID(int(envID))
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -87,7 +87,7 @@ func (appContext *AppContext) deleteHelmRelease(w http.ResponseWriter, r *http.R
 	purge, _ := strconv.ParseBool(purges[0])
 	err = appContext.HelmServiceAPI.DeleteHelmRelease(kubeConfig, releasesName[0], purge)
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -109,14 +109,14 @@ func (appContext *AppContext) rollback(w http.ResponseWriter, r *http.Request) {
 	var payload model.GetRevisionRequest
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	//Locate Environment
 	environment, err := appContext.Repositories.EnvironmentDAO.GetByID(payload.EnvironmentID)
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -124,7 +124,7 @@ func (appContext *AppContext) rollback(w http.ResponseWriter, r *http.Request) {
 
 	err = appContext.HelmServiceAPI.RollbackRelease(kubeConfig, payload.ReleaseName, payload.Revision)
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -139,14 +139,14 @@ func (appContext *AppContext) revision(w http.ResponseWriter, r *http.Request) {
 	var payload model.GetRevisionRequest
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	//Locate Environment
 	environment, err := appContext.Repositories.EnvironmentDAO.GetByID(payload.EnvironmentID)
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -167,14 +167,14 @@ func (appContext *AppContext) listReleaseHistory(w http.ResponseWriter, r *http.
 	var payload model.HistoryRequest
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	//Locate Environment
 	environment, err := appContext.Repositories.EnvironmentDAO.GetByID(payload.EnvironmentID)
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -193,14 +193,14 @@ func (appContext *AppContext) listHelmDeploymentsByEnvironment(w http.ResponseWr
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	//Locate Environment
 	environment, err := appContext.Repositories.EnvironmentDAO.GetByID(id)
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -211,7 +211,7 @@ func (appContext *AppContext) listHelmDeploymentsByEnvironment(w http.ResponseWr
 	result, err := appContext.HelmServiceAPI.ListHelmDeployments(kubeConfig, environment.Namespace)
 
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -254,14 +254,20 @@ func (appContext *AppContext) getChartVariables(w http.ResponseWriter, r *http.R
 	var payload model.GetChartRequest
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	result, err := appContext.HelmServiceAPI.GetTemplate(&appContext.Mutex, payload.ChartName, payload.ChartVersion, "values")
+	chartName, err := appContext.getChartName(payload.ChartName)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	result, err := appContext.HelmServiceAPI.GetTemplate(&appContext.Mutex, chartName, payload.ChartVersion, "values")
 
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -282,7 +288,7 @@ func (appContext *AppContext) getHelmCommand(w http.ResponseWriter, r *http.Requ
 	var payload model.MultipleInstallPayload
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -294,11 +300,11 @@ func (appContext *AppContext) getHelmCommand(w http.ResponseWriter, r *http.Requ
 		//Locate Environment
 		environment, err := appContext.Repositories.EnvironmentDAO.GetByID(element.EnvironmentID)
 		if err != nil {
-			http.Error(w, err.Error(), 501)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		command, errX := appContext.simpleInstall(environment, element.Chart, element.ChartVersion, element.Name, out, false, true)
+		command, errX := appContext.simpleInstall(environment, element, out, false, true)
 		if errX != nil {
 			http.Error(w, err.Error(), 501)
 			return
@@ -334,13 +340,17 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 	//Locate Environment
 	environment, err := appContext.Repositories.EnvironmentDAO.GetByID(payload.EnvironmentID)
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		msg := err.Error()
+		if err.Error() == "record not found" {
+			msg = "Environment " + strconv.Itoa(payload.EnvironmentID) + " not found"
+		}
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
 	for _, element := range payload.Deployables {
 
-		_, err = appContext.simpleInstall(environment, element.Chart, element.ChartVersion, element.Name, out, false, false)
+		_, err = appContext.simpleInstall(environment, element, out, false, false)
 		if err != nil {
 			http.Error(w, err.Error(), 501)
 			return
@@ -393,13 +403,11 @@ func (appContext *AppContext) install(w http.ResponseWriter, r *http.Request) {
 	//Locate Environment
 	environment, err := appContext.Repositories.EnvironmentDAO.GetByID(payload.EnvironmentID)
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	//TODO Verify if chart exists
-
-	_, err = appContext.simpleInstall(environment, payload.Chart, payload.ChartVersion, payload.Name, out, false, false)
+	_, err = appContext.simpleInstall(environment, payload, out, false, false)
 	if err != nil {
 		fmt.Println(out.String())
 		http.Error(w, err.Error(), 501)
@@ -425,12 +433,11 @@ func (appContext *AppContext) helmDryRun(w http.ResponseWriter, r *http.Request)
 	//Locate Environment
 	environment, err := appContext.Repositories.EnvironmentDAO.GetByID(payload.EnvironmentID)
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	//TODO Verify if chart exists
-	_, err = appContext.simpleInstall(environment, payload.Chart, payload.ChartVersion, payload.Name, out, true, false)
+	_, err = appContext.simpleInstall(environment, payload, out, true, false)
 
 	if err != nil {
 		http.Error(w, err.Error(), 501)
@@ -460,14 +467,13 @@ func (appContext *AppContext) getArgs(variables []model.Variable, globalVariable
 	return args
 }
 
-func (appContext *AppContext) simpleInstall(environment *model.Environment, chart string, chartVersion string,
-	name string, out *bytes.Buffer, dryRun bool, helmCommandOnly bool) (string, error) {
+func (appContext *AppContext) simpleInstall(environment *model.Environment, installPayload model.InstallPayload, out *bytes.Buffer, dryRun bool, helmCommandOnly bool) (string, error) {
 
 	//WARNING - VERIFY IF CONFIG FILE EXISTS !!! This is the cause of  u.client.ReleaseHistory fail sometimes.
 
-	searchTerm := chart
-	if strings.Index(name, "gcm") > -1 {
-		searchTerm = name
+	searchTerm := installPayload.Chart
+	if strings.Index(installPayload.Name, "gcm") > -1 {
+		searchTerm = installPayload.Name
 	}
 	variables, err := appContext.Repositories.VariableDAO.GetAllVariablesByEnvironmentAndScope(int(environment.ID), searchTerm)
 	globalVariables := appContext.getGlobalVariables(int(environment.ID))
@@ -483,7 +489,7 @@ func (appContext *AppContext) simpleInstall(environment *model.Environment, char
 	args = append(args, "app.dateHour="+dt.String())
 
 	if err == nil {
-		name := name + "-" + environment.Namespace
+		name := installPayload.Name + "-" + environment.Namespace
 		kubeConfig := appContext.ConventionInterface.GetKubeConfigFileName(environment.Group, environment.Name)
 
 		if !helmCommandOnly {
@@ -491,8 +497,8 @@ func (appContext *AppContext) simpleInstall(environment *model.Environment, char
 			upgradeRequest := helmapi.UpgradeRequest{}
 			upgradeRequest.Kubeconfig = kubeConfig
 			upgradeRequest.Namespace = environment.Namespace
-			upgradeRequest.ChartVersion = chartVersion
-			upgradeRequest.Chart = chart
+			upgradeRequest.ChartVersion = installPayload.ChartVersion
+			upgradeRequest.Chart = installPayload.Chart
 			upgradeRequest.Variables = args
 			upgradeRequest.Dryrun = dryRun
 			upgradeRequest.Release = name
@@ -501,15 +507,32 @@ func (appContext *AppContext) simpleInstall(environment *model.Environment, char
 
 		}
 
-		return getHelmMessage(name, args, environment, chart), nil
+		return getHelmMessage(name, args, environment, installPayload.Chart), nil
 
 	}
 
 	return "", nil
 }
 
+func (appContext *AppContext) getChartName(name string) (string, error) {
+
+	searchTerms := []string{name}
+	searchResult := appContext.HelmServiceAPI.SearchCharts(searchTerms, false)
+
+	if len(*searchResult) > 0 {
+		r := *searchResult
+		return r[0].Name, nil
+	}
+	return "", errors.New("Chart does not exists")
+}
+
 func (appContext *AppContext) doUpgrade(upgradeRequest helmapi.UpgradeRequest, out *bytes.Buffer) (string, error) {
-	err := appContext.HelmServiceAPI.Upgrade(upgradeRequest, out)
+	var err error
+	upgradeRequest.Chart, err = appContext.getChartName(upgradeRequest.Chart)
+	if err != nil {
+		return "", err
+	}
+	err = appContext.HelmServiceAPI.Upgrade(upgradeRequest, out)
 	if err != nil {
 		return "", err
 	}
