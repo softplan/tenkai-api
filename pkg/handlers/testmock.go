@@ -342,3 +342,36 @@ func mockEditVariableError(appContext *AppContext) *mockRepo.VariableDAOInterfac
 	appContext.Repositories.VariableDAO = mockVariableDAO
 	return mockVariableDAO
 }
+
+func mockVariableRule() model.VariableRule {
+	var item model.VariableRule
+	item.Name = "uriApi*"
+	return item
+}
+
+func mockVariableRuleWithID() model.VariableRule {
+	vr := mockValueRuleWithID()
+
+	var item model.VariableRule
+	item.ID = 999
+	item.Name = "uriApi*"
+	item.ValueRules = append(item.ValueRules, &vr)
+	return item
+}
+
+func mockValueRule() model.ValueRule {
+	var vr model.ValueRule
+	vr.Value = "http"
+	vr.Type = "StartsWith"
+	vr.VariableRuleID = 999
+	return vr
+}
+
+func mockValueRuleWithID() model.ValueRule {
+	var vr model.ValueRule
+	vr.ID = 888
+	vr.Value = "http"
+	vr.Type = "StartsWith"
+	vr.VariableRuleID = 999
+	return vr
+}
