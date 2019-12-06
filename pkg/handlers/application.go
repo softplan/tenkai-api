@@ -159,6 +159,8 @@ func defineRotes(r *mux.Router, appContext *AppContext) {
 	r.HandleFunc("/variablerules/edit", appContext.editVariableRule).Methods("POST")
 	r.HandleFunc("/variablerules/{id}", appContext.deleteVariableRule).Methods("DELETE")
 
+	r.HandleFunc("/validateVariables", appContext.validateVariables).Methods("POST")
+
 	r.HandleFunc("/", appContext.rootHandler)
 
 }
