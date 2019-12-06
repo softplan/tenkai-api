@@ -241,18 +241,3 @@ func TestGetVariablesNotUsed(t *testing.T) {
 	assert.Equal(t, `[{"id":0,"scope":"bar","name":"password","value":"password"}]`,
 		string(rr.Body.Bytes()), "Should found 1 not used variable.")
 }
-
-func getVarByEnvAndScopePayload() *bytes.Buffer {
-
-	type Payload struct {
-		EnvironmentID int    `json:"environmentId"`
-		Scope         string `json:"scope"`
-	}
-
-	var payload Payload
-	payload.EnvironmentID = 999
-	payload.Scope = "global"
-	payloadStr, _ := json.Marshal(payload)
-
-	return bytes.NewBuffer(payloadStr)
-}

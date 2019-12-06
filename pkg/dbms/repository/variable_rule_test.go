@@ -12,7 +12,7 @@ import (
 
 func getVariableRule() model.VariableRule {
 	var item model.VariableRule
-	item.Name = "uriApi*"
+	item.Name = "urlapi.*"
 	return item
 }
 
