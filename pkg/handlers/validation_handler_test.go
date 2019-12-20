@@ -1,10 +1,13 @@
 package handlers
 
 import (
+	"bytes"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
 	"github.com/stretchr/testify/assert"
@@ -192,6 +195,107 @@ func TestValidateRegEx(t *testing.T) {
 	assert.NotNil(t, ivr)
 	assert.NotEmpty(t, ivr.InvalidVariables)
 	assert.Equal(t, 1, len(ivr.InvalidVariables))
+}
+
+func TestValidateEnvironmentVariables(t *testing.T) {
+	appContext := AppContext{}
+
+	invalidVar := getVar("dbUsername", "")
+	validVar := getVar("dbUsername", "user")
+
+	mockVariableDAO := &mockRepo.VariableDAOInterface{}
+	var variables []model.Variable
+	variables = append(variables, invalidVar, validVar)
+	mockVariableDAO.On("GetAllVariablesByEnvironment", 999).Return(variables, nil)
+
+	var varRules []model.VariableRule
+	varRules = append(varRules, getVarRule("dbUsername", "NotEmpty", ""))
+	mockVariableRuleDAO := &mockRepo.VariableRuleDAOInterface{}
+	mockVariableRuleDAO.On("ListVariableRules").Return(varRules, nil)
+
+	appContext.Repositories.VariableDAO = mockVariableDAO
+	appContext.Repositories.VariableRuleDAO = mockVariableRuleDAO
+
+	req, err := http.NewRequest("GET", "/validateEnvVars/999", bytes.NewBuffer(nil))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, "tenkai-user")
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/validateEnvVars/{envId}", appContext.validateEnvironmentVariables).Methods("GET")
+	r.ServeHTTP(rr, req)
+
+	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironment", 1)
+	mockVariableRuleDAO.AssertNumberOfCalls(t, "ListVariableRules", 1)
+	assert.Equal(t, http.StatusOK, rr.Code, "Response should be ok.")
+
+	res := string(rr.Body.Bytes())
+	assert.Equal(t, res, `{"InvalidVariables":[{"scope":"global","name":"dbUsername","value":"","variableRule":"dbUsername","ruleType":"NotEmpty","valueRule":""}]}`)
+}
+
+func TestValidateEnvironmentVariables_Error1(t *testing.T) {
+	appContext := AppContext{}
+
+	invalidVar := getVar("dbUsername", "")
+	validVar := getVar("dbUsername", "user")
+
+	mockVariableDAO := &mockRepo.VariableDAOInterface{}
+	var variables []model.Variable
+	variables = append(variables, invalidVar, validVar)
+	mockVariableDAO.On("GetAllVariablesByEnvironment", 999).Return(variables, errors.New("some error"))
+
+	appContext.Repositories.VariableDAO = mockVariableDAO
+
+	req, err := http.NewRequest("GET", "/validateEnvVars/999", bytes.NewBuffer(nil))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, "tenkai-user")
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/validateEnvVars/{envId}", appContext.validateEnvironmentVariables).Methods("GET")
+	r.ServeHTTP(rr, req)
+
+	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironment", 1)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestValidateEnvironmentVariables_Error2(t *testing.T) {
+	appContext := AppContext{}
+
+	invalidVar := getVar("dbUsername", "")
+	validVar := getVar("dbUsername", "user")
+
+	mockVariableDAO := &mockRepo.VariableDAOInterface{}
+	var variables []model.Variable
+	variables = append(variables, invalidVar, validVar)
+	mockVariableDAO.On("GetAllVariablesByEnvironment", 999).Return(variables, nil)
+
+	var varRules []model.VariableRule
+	varRules = append(varRules, getVarRule("dbUsername", "NotEmpty", ""))
+	mockVariableRuleDAO := &mockRepo.VariableRuleDAOInterface{}
+	mockVariableRuleDAO.On("ListVariableRules").Return(varRules, errors.New("some error"))
+
+	appContext.Repositories.VariableDAO = mockVariableDAO
+	appContext.Repositories.VariableRuleDAO = mockVariableRuleDAO
+
+	req, err := http.NewRequest("GET", "/validateEnvVars/999", bytes.NewBuffer(nil))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, "tenkai-user")
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/validateEnvVars/{envId}", appContext.validateEnvironmentVariables).Methods("GET")
+	r.ServeHTTP(rr, req)
+
+	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironment", 1)
+	mockVariableRuleDAO.AssertNumberOfCalls(t, "ListVariableRules", 1)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
 
 func getVar(name string, value string) model.Variable {

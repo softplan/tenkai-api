@@ -9,6 +9,7 @@ import (
 
 	"log"
 
+	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/global"
 	"github.com/softplan/tenkai-api/pkg/util"
@@ -31,6 +32,37 @@ func (appContext *AppContext) validateVariables(w http.ResponseWriter, r *http.R
 	}
 
 	vars, err := appContext.Repositories.VariableDAO.GetAllVariablesByEnvironmentAndScope(payload.EnvironmentID, payload.Scope)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	vrs, err := appContext.Repositories.VariableRuleDAO.ListVariableRules()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	ivr, err := appContext.validate(vars, vrs)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data, _ := json.Marshal(ivr)
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+}
+
+func (appContext *AppContext) validateEnvironmentVariables(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set(global.ContentType, global.JSONContentType)
+
+	v := mux.Vars(r)
+	sl := v["envId"]
+	envID, _ := strconv.Atoi(sl)
+
+	vars, err := appContext.Repositories.VariableDAO.GetAllVariablesByEnvironment(envID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
