@@ -14,7 +14,7 @@ import (
 
 func getVariableRule() model.VariableRule {
 	var item model.VariableRule
-	item.Name = "uriApi*"
+	item.Name = "urlapi.*"
 	return item
 }
 
@@ -183,7 +183,7 @@ func TestListVariableRule(t *testing.T) {
 
 	response := string(rr.Body.Bytes())
 	assert.Contains(t, response, `{"list":[{"ID":999,`)
-	assert.Contains(t, response, `"name":"uriApi*","ValueRules":[{"ID":888,`)
+	assert.Contains(t, response, `"name":"urlapi.*","ValueRules":[{"ID":888,`)
 	assert.Contains(t, response, `"type":"StartsWith","value":"http","VariableRuleID":999}]}]}`)
 }
 

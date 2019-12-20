@@ -103,3 +103,18 @@ type GetChartRequest struct {
 	ChartName    string `json:"chartName"`
 	ChartVersion string `json:"chartVersion"`
 }
+
+//InvalidVariablesResult Model
+type InvalidVariablesResult struct {
+	InvalidVariables []InvalidVariable
+}
+
+//InvalidVariable Model
+type InvalidVariable struct {
+	Scope        string `json:"scope"`
+	Name         string `json:"name"`
+	Value        string `json:"value"`
+	VariableRule string `json:"variableRule"`
+	RuleType     string `json:"ruleType"`
+	ValueRule    string `json:"valueRule"`
+}

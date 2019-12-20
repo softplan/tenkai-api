@@ -345,7 +345,7 @@ func mockEditVariableError(appContext *AppContext) *mockRepo.VariableDAOInterfac
 
 func mockVariableRule() model.VariableRule {
 	var item model.VariableRule
-	item.Name = "uriApi*"
+	item.Name = "urlapi.*"
 	return item
 }
 
@@ -354,7 +354,7 @@ func mockVariableRuleWithID() model.VariableRule {
 
 	var item model.VariableRule
 	item.ID = 999
-	item.Name = "uriApi*"
+	item.Name = "urlapi.*"
 	item.ValueRules = append(item.ValueRules, &vr)
 	return item
 }
@@ -374,4 +374,22 @@ func mockValueRuleWithID() model.ValueRule {
 	vr.Type = "StartsWith"
 	vr.VariableRuleID = 999
 	return vr
+}
+
+func getVarByEnvAndScopePayload() *bytes.Buffer {
+	return createPayloadWithScopeAndID(999, "global")
+}
+
+func createPayloadWithScopeAndID(id int, scope string) *bytes.Buffer {
+	type Payload struct {
+		EnvironmentID int    `json:"environmentId"`
+		Scope         string `json:"scope"`
+	}
+
+	var payload Payload
+	payload.EnvironmentID = id
+	payload.Scope = scope
+	payloadStr, _ := json.Marshal(payload)
+
+	return bytes.NewBuffer(payloadStr)
 }
