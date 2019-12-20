@@ -39,7 +39,7 @@ func (dao VariableRuleDAOImpl) DeleteVariableRule(id int) error {
 //ListVariableRules - List value rules
 func (dao VariableRuleDAOImpl) ListVariableRules() ([]model.VariableRule, error) {
 	list := make([]model.VariableRule, 0)
-	if err := dao.Db.Find(&list).Error; err != nil {
+	if err := dao.Db.Preload("ValueRules").Find(&list).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return make([]model.VariableRule, 0), nil
 		}
