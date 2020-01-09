@@ -119,6 +119,15 @@ func (appContext *AppContext) audit(updated bool, auditValues map[string]string,
 
 func (appContext *AppContext) getHelmChartAppVars(chart string, chartVersion string) (map[string]interface{}, error) {
 
+	if strings.HasSuffix(chart, "-gcm") {
+		var config model.ConfigMap
+		var err error
+		if config, err = appContext.Repositories.ConfigDAO.GetConfigByName("commonValuesConfigMapChart"); err != nil {
+			return nil, err
+		}
+		chart = config.Value
+	}
+
 	chartVariables, err := appContext.HelmServiceAPI.GetTemplate(&appContext.Mutex, chart, chartVersion, "values")
 	if err != nil {
 		return nil, err
