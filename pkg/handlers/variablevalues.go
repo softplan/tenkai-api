@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -31,18 +32,30 @@ func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.
 		return
 	}
 
-	for _, item := range payload.Data {
+	cacheVars := make(map[string]map[string]interface{})
 
-		targetEnvironment, err := appContext.Repositories.EnvironmentDAO.GetByID(int(item.EnvironmentID))
-		if err != nil {
-			http.Error(w, err.Error(), 501)
-			return
-		}
+	firstVar := payload.Data[0]
+	targetEnvironment, err := appContext.Repositories.EnvironmentDAO.GetByID(int(firstVar.EnvironmentID))
+	if err != nil {
+		http.Error(w, err.Error(), 501)
+		return
+	}
+
+	for _, item := range payload.Data {
 
 		has, err := appContext.hasAccess(principal.Email, int(targetEnvironment.ID))
 		if err != nil || !has {
 			http.Error(w, errors.New("Access Denied in environment "+targetEnvironment.Namespace).Error(), http.StatusUnauthorized)
 			return
+		}
+
+		if cacheVars[item.Scope] == nil {
+			appVars, err := appContext.getHelmChartAppVars(item.Scope, item.ChartVersion)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			cacheVars[item.Scope] = appVars
 		}
 
 		var auditValues map[string]string
@@ -58,7 +71,48 @@ func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.
 		}
 
 	}
+
+	// Save variables with default values specified in values.yaml
+	for chartName, charts := range cacheVars {
+		for varName, varDefaultValue := range charts {
+			defaultValue := fmt.Sprintf("%v", varDefaultValue)
+
+			item := model.Variable{
+				EnvironmentID: int(firstVar.EnvironmentID),
+				Scope:         chartName,
+				Name:          varName,
+				Value:         defaultValue,
+			}
+
+			var auditValues map[string]string
+			var updated bool
+			var err error
+			if auditValues, updated, err = appContext.Repositories.VariableDAO.CreateVariableWithDefaultValue(item); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			if updated {
+				auditValues["environment"] = targetEnvironment.Name
+				appContext.Auditing.DoAudit(r.Context(), appContext.Elk, principal.Email, "saveVariable", auditValues)
+			}
+		}
+	}
+
 	w.WriteHeader(http.StatusCreated)
+}
+
+func (appContext *AppContext) getHelmChartAppVars(chart string, chartVersion string) (map[string]interface{}, error) {
+
+	chartVariables, err := appContext.HelmServiceAPI.GetTemplate(&appContext.Mutex, chart, chartVersion, "values")
+	if err != nil {
+		return nil, err
+	}
+
+	var result map[string]interface{}
+	json.Unmarshal(chartVariables, &result)
+	app := result["app"].(map[string]interface{})
+
+	return app, nil
 }
 
 func (appContext *AppContext) getVariablesByEnvironmentAndScope(w http.ResponseWriter, r *http.Request) {
