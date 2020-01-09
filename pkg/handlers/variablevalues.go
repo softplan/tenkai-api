@@ -32,14 +32,14 @@ func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.
 		return
 	}
 
-	cacheVars := make(map[string]map[string]interface{})
-
 	firstVar := payload.Data[0]
 	targetEnvironment, err := appContext.Repositories.EnvironmentDAO.GetByID(int(firstVar.EnvironmentID))
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
 	}
+
+	cacheVars := make(map[string]map[string]interface{})
 
 	for _, item := range payload.Data {
 
@@ -49,27 +49,18 @@ func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.
 			return
 		}
 
-		if cacheVars[item.Scope] == nil {
-			appVars, err := appContext.getHelmChartAppVars(item.Scope, item.ChartVersion)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			cacheVars[item.Scope] = appVars
-		}
-
-		var auditValues map[string]string
-		var updated bool
-		if auditValues, updated, err = appContext.Repositories.VariableDAO.CreateVariable(item); err != nil {
+		if err := appContext.loadChartVars(cacheVars, item); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		if updated {
-			auditValues["environment"] = targetEnvironment.Name
-			appContext.Auditing.DoAudit(r.Context(), appContext.Elk, principal.Email, "saveVariable", auditValues)
+		var updated bool
+		var auditValues map[string]string
+		if auditValues, updated, err = appContext.Repositories.VariableDAO.CreateVariable(item); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
-
+		appContext.audit(updated, auditValues, targetEnvironment, principal, r)
 	}
 
 	// Save variables with default values specified in values.yaml
@@ -78,6 +69,17 @@ func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.
 	}
 
 	w.WriteHeader(http.StatusCreated)
+}
+
+func (appContext *AppContext) loadChartVars(cacheVars map[string]map[string]interface{}, item model.Variable) error {
+	if cacheVars[item.Scope] == nil {
+		appVars, err := appContext.getHelmChartAppVars(item.Scope, item.ChartVersion)
+		if err != nil {
+			return err
+		}
+		cacheVars[item.Scope] = appVars
+	}
+	return nil
 }
 
 func (appContext *AppContext) saveVariablesWithDefaultValue(cacheVars map[string]map[string]interface{},
@@ -94,19 +96,25 @@ func (appContext *AppContext) saveVariablesWithDefaultValue(cacheVars map[string
 				Value:         defaultValue,
 			}
 
-			var auditValues map[string]string
-			var updated bool
 			var err error
+			var updated bool
+			var auditValues map[string]string
 			if auditValues, updated, err = appContext.Repositories.VariableDAO.CreateVariableWithDefaultValue(item); err != nil {
 				return err
 			}
-			if updated {
-				auditValues["environment"] = targetEnvironment.Name
-				appContext.Auditing.DoAudit(r.Context(), appContext.Elk, principal.Email, "saveVariable", auditValues)
-			}
+			appContext.audit(updated, auditValues, targetEnvironment, principal, r)
 		}
 	}
 	return nil
+}
+
+func (appContext *AppContext) audit(updated bool, auditValues map[string]string,
+	targetEnvironment *model.Environment, principal model.Principal, r *http.Request) {
+
+	if updated {
+		auditValues["environment"] = targetEnvironment.Name
+		appContext.Auditing.DoAudit(r.Context(), appContext.Elk, principal.Email, "saveVariable", auditValues)
+	}
 }
 
 func (appContext *AppContext) getHelmChartAppVars(chart string, chartVersion string) (map[string]interface{}, error) {
