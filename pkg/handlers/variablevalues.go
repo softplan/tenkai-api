@@ -73,6 +73,16 @@ func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.
 	}
 
 	// Save variables with default values specified in values.yaml
+	if err := appContext.saveVariablesWithDefaultValue(cacheVars, firstVar, targetEnvironment, r, principal); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (appContext *AppContext) saveVariablesWithDefaultValue(cacheVars map[string]map[string]interface{},
+	firstVar model.Variable, targetEnvironment *model.Environment, r *http.Request, principal model.Principal) error {
+
 	for chartName, charts := range cacheVars {
 		for varName, varDefaultValue := range charts {
 			defaultValue := fmt.Sprintf("%v", varDefaultValue)
@@ -88,8 +98,7 @@ func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.
 			var updated bool
 			var err error
 			if auditValues, updated, err = appContext.Repositories.VariableDAO.CreateVariableWithDefaultValue(item); err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
+				return err
 			}
 			if updated {
 				auditValues["environment"] = targetEnvironment.Name
@@ -97,8 +106,7 @@ func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.
 			}
 		}
 	}
-
-	w.WriteHeader(http.StatusCreated)
+	return nil
 }
 
 func (appContext *AppContext) getHelmChartAppVars(chart string, chartVersion string) (map[string]interface{}, error) {
