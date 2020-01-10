@@ -178,9 +178,9 @@ func TestGetVariables(t *testing.T) {
 
 	response := string(rr.Body.Bytes())
 	assert.Contains(t, response, `{"Variables":[{"ID":0,`)
-	assert.Contains(t, response, `"scope":"global","name":"username","value":"user",`)
+	assert.Contains(t, response, `"scope":"global","chartVersion":"","name":"username","value":"user",`)
 	assert.Contains(t, response, `"secret":false,"description":"Login username.","environmentId":999},{"ID":0,`)
-	assert.Contains(t, response, `"scope":"bar","name":"password","value":"password","secret":false,`)
+	assert.Contains(t, response, `"scope":"bar","chartVersion":"","name":"password","value":"password","secret":false,`)
 	assert.Contains(t, response, `"description":"Login password.","environmentId":999}]}`)
 }
 

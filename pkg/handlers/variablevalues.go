@@ -136,6 +136,7 @@ func (appContext *AppContext) getHelmChartAppVars(chart string, chartVersion str
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println(string(chartVariables))
 
 	var result map[string]interface{}
 	json.Unmarshal(chartVariables, &result)
