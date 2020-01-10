@@ -89,6 +89,10 @@ func (appContext *AppContext) saveVariablesWithDefaultValue(cacheVars map[string
 		for varName, varDefaultValue := range charts {
 			defaultValue := fmt.Sprintf("%v", varDefaultValue)
 
+			if strings.HasPrefix(defaultValue, "[map") {
+				continue
+			}
+
 			item := model.Variable{
 				EnvironmentID: int(firstVar.EnvironmentID),
 				Scope:         chartName,
