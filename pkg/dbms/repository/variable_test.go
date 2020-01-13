@@ -172,6 +172,40 @@ func TestCreateVariable_AuditSaveError(t *testing.T) {
 	mock.ExpectationsWereMet()
 }
 
+func TestCreateVariableWithDefaultValue(t *testing.T) {
+
+	db, mock, err := sqlmock.New()
+
+	assert.Nil(t, err)
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	dao := VariableDAOImpl{}
+	dao.Db = gormDB
+
+	mock.MatchExpectationsInOrder(false)
+
+	v := getVariable()
+
+	rows := sqlmock.NewRows([]string{"id"}).AddRow(1)
+
+	mock.ExpectQuery(`SELECT (.*) FROM "variables" WHERE (.*) ORDER BY (.*) ASC LIMIT 1`).
+		WithArgs(v.Scope, v.Name, v.EnvironmentID).
+		WillReturnError(gorm.ErrRecordNotFound)
+
+	mock.ExpectQuery(`INSERT INTO "variables"`).
+		WithArgs(999, AnyTime{}, AnyTime{}, nil, v.Scope, v.Name, v.Value, v.Secret, v.Description, v.EnvironmentID).
+		WillReturnRows(rows)
+
+	audit, updated, err := dao.CreateVariableWithDefaultValue(v)
+	assert.Nil(t, err)
+	assert.NotNil(t, audit)
+	assert.True(t, updated)
+
+	mock.ExpectationsWereMet()
+}
+
 func TestGetAllVariablesByEnvironment(t *testing.T) {
 
 	db, mock, err := sqlmock.New()

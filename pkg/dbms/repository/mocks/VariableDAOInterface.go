@@ -42,6 +42,36 @@ func (_m *VariableDAOInterface) CreateVariable(variable model.Variable) (map[str
 	return r0, r1, r2
 }
 
+// CreateVariableWithDefaultValue provides a mock function with given fields: variable
+func (_m *VariableDAOInterface) CreateVariableWithDefaultValue(variable model.Variable) (map[string]string, bool, error) {
+	ret := _m.Called(variable)
+
+	var r0 map[string]string
+	if rf, ok := ret.Get(0).(func(model.Variable) map[string]string); ok {
+		r0 = rf(variable)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]string)
+		}
+	}
+
+	var r1 bool
+	if rf, ok := ret.Get(1).(func(model.Variable) bool); ok {
+		r1 = rf(variable)
+	} else {
+		r1 = ret.Get(1).(bool)
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(model.Variable) error); ok {
+		r2 = rf(variable)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
 // DeleteVariable provides a mock function with given fields: id
 func (_m *VariableDAOInterface) DeleteVariable(id int) error {
 	ret := _m.Called(id)
@@ -82,29 +112,6 @@ func (_m *VariableDAOInterface) EditVariable(data model.Variable) error {
 	}
 
 	return r0
-}
-
-// GetAllVariables provides a mock function with given fields:
-func (_m *VariableDAOInterface) GetAllVariables() ([]model.Variable, error) {
-	ret := _m.Called()
-
-	var r0 []model.Variable
-	if rf, ok := ret.Get(0).(func() []model.Variable); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]model.Variable)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
 }
 
 // GetAllVariablesByEnvironment provides a mock function with given fields: envID
