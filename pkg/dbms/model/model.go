@@ -119,3 +119,30 @@ type InvalidVariable struct {
 	RuleType     string `json:"ruleType"`
 	ValueRule    string `json:"valueRule"`
 }
+
+//CompareEnvironments Model Payload
+type CompareEnvironments struct {
+	SourceEnvID  int      `json:"sourceEnvId"`
+	TargetEnvID  int      `json:"targetEnvId"`
+	ExceptCharts []string `json:"exceptCharts"`
+	OnlyCharts   []string `json:"onlyCharts"`
+	ExceptFields []string `json:"exceptFields"`
+	OnlyFields   []string `json:"onlyFields"`
+}
+
+//EnvironmentsDiff Model Response
+type EnvironmentsDiff struct {
+	SourceEnvID int    `json:"sourceEnvId"`
+	TargetEnvID int    `json:"targetEnvId"`
+	SourceScope string `json:"sourceScope"`
+	TargetScope string `json:"targetScope"`
+	SourceName  string `json:"sourceName"`
+	TargetName  string `json:"targetName"`
+	SourceValue string `json:"sourceValue"`
+	TargetValue string `json:"targetValue"`
+}
+
+//CompareEnvsResponse CompareEnvsResponse
+type CompareEnvsResponse struct {
+	List []EnvironmentsDiff `json:"list"`
+}
