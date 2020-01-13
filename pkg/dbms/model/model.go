@@ -65,6 +65,7 @@ type ChartsResult struct {
 type Variable struct {
 	gorm.Model
 	Scope         string `json:"scope" gorm:"index:var_scope"`
+	ChartVersion  string `gorm:"-" json:"chartVersion"`
 	Name          string `json:"name" gorm:"index:var_name"`
 	Value         string `json:"value"`
 	Secret        bool   `json:"secret"`
