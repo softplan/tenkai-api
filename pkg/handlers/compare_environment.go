@@ -57,18 +57,31 @@ func (appContext *AppContext) compareEnvironments(w http.ResponseWriter, r *http
 	w.Write(data)
 }
 
+func shouldIgnoreScope(filter model.CompareEnvironments, scope string) bool {
+	for _, e := range filter.ExceptCharts {
+		if e == scope {
+			return true
+		}
+	}
+	return false
+}
+
 func (appContext *AppContext) compare(
 	rmap map[uint32]model.EnvironmentsDiff,
-	payload model.CompareEnvironments,
+	filter model.CompareEnvironments,
 	source map[string]map[string]string,
 	target map[string]map[string]string, reverse bool) {
 
 	for scope, srcVars := range source {
+		if shouldIgnoreScope(filter, scope) {
+			continue
+		}
+
 		if _, ok := target[scope]; ok { // Target possui este chart?
 
 			for srcVarName, srcValue := range srcVars {
 				if _, ok := target[scope][srcVarName]; !ok { // Chart target não possui esta variável?
-					addToResp(rmap, payload.SourceEnvID, payload.TargetEnvID, scope, scope, srcVarName, "", srcValue, "", reverse)
+					addToResp(rmap, filter.SourceEnvID, filter.TargetEnvID, scope, scope, srcVarName, "", srcValue, "", reverse)
 					continue
 				}
 				for tarVarName, tarValue := range target[scope] {
@@ -76,7 +89,7 @@ func (appContext *AppContext) compare(
 						if srcValue == tarValue {
 							continue
 						} else {
-							addToResp(rmap, payload.SourceEnvID, payload.TargetEnvID, scope, scope, srcVarName, tarVarName, srcValue, tarValue, reverse)
+							addToResp(rmap, filter.SourceEnvID, filter.TargetEnvID, scope, scope, srcVarName, tarVarName, srcValue, tarValue, reverse)
 						}
 					} else {
 						continue
@@ -86,7 +99,7 @@ func (appContext *AppContext) compare(
 			}
 
 		} else {
-			addToResp(rmap, payload.SourceEnvID, payload.TargetEnvID, scope, "", "", "", "", "", reverse)
+			addToResp(rmap, filter.SourceEnvID, filter.TargetEnvID, scope, "", "", "", "", "", reverse)
 		}
 	}
 }
