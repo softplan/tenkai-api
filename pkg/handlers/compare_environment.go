@@ -1,8 +1,10 @@
 package handlers
 
 import (
-	"fmt"
+	"encoding/json"
+	"hash/fnv"
 	"net/http"
+	"sort"
 
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/global"
@@ -37,32 +39,44 @@ func (appContext *AppContext) compareEnvironments(w http.ResponseWriter, r *http
 	}
 
 	var resp model.CompareEnvsResponse
-	appContext.compare(&resp, toMap(sourceVars), toMap(targetVars))
-	appContext.compare(&resp, toMap(targetVars), toMap(sourceVars))
+	rmap := make(map[uint32]model.EnvironmentsDiff)
+
+	appContext.compare(rmap, payload, toMap(sourceVars), toMap(targetVars), false)
+	appContext.compare(rmap, payload, toMap(targetVars), toMap(sourceVars), true)
+
+	for _, v := range rmap {
+		resp.List = append(resp.List, v)
+	}
+
+	sort.Slice(resp.List, func(i int, j int) bool {
+		return resp.List[i].SourceScope < resp.List[j].SourceScope
+	})
+
+	data, _ := json.Marshal(resp)
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
 }
 
 func (appContext *AppContext) compare(
-	resp *model.CompareEnvsResponse,
+	rmap map[uint32]model.EnvironmentsDiff,
+	payload model.CompareEnvironments,
 	source map[string]map[string]string,
-	target map[string]map[string]string) {
+	target map[string]map[string]string, reverse bool) {
 
-	for scope, varMap := range source {
-		if target[scope] != nil {
+	for scope, srcVars := range source {
+		if _, ok := target[scope]; ok { // Target possui este chart?
 
-			for sk, sv := range varMap {
-				for tk, tv := range target[scope] {
-					if sk == tk {
-						if sv == tv {
+			for srcVarName, srcValue := range srcVars {
+				if _, ok := target[scope][srcVarName]; !ok { // Chart target não possui esta variável?
+					addToResp(rmap, payload.SourceEnvID, payload.TargetEnvID, scope, scope, srcVarName, "", srcValue, "", reverse)
+					continue
+				}
+				for tarVarName, tarValue := range target[scope] {
+					if srcVarName == tarVarName {
+						if srcValue == tarValue {
 							continue
 						} else {
-							var x model.EnvironmentsDiff
-							x.SourceScope = scope
-							x.TargetScope = scope
-							x.SourceName = sk
-							x.TargetName = tk
-							x.SourceValue = sv
-							x.TargetValue = tv
-							resp.List = append(resp.List, x)
+							addToResp(rmap, payload.SourceEnvID, payload.TargetEnvID, scope, scope, srcVarName, tarVarName, srcValue, tarValue, reverse)
 						}
 					} else {
 						continue
@@ -72,7 +86,7 @@ func (appContext *AppContext) compare(
 			}
 
 		} else {
-			fmt.Println("diff: ", scope, nil, nil, nil, nil)
+			addToResp(rmap, payload.SourceEnvID, payload.TargetEnvID, scope, "", "", "", "", "", reverse)
 		}
 	}
 }
@@ -89,4 +103,44 @@ func toMap(vars []model.Variable) map[string]map[string]string {
 	}
 
 	return sm
+}
+
+func addToResp(rmap map[uint32]model.EnvironmentsDiff, srcEnvID int,
+	tarEnvID int, srcScope string, tarScope string, srcVarName string,
+	tarVarName string, srcValue string, tarValue string, reverse bool) {
+
+	var e model.EnvironmentsDiff
+	e.SourceEnvID = srcEnvID
+	e.TargetEnvID = tarEnvID
+
+	if reverse {
+		e.SourceScope = tarScope
+		e.TargetScope = srcScope
+		e.SourceName = tarVarName
+		e.TargetName = srcVarName
+		e.SourceValue = tarValue
+		e.TargetValue = srcValue
+	} else {
+		e.SourceScope = srcScope
+		e.TargetScope = tarScope
+		e.SourceName = srcVarName
+		e.TargetName = tarVarName
+		e.SourceValue = srcValue
+		e.TargetValue = tarValue
+	}
+
+	// Avoid duplicate entries
+	h := hash(e)
+	if _, ok := rmap[h]; !ok {
+		rmap[h] = e
+	}
+}
+
+func hash(e model.EnvironmentsDiff) uint32 {
+	key := e.SourceScope + e.TargetScope + e.SourceName +
+		e.TargetName + e.SourceValue + e.TargetValue
+
+	h := fnv.New32a()
+	h.Write([]byte(key))
+	return h.Sum32()
 }
