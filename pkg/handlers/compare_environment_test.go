@@ -47,6 +47,10 @@ func TestCompareEnvironments(t *testing.T) {
 	r := string(rr.Body.Bytes())
 	fmt.Println(r)
 	assert.Contains(t, r, `{"list":[`)
+	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"f1","targetName":"f1","sourceValue":"equal","targetValue":"equal"}`)
+	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart2","targetScope":"repo/chart2","sourceName":"f1","targetName":"f1","sourceValue":"equal","targetValue":"equal"}`)
+	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"global","targetScope":"global","sourceName":"user","targetName":"user","sourceValue":"equal","targetValue":"equal"}`)
+
 	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"global","targetScope":"global","sourceName":"pass","targetName":"","sourceValue":"only-in-source","targetValue":""}`)
 	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"global","targetScope":"global","sourceName":"foo","targetName":"foo","sourceValue":"not-equal-1","targetValue":"not-equal-2"}`)
 	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"global","targetScope":"global","sourceName":"","targetName":"port","sourceValue":"","targetValue":"only-in-target"}`)
@@ -96,6 +100,10 @@ func TestCompareEnvironmentsFilterExceptCharts(t *testing.T) {
 	r := string(rr.Body.Bytes())
 	fmt.Println(r)
 	assert.Contains(t, r, `{"list":[`)
+	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"f1","targetName":"f1","sourceValue":"equal","targetValue":"equal"}`)
+	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart2","targetScope":"repo/chart2","sourceName":"f1","targetName":"f1","sourceValue":"equal","targetValue":"equal"}`)
+	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"global","targetScope":"global","sourceName":"user","targetName":"user","sourceValue":"equal","targetValue":"equal"}`)
+
 	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"global","targetScope":"global","sourceName":"pass","targetName":"","sourceValue":"only-in-source","targetValue":""}`)
 	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"global","targetScope":"global","sourceName":"foo","targetName":"foo","sourceValue":"not-equal-1","targetValue":"not-equal-2"}`)
 	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"global","targetScope":"global","sourceName":"","targetName":"port","sourceValue":"","targetValue":"only-in-target"}`)
@@ -145,6 +153,10 @@ func TestCompareEnvironmentsFilterOnlyCharts(t *testing.T) {
 	r := string(rr.Body.Bytes())
 	fmt.Println(r)
 	assert.Contains(t, r, `{"list":[`)
+	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"f1","targetName":"f1","sourceValue":"equal","targetValue":"equal"}`)
+	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart2","targetScope":"repo/chart2","sourceName":"f1","targetName":"f1","sourceValue":"equal","targetValue":"equal"}`)
+	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"global","targetScope":"global","sourceName":"user","targetName":"user","sourceValue":"equal","targetValue":"equal"}`)
+
 	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"global","targetScope":"global","sourceName":"pass","targetName":"","sourceValue":"only-in-source","targetValue":""}`)
 	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"global","targetScope":"global","sourceName":"foo","targetName":"foo","sourceValue":"not-equal-1","targetValue":"not-equal-2"}`)
 	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"global","targetScope":"global","sourceName":"","targetName":"port","sourceValue":"","targetValue":"only-in-target"}`)
@@ -192,6 +204,10 @@ func TestCompareEnvironmentsFilterExceptFields(t *testing.T) {
 	r := string(rr.Body.Bytes())
 	fmt.Println(r)
 	assert.Contains(t, r, `{"list":[`)
+	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"f1","targetName":"f1","sourceValue":"equal","targetValue":"equal"}`)
+	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart2","targetScope":"repo/chart2","sourceName":"f1","targetName":"f1","sourceValue":"equal","targetValue":"equal"}`)
+	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"global","targetScope":"global","sourceName":"user","targetName":"user","sourceValue":"equal","targetValue":"equal"}`)
+
 	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"global","targetScope":"global","sourceName":"pass","targetName":"","sourceValue":"only-in-source","targetValue":""}`)
 	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"global","targetScope":"global","sourceName":"foo","targetName":"foo","sourceValue":"not-equal-1","targetValue":"not-equal-2"}`)
 	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"global","targetScope":"global","sourceName":"","targetName":"port","sourceValue":"","targetValue":"only-in-target"}`)
@@ -239,6 +255,10 @@ func TestCompareEnvironmentsFilterOnlyFields(t *testing.T) {
 	r := string(rr.Body.Bytes())
 	fmt.Println(r)
 	assert.Contains(t, r, `{"list":[`)
+	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"f1","targetName":"f1","sourceValue":"equal","targetValue":"equal"}`)
+	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart2","targetScope":"repo/chart2","sourceName":"f1","targetName":"f1","sourceValue":"equal","targetValue":"equal"}`)
+	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"global","targetScope":"global","sourceName":"user","targetName":"user","sourceValue":"equal","targetValue":"equal"}`)
+
 	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"global","targetScope":"global","sourceName":"pass","targetName":"","sourceValue":"only-in-source","targetValue":""}`)
 	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"global","targetScope":"global","sourceName":"foo","targetName":"foo","sourceValue":"not-equal-1","targetValue":"not-equal-2"}`)
 	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"global","targetScope":"global","sourceName":"","targetName":"port","sourceValue":"","targetValue":"only-in-target"}`)
@@ -268,7 +288,6 @@ func mockSourceEnvs() []model.Variable {
 	// Source chart 2
 	sVars = append(sVars, mockVar(888, "repo/chart2", "f1", "equal"))
 	sVars = append(sVars, mockVar(888, "repo/chart2", "f2", "not-equal-1"))
-	// sVars = append(sVars, mockVar(888, "repo/chart2", "f5", "ignore"))
 	// Source global
 	sVars = append(sVars, mockVar(888, "global", "user", "equal"))
 	sVars = append(sVars, mockVar(888, "global", "pass", "only-in-source"))
@@ -285,7 +304,6 @@ func mockTargetVars() []model.Variable {
 	// Target chart 2
 	tVars = append(tVars, mockVar(999, "repo/chart2", "f1", "equal"))
 	tVars = append(tVars, mockVar(999, "repo/chart2", "f2", "not-equal-2"))
-	// tVars = append(tVars, mockVar(999, "repo/chart2", "f5", "ignored"))
 	// Target global
 	tVars = append(tVars, mockVar(999, "global", "user", "equal"))
 	tVars = append(tVars, mockVar(999, "global", "port", "only-in-target"))
