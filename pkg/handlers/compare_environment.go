@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"hash/fnv"
 	"net/http"
 	"sort"
@@ -41,8 +42,15 @@ func (appContext *AppContext) compareEnvironments(w http.ResponseWriter, r *http
 	var resp model.CompareEnvsResponse
 	rmap := make(map[uint32]model.EnvironmentsDiff)
 
-	appContext.compare(rmap, payload, toMap(sourceVars), toMap(targetVars), false)
-	appContext.compare(rmap, payload, toMap(targetVars), toMap(sourceVars), true)
+	if err := appContext.compare(rmap, payload, toMap(sourceVars), toMap(targetVars), false); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := appContext.compare(rmap, payload, toMap(targetVars), toMap(sourceVars), true); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	for _, v := range rmap {
 		resp.List = append(resp.List, v)
@@ -57,34 +65,37 @@ func (appContext *AppContext) compareEnvironments(w http.ResponseWriter, r *http
 	w.Write(data)
 }
 
-func shouldIgnoreScope(filter model.CompareEnvironments, scope string) bool {
-	for _, e := range filter.ExceptCharts {
-		if e == scope {
-			return true
-		}
-	}
-	return false
-}
-
 func (appContext *AppContext) compare(
 	rmap map[uint32]model.EnvironmentsDiff,
 	filter model.CompareEnvironments,
 	source map[string]map[string]string,
-	target map[string]map[string]string, reverse bool) {
+	target map[string]map[string]string, reverse bool) error {
 
 	for scope, srcVars := range source {
-		if shouldIgnoreScope(filter, scope) {
+		if ignore, err := shouldFilterChart(filter, scope); err != nil {
+			return err
+		} else if ignore {
 			continue
 		}
 
 		if _, ok := target[scope]; ok { // Target possui este chart?
 
 			for srcVarName, srcValue := range srcVars {
+				if ignore, err := shouldFilterVar(filter, srcVarName); err != nil {
+					return err
+				} else if ignore {
+					continue
+				}
 				if _, ok := target[scope][srcVarName]; !ok { // Chart target não possui esta variável?
 					addToResp(rmap, filter.SourceEnvID, filter.TargetEnvID, scope, scope, srcVarName, "", srcValue, "", reverse)
 					continue
 				}
 				for tarVarName, tarValue := range target[scope] {
+					if ignore, err := shouldFilterVar(filter, tarVarName); err != nil {
+						return err
+					} else if ignore {
+						continue
+					}
 					if srcVarName == tarVarName {
 						if srcValue == tarValue {
 							continue
@@ -102,6 +113,63 @@ func (appContext *AppContext) compare(
 			addToResp(rmap, filter.SourceEnvID, filter.TargetEnvID, scope, "", "", "", "", "", reverse)
 		}
 	}
+	return nil
+}
+
+func shouldFilterVar(filter model.CompareEnvironments, varName string) (bool, error) {
+	if len(filter.OnlyFields) > 0 && len(filter.ExceptFields) > 0 {
+		return true, errors.New("Choose only one kind of filter: only or except")
+	}
+
+	if len(filter.ExceptFields) > 0 {
+		for _, e := range filter.ExceptFields {
+			if e == varName {
+				return true, nil
+			}
+		}
+		return false, nil
+	}
+
+	if len(filter.OnlyFields) > 0 {
+		found := false
+		for _, e := range filter.OnlyFields {
+			if e == varName {
+				found = true
+				continue
+			}
+		}
+		return !found, nil
+	}
+
+	return false, nil
+}
+
+func shouldFilterChart(filter model.CompareEnvironments, scope string) (bool, error) {
+	if len(filter.OnlyCharts) > 0 && len(filter.ExceptCharts) > 0 {
+		return true, errors.New("Choose only one kind of filter: only or except")
+	}
+
+	if len(filter.ExceptCharts) > 0 {
+		for _, e := range filter.ExceptCharts {
+			if e == scope {
+				return true, nil
+			}
+		}
+		return false, nil
+	}
+
+	if len(filter.OnlyCharts) > 0 {
+		found := false
+		for _, e := range filter.OnlyCharts {
+			if e == scope {
+				found = true
+				continue
+			}
+		}
+		return !found, nil
+	}
+
+	return false, nil
 }
 
 func toMap(vars []model.Variable) map[string]map[string]string {
