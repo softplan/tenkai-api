@@ -58,7 +58,7 @@ func TestCompareEnvironments(t *testing.T) {
 	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"f2","targetName":"","sourceValue":"only-in-source","targetValue":""}`)
 	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"","targetName":"f3","sourceValue":"","targetValue":"only-in-target"}`)
 	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart2","targetScope":"repo/chart2","sourceName":"f2","targetName":"f2","sourceValue":"not-equal-1","targetValue":"not-equal-2"}`)
-	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart3","targetScope":"repo/chart3","sourceName":"","targetName":"","sourceValue":"","targetValue":""}`)
+	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart3","targetScope":"","sourceName":"","targetName":"","sourceValue":"","targetValue":""}`)
 	assert.Contains(t, r, `]}`)
 }
 
@@ -112,7 +112,7 @@ func TestCompareEnvironmentsFilterExceptCharts(t *testing.T) {
 	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"f2","targetName":"","sourceValue":"only-in-source","targetValue":""}`)
 	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"","targetName":"f3","sourceValue":"","targetValue":"only-in-target"}`)
 	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart2","targetScope":"repo/chart2","sourceName":"f2","targetName":"f2","sourceValue":"not-equal-1","targetValue":"not-equal-2"}`)
-	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart3","targetScope":"repo/chart3","sourceName":"","targetName":"","sourceValue":"","targetValue":""}`)
+	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart3","targetScope":"","sourceName":"","targetName":"","sourceValue":"","targetValue":""}`)
 	assert.Contains(t, r, `]}`)
 }
 
@@ -166,7 +166,7 @@ func TestCompareEnvironmentsFilterOnlyCharts(t *testing.T) {
 	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"f2","targetName":"","sourceValue":"only-in-source","targetValue":""}`)
 	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"","targetName":"f3","sourceValue":"","targetValue":"only-in-target"}`)
 	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart2","targetScope":"repo/chart2","sourceName":"f2","targetName":"f2","sourceValue":"not-equal-1","targetValue":"not-equal-2"}`)
-	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart3","targetScope":"repo/chart3","sourceName":"","targetName":"","sourceValue":"","targetValue":""}`)
+	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart3","targetScope":"","sourceName":"","targetName":"","sourceValue":"","targetValue":""}`)
 	assert.Contains(t, r, `]}`)
 }
 
@@ -218,7 +218,7 @@ func TestCompareEnvironmentsFilterExceptFields(t *testing.T) {
 	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"f2","targetName":"","sourceValue":"only-in-source","targetValue":""}`)
 	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"","targetName":"f3","sourceValue":"","targetValue":"only-in-target"}`)
 	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart2","targetScope":"repo/chart2","sourceName":"f2","targetName":"f2","sourceValue":"not-equal-1","targetValue":"not-equal-2"}`)
-	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart3","targetScope":"repo/chart3","sourceName":"","targetName":"","sourceValue":"","targetValue":""}`)
+	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart3","targetScope":"","sourceName":"","targetName":"","sourceValue":"","targetValue":""}`)
 	assert.Contains(t, r, `]}`)
 }
 
@@ -270,7 +270,7 @@ func TestCompareEnvironmentsFilterOnlyFields(t *testing.T) {
 	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"f2","targetName":"","sourceValue":"only-in-source","targetValue":""}`)
 	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"","targetName":"f3","sourceValue":"","targetValue":"only-in-target"}`)
 	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart2","targetScope":"repo/chart2","sourceName":"f2","targetName":"f2","sourceValue":"not-equal-1","targetValue":"not-equal-2"}`)
-	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart3","targetScope":"repo/chart3","sourceName":"","targetName":"","sourceValue":"","targetValue":""}`)
+	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart3","targetScope":"","sourceName":"","targetName":"","sourceValue":"","targetValue":""}`)
 	assert.Contains(t, r, `]}`)
 }
 
