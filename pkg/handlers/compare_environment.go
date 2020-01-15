@@ -74,44 +74,36 @@ func (appContext *AppContext) compare(
 	target map[string]map[string]string, reverse bool) {
 
 	for scope, srcVars := range source {
-		if ignore := shouldFilterChart(filter, scope); ignore {
+		if shouldIgnoreChart(filter, scope) {
 			continue
 		}
 
-		if _, ok := target[scope]; ok { // Target possui este chart?
+		if _, ok := target[scope]; !ok { // Target possui este chart?
+			addToResp(rmap, filter, scope, "", "", "", "", reverse)
+		}
 
-			for srcVarName, srcValue := range srcVars {
-				if ignore := shouldFilterVar(filter, srcVarName); ignore {
+		for srcVarName, srcValue := range srcVars {
+			if shouldIgnoreVar(filter, srcVarName) {
+				continue
+			}
+			if _, ok := target[scope][srcVarName]; !ok { // Chart target não possui esta variável?
+				addToResp(rmap, filter, scope, srcVarName, "", srcValue, "", reverse)
+				continue
+			}
+			for tarVarName, tarValue := range target[scope] {
+				if shouldIgnoreVar(filter, tarVarName) || srcVarName != tarVarName || srcValue == tarValue {
 					continue
+				} else {
+					addToResp(rmap, filter, scope, srcVarName, tarVarName, srcValue, tarValue, reverse)
 				}
-				if _, ok := target[scope][srcVarName]; !ok { // Chart target não possui esta variável?
-					addToResp(rmap, filter.SourceEnvID, filter.TargetEnvID, scope, scope, srcVarName, "", srcValue, "", reverse)
-					continue
-				}
-				for tarVarName, tarValue := range target[scope] {
-					if ignore := shouldFilterVar(filter, tarVarName); ignore {
-						continue
-					}
-					if srcVarName == tarVarName {
-						if srcValue == tarValue {
-							continue
-						} else {
-							addToResp(rmap, filter.SourceEnvID, filter.TargetEnvID, scope, scope, srcVarName, tarVarName, srcValue, tarValue, reverse)
-						}
-					} else {
-						continue
-					}
-				}
-
 			}
 
-		} else {
-			addToResp(rmap, filter.SourceEnvID, filter.TargetEnvID, scope, "", "", "", "", "", reverse)
 		}
+
 	}
 }
 
-func shouldFilterVar(filter model.CompareEnvironments, varName string) bool {
+func shouldIgnoreVar(filter model.CompareEnvironments, varName string) bool {
 	if len(filter.ExceptFields) > 0 {
 		for _, e := range filter.ExceptFields {
 			if e == varName {
@@ -135,7 +127,7 @@ func shouldFilterVar(filter model.CompareEnvironments, varName string) bool {
 	return false
 }
 
-func shouldFilterChart(filter model.CompareEnvironments, scope string) bool {
+func shouldIgnoreChart(filter model.CompareEnvironments, scope string) bool {
 	if len(filter.ExceptCharts) > 0 {
 		for _, e := range filter.ExceptCharts {
 			if e == scope {
@@ -173,24 +165,24 @@ func toMap(vars []model.Variable) map[string]map[string]string {
 	return sm
 }
 
-func addToResp(rmap map[uint32]model.EnvironmentsDiff, srcEnvID int,
-	tarEnvID int, srcScope string, tarScope string, srcVarName string,
+func addToResp(rmap map[uint32]model.EnvironmentsDiff, filter model.CompareEnvironments,
+	scope string, srcVarName string,
 	tarVarName string, srcValue string, tarValue string, reverse bool) {
 
 	var e model.EnvironmentsDiff
-	e.SourceEnvID = srcEnvID
-	e.TargetEnvID = tarEnvID
+	e.SourceEnvID = filter.SourceEnvID
+	e.TargetEnvID = filter.TargetEnvID
 
 	if reverse {
-		e.SourceScope = tarScope
-		e.TargetScope = srcScope
+		e.SourceScope = scope
+		e.TargetScope = scope
 		e.SourceName = tarVarName
 		e.TargetName = srcVarName
 		e.SourceValue = tarValue
 		e.TargetValue = srcValue
 	} else {
-		e.SourceScope = srcScope
-		e.TargetScope = tarScope
+		e.SourceScope = scope
+		e.TargetScope = scope
 		e.SourceName = srcVarName
 		e.TargetName = tarVarName
 		e.SourceValue = srcValue
