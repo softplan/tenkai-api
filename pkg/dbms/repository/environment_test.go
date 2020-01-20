@@ -25,6 +25,7 @@ func getEnvironmentTestData() model.Environment {
 	item.Namespace = "dev"
 	item.Gateway = "dsa"
 	item.ProductVersion = "19.0.1-0"
+	item.CurrentRelease = "19.0.1"
 	return item
 }
 
@@ -63,7 +64,7 @@ func TestCreateEnvironment(t *testing.T) {
 	mock.ExpectQuery(`INSERT INTO "environments"`).
 		WithArgs(item.CreatedAt, item.UpdatedAt, item.DeletedAt, item.Group,
 			item.Name, item.ClusterURI, item.CACertificate, item.Token,
-			item.Namespace, item.Gateway, item.ProductVersion).
+			item.Namespace, item.Gateway, item.ProductVersion, item.CurrentRelease).
 		WillReturnRows(rows)
 
 	result, e := envDAO.CreateEnvironment(item)
@@ -122,7 +123,7 @@ func TestEditEnvironment(t *testing.T) {
 	mock.ExpectExec(`UPDATE "environments" SET (.*) WHERE (.*)`).
 		WithArgs(item.CreatedAt, sqlmock.AnyArg(), item.DeletedAt, item.Group,
 			item.Name, item.ClusterURI, item.CACertificate, item.Token,
-			item.Namespace, item.Gateway, item.ProductVersion, item.ID).
+			item.Namespace, item.Gateway, item.ProductVersion, item.CurrentRelease, item.ID).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	result := envDAO.EditEnvironment(item)
