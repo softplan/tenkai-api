@@ -13,6 +13,7 @@ type Environment struct {
 	Namespace      string `json:"namespace"`
 	Gateway        string `json:"gateway"`
 	ProductVersion string `json:"productVersion"`
+	CurrentRelease string `json:"currentRelease"`
 }
 
 //EnvResult Model
