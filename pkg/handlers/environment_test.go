@@ -452,7 +452,7 @@ func TestGetEnvironments(t *testing.T) {
 	assert.Contains(t, response, `"ca_certificate":"my-certificate"`)
 	assert.Contains(t, response, `"token":"kubeconfig-user-ph111:abbkdd57t68tq2lppg6lwb65sb69282jhsmh3ndwn4vhjtt8blmhh2"`)
 	assert.Contains(t, response, `"namespace":"dev","gateway":"my-gateway.istio-system.svc.cluster.local"`)
-	assert.Contains(t, response, `"productVersion":""}]}`)
+	assert.Contains(t, response, `"productVersion":"","currentRelease":""}]}`)
 }
 
 func TestGetEnvironments_AccessDenied(t *testing.T) {
@@ -562,7 +562,7 @@ func TestGetAllEnvironments(t *testing.T) {
 	assert.Contains(t, response, `"ca_certificate":"my-certificate"`)
 	assert.Contains(t, response, `"token":"kubeconfig-user-ph111:abbkdd57t68tq2lppg6lwb65sb69282jhsmh3ndwn4vhjtt8blmhh2"`)
 	assert.Contains(t, response, `"namespace":"dev","gateway":"my-gateway.istio-system.svc.cluster.local"`)
-	assert.Contains(t, response, `"productVersion":""}]}`)
+	assert.Contains(t, response, `"productVersion":"","currentRelease":""}]}`)
 }
 
 func TestGetAllEnvironments_GetAllEnvError(t *testing.T) {
