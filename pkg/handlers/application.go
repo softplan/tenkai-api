@@ -162,6 +162,8 @@ func defineRotes(r *mux.Router, appContext *AppContext) {
 	r.HandleFunc("/validateVariables", appContext.validateVariables).Methods("POST")
 	r.HandleFunc("/validateEnvVars/{envId}", appContext.validateEnvironmentVariables).Methods("POST")
 
+	r.HandleFunc("/compare-environments", appContext.compareEnvironments).Methods("POST")
+
 	r.HandleFunc("/", appContext.rootHandler)
 
 }
