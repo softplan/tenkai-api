@@ -76,11 +76,6 @@ func (appContext *AppContext) compare(rmap map[uint32]model.EnvironmentsDiff,
 			continue
 		}
 
-		if _, ok := target[scope]; !ok {
-			addToResp(rmap, filter, scope, "", "", "", "", "", reverse)
-			continue
-		}
-
 		iterateOverSourceVars(filter, scope, srcVars, target, reverse, rmap)
 	}
 }
