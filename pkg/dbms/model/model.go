@@ -13,6 +13,7 @@ type Environment struct {
 	Namespace      string `json:"namespace"`
 	Gateway        string `json:"gateway"`
 	ProductVersion string `json:"productVersion"`
+	CurrentRelease string `json:"currentRelease"`
 }
 
 //EnvResult Model
@@ -65,6 +66,7 @@ type ChartsResult struct {
 type Variable struct {
 	gorm.Model
 	Scope         string `json:"scope" gorm:"index:var_scope"`
+	ChartVersion  string `gorm:"-" json:"chartVersion"`
 	Name          string `json:"name" gorm:"index:var_name"`
 	Value         string `json:"value"`
 	Secret        bool   `json:"secret"`
@@ -102,4 +104,46 @@ type MultipleInstallPayload struct {
 type GetChartRequest struct {
 	ChartName    string `json:"chartName"`
 	ChartVersion string `json:"chartVersion"`
+}
+
+//InvalidVariablesResult Model
+type InvalidVariablesResult struct {
+	InvalidVariables []InvalidVariable
+}
+
+//InvalidVariable Model
+type InvalidVariable struct {
+	Scope        string `json:"scope"`
+	Name         string `json:"name"`
+	Value        string `json:"value"`
+	VariableRule string `json:"variableRule"`
+	RuleType     string `json:"ruleType"`
+	ValueRule    string `json:"valueRule"`
+}
+
+//CompareEnvironments Model Payload
+type CompareEnvironments struct {
+	SourceEnvID  int      `json:"sourceEnvId"`
+	TargetEnvID  int      `json:"targetEnvId"`
+	ExceptCharts []string `json:"exceptCharts"`
+	OnlyCharts   []string `json:"onlyCharts"`
+	ExceptFields []string `json:"exceptFields"`
+	OnlyFields   []string `json:"onlyFields"`
+}
+
+//EnvironmentsDiff Model Response
+type EnvironmentsDiff struct {
+	SourceEnvID int    `json:"sourceEnvId"`
+	TargetEnvID int    `json:"targetEnvId"`
+	SourceScope string `json:"sourceScope"`
+	TargetScope string `json:"targetScope"`
+	SourceName  string `json:"sourceName"`
+	TargetName  string `json:"targetName"`
+	SourceValue string `json:"sourceValue"`
+	TargetValue string `json:"targetValue"`
+}
+
+//CompareEnvsResponse CompareEnvsResponse
+type CompareEnvsResponse struct {
+	List []EnvironmentsDiff `json:"list"`
 }

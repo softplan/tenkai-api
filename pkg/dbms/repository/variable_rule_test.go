@@ -12,7 +12,7 @@ import (
 
 func getVariableRule() model.VariableRule {
 	var item model.VariableRule
-	item.Name = "uriApi*"
+	item.Name = "urlapi.*"
 	return item
 }
 
@@ -97,12 +97,19 @@ func TestListVariableRules(t *testing.T) {
 	gormDB, mock, dao, item := beforeVarRuleTest(t)
 	defer gormDB.Close()
 
-	rows := sqlmock.NewRows([]string{"id", "name"}).
+	rows1 := sqlmock.NewRows([]string{"id", "name"}).
+		AddRow(999, item.Name)
+
+	rows2 := sqlmock.NewRows([]string{"id", "name"}).
 		AddRow(999, item.Name)
 
 	item.ID = 999
+	mock.ExpectQuery(`SELECT (.+) FROM "value_rules" WHERE (.+)`).
+		WithArgs(999).
+		WillReturnRows(rows1)
+
 	mock.ExpectQuery(`SELECT (.+) FROM "variable_rules" WHERE (.+)`).
-		WillReturnRows(rows)
+		WillReturnRows(rows2)
 
 	result, err := dao.ListVariableRules()
 	assert.Nil(t, err)

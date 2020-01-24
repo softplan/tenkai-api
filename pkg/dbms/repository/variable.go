@@ -10,6 +10,7 @@ import (
 type VariableDAOInterface interface {
 	EditVariable(data model2.Variable) error
 	CreateVariable(variable model2.Variable) (map[string]string, bool, error)
+	CreateVariableWithDefaultValue(variable model2.Variable) (map[string]string, bool, error)
 	GetAllVariablesByEnvironment(envID int) ([]model2.Variable, error)
 	GetAllVariablesByEnvironmentAndScope(envID int, scope string) ([]model2.Variable, error)
 	DeleteVariable(id int) error
@@ -55,6 +56,33 @@ func (dao VariableDAOImpl) CreateVariable(variable model2.Variable) (map[string]
 
 	} else {
 
+		if err := dao.Db.Create(&variable).Error; err != nil {
+			return auditValues, updated, err
+		}
+		updated = true
+
+		auditValues["variable_name"] = variable.Name
+		auditValues["variable_value"] = variable.Value
+	}
+
+	return auditValues, updated, nil
+}
+
+//CreateVariableWithDefaultValue - Create variable with the default value when it wasn't specified
+func (dao VariableDAOImpl) CreateVariableWithDefaultValue(variable model2.Variable) (map[string]string, bool, error) {
+
+	auditValues := make(map[string]string)
+	updated := false
+
+	condition := model2.Variable{
+		EnvironmentID: variable.EnvironmentID,
+		Scope:         variable.Scope,
+		Name:          variable.Name,
+	}
+
+	var variableEntity model2.Variable
+
+	if err := dao.Db.Where(&condition).First(&variableEntity).Error; gorm.IsRecordNotFoundError(err) {
 		if err := dao.Db.Create(&variable).Error; err != nil {
 			return auditValues, updated, err
 		}

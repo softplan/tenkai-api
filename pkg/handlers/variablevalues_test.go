@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
+	"github.com/softplan/tenkai-api/pkg/service/_helm/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -33,6 +34,11 @@ func TestSaveVariableValues(t *testing.T) {
 	mockEnvDao := mockGetByID(&appContext)
 	mockEnvDao.On("GetAllEnvironments", "beta@alfa.com").Return(envs, nil)
 
+	chartValue := `{"app":{"myvar":"myvalue"}}`
+	mockHelmSvc := &mocks.HelmServiceInterface{}
+	mockHelmSvc.On("GetTemplate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]byte(chartValue), nil)
+	appContext.HelmServiceAPI = mockHelmSvc
+
 	auditValues := make(map[string]string)
 	auditValues["variable_name"] = variable.Name
 	auditValues["variable_old_value"] = ""
@@ -40,6 +46,7 @@ func TestSaveVariableValues(t *testing.T) {
 	auditValues["scope"] = variable.Scope
 
 	mockVariableDAO := &mockRepo.VariableDAOInterface{}
+	mockVariableDAO.On("CreateVariableWithDefaultValue", mock.Anything).Return(auditValues, true, nil)
 	mockVariableDAO.On("CreateVariable", mock.Anything).Return(auditValues, true, nil)
 
 	mockAudit := mockDoAudit(&appContext, "saveVariable", auditValues)
@@ -54,7 +61,7 @@ func TestSaveVariableValues(t *testing.T) {
 	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
 	mockEnvDao.AssertNumberOfCalls(t, "GetAllEnvironments", 1)
 	mockVariableDAO.AssertNumberOfCalls(t, "CreateVariable", 1)
-	mockAudit.AssertNumberOfCalls(t, "DoAudit", 1)
+	mockAudit.AssertNumberOfCalls(t, "DoAudit", 2)
 
 	assert.Equal(t, http.StatusCreated, rr.Code, "Response should be Created.")
 }
@@ -137,8 +144,14 @@ func TestSaveVariableValues_CreateVariableError(t *testing.T) {
 	mockEnvDao := mockGetByID(&appContext)
 	mockEnvDao.On("GetAllEnvironments", "beta@alfa.com").Return(envs, nil)
 
+	chartValue := `{"app":{"myvar":"myvalue"}}`
+	mockHelmSvc := &mocks.HelmServiceInterface{}
+	mockHelmSvc.On("GetTemplate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]byte(chartValue), nil)
+	appContext.HelmServiceAPI = mockHelmSvc
+
 	mockVariableDAO := &mockRepo.VariableDAOInterface{}
 	mockVariableDAO.On("CreateVariable", mock.Anything).Return(nil, false, errors.New("Error saving variable"))
+	mockVariableDAO.On("CreateVariableWithDefaultValue", mock.Anything).Return(nil, false, nil)
 
 	appContext.Repositories.EnvironmentDAO = mockEnvDao
 	appContext.Repositories.VariableDAO = mockVariableDAO
@@ -176,7 +189,7 @@ func TestGetVariablesByEnvironmentAndScope(t *testing.T) {
 
 	response := string(rr.Body.Bytes())
 	assert.Contains(t, response, `{"Variables":[{"ID":0,`)
-	assert.Contains(t, response, `"scope":"global","name":"username","value":"user",`)
+	assert.Contains(t, response, `"scope":"global","chartVersion":"","name":"username","value":"user",`)
 	assert.Contains(t, response, `"secret":false,"description":"Login username.","environmentId":999}]}`)
 }
 
@@ -240,19 +253,4 @@ func TestGetVariablesNotUsed(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 	assert.Equal(t, `[{"id":0,"scope":"bar","name":"password","value":"password"}]`,
 		string(rr.Body.Bytes()), "Should found 1 not used variable.")
-}
-
-func getVarByEnvAndScopePayload() *bytes.Buffer {
-
-	type Payload struct {
-		EnvironmentID int    `json:"environmentId"`
-		Scope         string `json:"scope"`
-	}
-
-	var payload Payload
-	payload.EnvironmentID = 999
-	payload.Scope = "global"
-	payloadStr, _ := json.Marshal(payload)
-
-	return bytes.NewBuffer(payloadStr)
 }
