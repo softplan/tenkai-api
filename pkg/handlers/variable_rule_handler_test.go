@@ -12,197 +12,204 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func getVariableRule() model.VariableRule {
-	var item model.VariableRule
-	item.Name = "uriApi*"
-	return item
-}
-
-func TestNewVariableRule(t *testing.T) {
+func TestNewValueRule(t *testing.T) {
 	appContext := AppContext{}
 
-	p := mockVariableRule()
+	p := mockValueRule()
 
-	mockVarRule := &mockRepo.VariableRuleDAOInterface{}
-	mockVarRule.On("CreateVariableRule", p).Return(1, nil)
+	mockValueRule := &mockRepo.ValueRuleDAOInterface{}
+	mockValueRule.On("CreateValueRule", p).Return(1, nil)
 
-	appContext.Repositories.VariableRuleDAO = mockVarRule
+	appContext.Repositories.ValueRuleDAO = mockValueRule
 
-	req, err := http.NewRequest("POST", "/variablerules", payload(p))
+	req, err := http.NewRequest("POST", "/valuerules", payload(p))
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(appContext.newVariableRule)
+	handler := http.HandlerFunc(appContext.newValueRule)
 	handler.ServeHTTP(rr, req)
 
-	mockVarRule.AssertNumberOfCalls(t, "CreateVariableRule", 1)
+	mockValueRule.AssertNumberOfCalls(t, "CreateValueRule", 1)
 	assert.Equal(t, http.StatusCreated, rr.Code, "Response should be Created")
 }
 
-func TestNewVariableRule_UnmarshalPaylError(t *testing.T) {
+func TestNewValueRule_UnmarshalPaylError(t *testing.T) {
 	appContext := AppContext{}
-	rr := testUnmarshalPayloadError(t, "/variablerules", appContext.newVariableRule)
+	rr := testUnmarshalPayloadError(t, "/valuerules", appContext.newValueRule)
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
 
-func TestNewVariableRule_Error(t *testing.T) {
+func TestNewValueRule_Error(t *testing.T) {
 	appContext := AppContext{}
 
-	p := mockVariableRule()
+	p := mockValueRule()
 
-	mockVarRule := &mockRepo.VariableRuleDAOInterface{}
-	mockVarRule.On("CreateVariableRule", p).Return(1, errors.New("some error"))
+	mockValueRule := &mockRepo.ValueRuleDAOInterface{}
+	mockValueRule.On("CreateValueRule", p).Return(1, errors.New("some error"))
 
-	appContext.Repositories.VariableRuleDAO = mockVarRule
+	appContext.Repositories.ValueRuleDAO = mockValueRule
 
-	req, err := http.NewRequest("POST", "/variablerules", payload(p))
+	req, err := http.NewRequest("POST", "/valuerules", payload(p))
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(appContext.newVariableRule)
+	handler := http.HandlerFunc(appContext.newValueRule)
 	handler.ServeHTTP(rr, req)
 
-	mockVarRule.AssertNumberOfCalls(t, "CreateVariableRule", 1)
+	mockValueRule.AssertNumberOfCalls(t, "CreateValueRule", 1)
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500")
 }
 
-func TestEditVariableRule(t *testing.T) {
+func TestEditValueRule(t *testing.T) {
 	appContext := AppContext{}
 
-	p := mockVariableRule()
+	p := mockValueRule()
 
-	mockVarRule := &mockRepo.VariableRuleDAOInterface{}
-	mockVarRule.On("EditVariableRule", p).Return(nil)
+	mockValueRule := &mockRepo.ValueRuleDAOInterface{}
+	mockValueRule.On("EditValueRule", p).Return(nil)
 
-	appContext.Repositories.VariableRuleDAO = mockVarRule
+	appContext.Repositories.ValueRuleDAO = mockValueRule
 
-	req, err := http.NewRequest("POST", "/variablerules/edit", payload(p))
+	req, err := http.NewRequest("POST", "/valuerules/edit", payload(p))
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(appContext.editVariableRule)
+	handler := http.HandlerFunc(appContext.editValueRule)
 	handler.ServeHTTP(rr, req)
 
-	mockVarRule.AssertNumberOfCalls(t, "EditVariableRule", 1)
+	mockValueRule.AssertNumberOfCalls(t, "EditValueRule", 1)
 	assert.Equal(t, http.StatusOK, rr.Code, "Response should be ok")
 }
 
-func TestEditVariableRule_UnmarshalPaylError(t *testing.T) {
+func TestEditValueRule_UnmarshalPaylError(t *testing.T) {
 	appContext := AppContext{}
-	rr := testUnmarshalPayloadError(t, "/variablerules/edit", appContext.editVariableRule)
+	rr := testUnmarshalPayloadError(t, "/valuerules", appContext.editValueRule)
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
 
-func TestEditVariableRule_Error(t *testing.T) {
+func TestEditValueRule_Error(t *testing.T) {
 	appContext := AppContext{}
 
-	p := mockVariableRuleWithID()
+	p := mockValueRule()
 
-	mockVarRule := &mockRepo.VariableRuleDAOInterface{}
-	mockVarRule.On("EditVariableRule", p).Return(errors.New("some error"))
+	mockValueRule := &mockRepo.ValueRuleDAOInterface{}
+	mockValueRule.On("EditValueRule", p).Return(errors.New("some error"))
 
-	appContext.Repositories.VariableRuleDAO = mockVarRule
+	appContext.Repositories.ValueRuleDAO = mockValueRule
 
-	req, err := http.NewRequest("POST", "/variablerules/edit", payload(p))
+	req, err := http.NewRequest("POST", "/valuerules/edit", payload(p))
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(appContext.editVariableRule)
+	handler := http.HandlerFunc(appContext.editValueRule)
 	handler.ServeHTTP(rr, req)
 
-	mockVarRule.AssertNumberOfCalls(t, "EditVariableRule", 1)
+	mockValueRule.AssertNumberOfCalls(t, "EditValueRule", 1)
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500")
 }
 
-func TestDeleteVariableRule(t *testing.T) {
+func TestDeleteValueRule(t *testing.T) {
 	appContext := AppContext{}
 
-	mockVarRule := &mockRepo.VariableRuleDAOInterface{}
-	mockVarRule.On("DeleteVariableRule", 999).Return(nil)
+	mockValueRule := &mockRepo.ValueRuleDAOInterface{}
+	mockValueRule.On("DeleteValueRule", 999).Return(nil)
 
-	appContext.Repositories.VariableRuleDAO = mockVarRule
+	appContext.Repositories.ValueRuleDAO = mockValueRule
 
-	req, err := http.NewRequest("DELETE", "/variablerules/999", nil)
+	req, err := http.NewRequest("DELETE", "/valuerules/999", nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
-	r.HandleFunc("/variablerules/{id}", appContext.deleteVariableRule).Methods("DELETE")
+	r.HandleFunc("/valuerules/{id}", appContext.deleteValueRule).Methods("DELETE")
 	r.ServeHTTP(rr, req)
 
-	mockVarRule.AssertNumberOfCalls(t, "DeleteVariableRule", 1)
+	mockValueRule.AssertNumberOfCalls(t, "DeleteValueRule", 1)
 	assert.Equal(t, http.StatusOK, rr.Code, "Response should be Ok.")
 }
 
-func TestDeleteVariableRule_Error(t *testing.T) {
+func TestDeleteValueRule_Error(t *testing.T) {
 	appContext := AppContext{}
 
-	mockVarRule := &mockRepo.VariableRuleDAOInterface{}
-	mockVarRule.On("DeleteVariableRule", 999).Return(errors.New("some error"))
+	mockValueRule := &mockRepo.ValueRuleDAOInterface{}
+	mockValueRule.On("DeleteValueRule", 999).Return(errors.New("some error"))
 
-	appContext.Repositories.VariableRuleDAO = mockVarRule
+	appContext.Repositories.ValueRuleDAO = mockValueRule
 
-	req, err := http.NewRequest("DELETE", "/variablerules/999", nil)
+	req, err := http.NewRequest("DELETE", "/valuerules/999", nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
-	r.HandleFunc("/variablerules/{id}", appContext.deleteVariableRule).Methods("DELETE")
+	r.HandleFunc("/valuerules/{id}", appContext.deleteValueRule).Methods("DELETE")
 	r.ServeHTTP(rr, req)
 
-	mockVarRule.AssertNumberOfCalls(t, "DeleteVariableRule", 1)
+	mockValueRule.AssertNumberOfCalls(t, "DeleteValueRule", 1)
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
 
-func TestListVariableRule(t *testing.T) {
+func TestListValueRule(t *testing.T) {
 	appContext := AppContext{}
 
-	mockVarRule := &mockRepo.VariableRuleDAOInterface{}
-	result := &model.VariableRuleReponse{}
-	result.List = append(result.List, mockVariableRuleWithID())
-	mockVarRule.On("ListVariableRules").Return(result.List, nil)
+	mockValueRule := &mockRepo.ValueRuleDAOInterface{}
+	result := &model.ValueRuleReponse{}
+	result.List = append(result.List, mockValueRuleWithID())
+	mockValueRule.On("ListValueRules", 999).Return(result.List, nil)
 
-	appContext.Repositories.VariableRuleDAO = mockVarRule
+	appContext.Repositories.ValueRuleDAO = mockValueRule
 
-	req, err := http.NewRequest("GET", "/variablerules", nil)
+	req, err := http.NewRequest("GET", "/valuerules?variableRuleId=999", nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(appContext.listVariableRules)
+	handler := http.HandlerFunc(appContext.listValueRules)
 	handler.ServeHTTP(rr, req)
 
-	mockVarRule.AssertNumberOfCalls(t, "ListVariableRules", 1)
+	mockValueRule.AssertNumberOfCalls(t, "ListValueRules", 1)
 	assert.Equal(t, http.StatusOK, rr.Code, "Response should be ok")
 
 	response := string(rr.Body.Bytes())
-	assert.Contains(t, response, `{"list":[{"ID":999,`)
-	assert.Contains(t, response, `"name":"uriApi*","ValueRules":[{"ID":888,`)
-	assert.Contains(t, response, `"type":"StartsWith","value":"http","VariableRuleID":999}]}]}`)
+	assert.Contains(t, response, `{"list":[{"ID":888,`)
+	assert.Contains(t, response, `"type":"StartsWith",`)
+	assert.Contains(t, response, `"value":"http","VariableRuleID":999}]}`)
 }
 
-func TestListVariableRule_Error(t *testing.T) {
+func TestListValueRule_ParseError(t *testing.T) {
 	appContext := AppContext{}
 
-	mockVarRule := &mockRepo.VariableRuleDAOInterface{}
-	mockVarRule.On("ListVariableRules").Return(nil, errors.New("some error"))
-
-	appContext.Repositories.VariableRuleDAO = mockVarRule
-
-	req, err := http.NewRequest("GET", "/variablerules", nil)
+	req, err := http.NewRequest("GET", "/valuerules?xxxxxx=999", nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(appContext.listVariableRules)
+	handler := http.HandlerFunc(appContext.listValueRules)
 	handler.ServeHTTP(rr, req)
 
-	mockVarRule.AssertNumberOfCalls(t, "ListVariableRules", 1)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500")
+}
+
+func TestListValueRule_Error(t *testing.T) {
+	appContext := AppContext{}
+
+	mockValueRule := &mockRepo.ValueRuleDAOInterface{}
+	mockValueRule.On("ListValueRules", 999).Return(nil, errors.New("some error"))
+	appContext.Repositories.ValueRuleDAO = mockValueRule
+
+	req, err := http.NewRequest("GET", "/valuerules?variableRuleId=999", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.listValueRules)
+	handler.ServeHTTP(rr, req)
+
+	mockValueRule.AssertNumberOfCalls(t, "ListValueRules", 1)
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500")
 }
