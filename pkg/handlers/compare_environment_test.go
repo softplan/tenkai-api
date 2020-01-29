@@ -274,7 +274,7 @@ func TestCompareEnvironmentsFilterOnlyFields(t *testing.T) {
 	assert.Contains(t, r, `]}`)
 }
 
-func TestCompareEnvironmentsFilterByStartsWith(t *testing.T) {
+func TestCompareEnvironmentsFilterCustomByStartsWith(t *testing.T) {
 	appContext := AppContext{}
 
 	exceptCharts := make([]string, 0)
@@ -329,7 +329,7 @@ func TestCompareEnvironmentsFilterByStartsWith(t *testing.T) {
 	assert.Contains(t, r, `]}`)
 }
 
-func TestCompareEnvironmentsFilterByContains(t *testing.T) {
+func TestCompareEnvironmentsFilterCustomByContains(t *testing.T) {
 	appContext := AppContext{}
 
 	exceptCharts := make([]string, 0)
@@ -384,7 +384,7 @@ func TestCompareEnvironmentsFilterByContains(t *testing.T) {
 	assert.Contains(t, r, `]}`)
 }
 
-func TestCompareEnvironmentsFilterByEndsWith(t *testing.T) {
+func TestCompareEnvironmentsFilterCustomByEndsWith(t *testing.T) {
 	appContext := AppContext{}
 
 	exceptCharts := make([]string, 0)
@@ -439,7 +439,7 @@ func TestCompareEnvironmentsFilterByEndsWith(t *testing.T) {
 	assert.Contains(t, r, `]}`)
 }
 
-func TestCompareEnvironmentsFilterByRegex(t *testing.T) {
+func TestCompareEnvironmentsFilterCustomByRegex(t *testing.T) {
 	appContext := AppContext{}
 
 	exceptCharts := make([]string, 0)
@@ -456,7 +456,7 @@ func TestCompareEnvironmentsFilterByRegex(t *testing.T) {
 	p.OnlyFields = onlyFields
 
 	var f3 model.FilterField
-	f3.FilterType = "Regex"
+	f3.FilterType = "RegEx"
 	f3.FilterValue = "urlapiMyService|field1"
 
 	var customFields []model.FilterField
@@ -494,7 +494,7 @@ func TestCompareEnvironmentsFilterByRegex(t *testing.T) {
 	assert.Contains(t, r, `]}`)
 }
 
-func TestCompareEnvironmentsFilter(t *testing.T) {
+func TestCompareEnvironmentsFilterCustom(t *testing.T) {
 	appContext := AppContext{}
 
 	exceptCharts := make([]string, 0)

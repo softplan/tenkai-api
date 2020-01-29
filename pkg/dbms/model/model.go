@@ -123,12 +123,19 @@ type InvalidVariable struct {
 
 //CompareEnvironments Model Payload
 type CompareEnvironments struct {
-	SourceEnvID  int      `json:"sourceEnvId"`
-	TargetEnvID  int      `json:"targetEnvId"`
-	ExceptCharts []string `json:"exceptCharts"`
-	OnlyCharts   []string `json:"onlyCharts"`
-	ExceptFields []string `json:"exceptFields"`
-	OnlyFields   []string `json:"onlyFields"`
+	SourceEnvID  int           `json:"sourceEnvId"`
+	TargetEnvID  int           `json:"targetEnvId"`
+	ExceptCharts []string      `json:"exceptCharts"`
+	OnlyCharts   []string      `json:"onlyCharts"`
+	ExceptFields []string      `json:"exceptFields"`
+	OnlyFields   []string      `json:"onlyFields"`
+	CustomFields []FilterField `json:"customFields"`
+}
+
+//FilterField Filters the CompareEnvironments result
+type FilterField struct {
+	FilterType  string `json:"filterType"`
+	FilterValue string `json:"filterValue"`
 }
 
 //EnvironmentsDiff Model Response
