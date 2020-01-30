@@ -148,6 +148,8 @@ type EnvironmentsDiff struct {
 	TargetName  string `json:"targetName"`
 	SourceValue string `json:"sourceValue"`
 	TargetValue string `json:"targetValue"`
+	SourceVarID string `json:"sourceVarId"`
+	TargetVarID string `json:"targetVarId"`
 }
 
 //CompareEnvsResponse CompareEnvsResponse
