@@ -159,3 +159,26 @@ func (_m *VariableDAOInterface) GetAllVariablesByEnvironmentAndScope(envID int, 
 
 	return r0, r1
 }
+
+// GetByID provides a mock function with given fields: id
+func (_m *VariableDAOInterface) GetByID(id uint) (*model.Variable, error) {
+	ret := _m.Called(id)
+
+	var r0 *model.Variable
+	if rf, ok := ret.Get(0).(func(uint) *model.Variable); ok {
+		r0 = rf(id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Variable)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(uint) error); ok {
+		r1 = rf(id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}

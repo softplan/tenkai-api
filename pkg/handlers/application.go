@@ -72,6 +72,7 @@ func defineRotes(r *mux.Router, appContext *AppContext) {
 	r.HandleFunc("/listServices/{id}", appContext.services).Methods("GET")
 
 	r.HandleFunc("/variables", appContext.editVariable).Methods("POST")
+	r.HandleFunc("/variables/copy-value", appContext.copyVariableValue).Methods("POST")
 	r.HandleFunc("/variables/{envId}", appContext.getVariables).Methods("GET")
 	r.HandleFunc("/variables/delete/{id}", appContext.deleteVariable).Methods("DELETE")
 	r.HandleFunc("/deletePod", appContext.deletePod).Methods("DELETE")

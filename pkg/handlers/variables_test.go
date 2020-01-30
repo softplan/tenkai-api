@@ -223,6 +223,65 @@ func TestGetVariables_GetAllVarByEnvError(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
 
+func TestCopyVariableValue(t *testing.T) {
+	config := configs.Configuration{
+		App: configs.App{
+			Passkey: "qwert",
+		},
+	}
+
+	appContext := &AppContext{Configuration: &config}
+	appContext.K8sConfigPath = "/tmp/"
+
+	mockVariableDAO := &mocks.VariableDAOInterface{}
+	mockVariableDAO.On("EditVariable", mock.Anything).Return(nil)
+
+	var srcVar model.Variable
+	srcVar.ID = 999
+	srcVar.Scope = "foo"
+	srcVar.Name = "foo"
+	srcVar.Value = "foo"
+	srcVar.Secret = false
+	srcVar.Description = "foo"
+	srcVar.EnvironmentID = 999
+
+	var tarVar model.Variable
+	tarVar.ID = 888
+	tarVar.Scope = "foo"
+	tarVar.Name = "foo"
+	tarVar.Value = "bar"
+	tarVar.Secret = false
+	tarVar.Description = "foo"
+	tarVar.EnvironmentID = 888
+
+	mockVariableDAO.On("GetByID", srcVar.ID).Return(&srcVar, nil)
+	mockVariableDAO.On("GetByID", tarVar.ID).Return(&tarVar, nil)
+
+	appContext.Repositories = Repositories{}
+	appContext.Repositories.VariableDAO = mockVariableDAO
+
+	var p model.CopyVariableValue
+	p.SrcEnvID = 999
+	p.SrcVarID = 999
+	p.TarEnvID = 888
+	p.TarVarID = 888
+	p.NewValue = "foo"
+
+	req, err := http.NewRequest("POST", "/variables/copy-value", payload(p))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, "tenkai-variables-save")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.copyVariableValue)
+	handler.ServeHTTP(rr, req)
+
+	mockVariableDAO.AssertNumberOfCalls(t, "EditVariable", 1)
+	mockVariableDAO.AssertNumberOfCalls(t, "GetByID", 2)
+	assert.Equal(t, http.StatusCreated, rr.Code, "Response is not Ok.")
+}
+
 func getDataVariableElement(secret bool) model.DataVariableElement {
 	var payload model.DataVariableElement
 	payload.Data.Secret = secret

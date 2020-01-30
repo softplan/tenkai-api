@@ -44,6 +44,15 @@ type DataVariableElement struct {
 	Data Variable `json:"data"`
 }
 
+//CopyVariableValue CopyVariableValue
+type CopyVariableValue struct {
+	SrcEnvID uint   `json:"srcEnvId"`
+	SrcVarID uint   `json:"srcVarId"`
+	TarEnvID uint   `json:"tarEnvId"`
+	TarVarID uint   `json:"tarVarId"`
+	NewValue string `json:"newValue"`
+}
+
 //VariablesResult Model
 type VariablesResult struct {
 	Variables []Variable
