@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"hash/fnv"
 	"net/http"
+	"regexp"
 	"sort"
+	"strings"
 
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/global"
@@ -55,7 +57,7 @@ func (appContext *AppContext) compareEnvironments(w http.ResponseWriter, r *http
 	appContext.compare(rmap, payload, toMap(targetVars), toMap(sourceVars), true)
 
 	for _, v := range rmap {
-		resp.List = append(resp.List, v)
+		appContext.applyFilters(payload, v, &resp)
 	}
 
 	sort.Slice(resp.List, func(i int, j int) bool {
@@ -65,6 +67,68 @@ func (appContext *AppContext) compareEnvironments(w http.ResponseWriter, r *http
 	data, _ := json.Marshal(resp)
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
+}
+
+func (appContext *AppContext) applyFilters(payload model.CompareEnvironments,
+	v model.EnvironmentsDiff, resp *model.CompareEnvsResponse) {
+
+	var fieldName string
+	if v.SourceName != "" {
+		fieldName = v.SourceName
+	} else {
+		fieldName = v.TargetName
+	}
+
+	if len(payload.CustomFields) == 0 {
+		resp.List = append(resp.List, v)
+	} else {
+		filterMatch := false
+		for _, filter := range payload.CustomFields {
+			if fieldFilter(filter.FilterType)(fieldName, filter.FilterValue) {
+				filterMatch = true
+				break
+			}
+		}
+
+		if filterMatch {
+			resp.List = append(resp.List, v)
+		}
+	}
+}
+
+func fieldFilter(filterType string) myFn {
+	m := make(map[string]myFn)
+
+	m["Contains"] = fieldContains
+	m["StartsWith"] = fieldStartsWith
+	m["EndsWith"] = fieldEndsWith
+	m["RegEx"] = fieldRegExp
+
+	return m[filterType]
+}
+
+type myFn func(field string, value string) bool
+
+func fieldStartsWith(field string, value string) bool {
+	return strings.HasPrefix(field, value)
+}
+
+func fieldContains(field string, value string) bool {
+	return strings.Contains(field, value)
+}
+
+func fieldEndsWith(field string, value string) bool {
+	return strings.HasSuffix(field, value)
+}
+
+func fieldRegExp(field string, value string) bool {
+	result, err := regexp.MatchString(value, field)
+
+	if err != nil {
+		return false
+	}
+
+	return result
 }
 
 func (appContext *AppContext) compare(rmap map[uint32]model.EnvironmentsDiff,
