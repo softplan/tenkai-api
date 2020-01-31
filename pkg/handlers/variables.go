@@ -119,12 +119,24 @@ func (appContext *AppContext) copyVariableValue(w http.ResponseWriter, r *http.R
 	}
 
 	var targetVar *model.Variable
-	if targetVar, err = appContext.Repositories.VariableDAO.GetByID(payload.TarVarID); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	if payload.TarVarID > 0 {
+		if targetVar, err = appContext.Repositories.VariableDAO.GetByID(payload.TarVarID); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		targetVar.Value = sourceVar.Value
+	} else {
+		new := model.Variable{}
+		new.Scope = sourceVar.Scope
+		new.ChartVersion = sourceVar.ChartVersion
+		new.Name = sourceVar.Name
+		new.Value = sourceVar.Value
+		new.Secret = sourceVar.Secret
+		new.Description = sourceVar.Description
+		new.EnvironmentID = int(payload.TarEnvID)
+		targetVar = &new
 	}
 
-	targetVar.Value = sourceVar.Value
 	if err := appContext.Repositories.VariableDAO.EditVariable(*targetVar); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
