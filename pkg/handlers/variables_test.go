@@ -261,9 +261,7 @@ func TestCopyVariableValue(t *testing.T) {
 	appContext.Repositories.VariableDAO = mockVariableDAO
 
 	var p model.CopyVariableValue
-	p.SrcEnvID = 999
 	p.SrcVarID = 999
-	p.TarEnvID = 888
 	p.TarVarID = 888
 	p.NewValue = "foo"
 
