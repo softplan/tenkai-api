@@ -44,6 +44,13 @@ type DataVariableElement struct {
 	Data Variable `json:"data"`
 }
 
+//CopyVariableValue CopyVariableValue
+type CopyVariableValue struct {
+	SrcVarID uint   `json:"srcVarId"`
+	TarVarID uint   `json:"tarVarId"`
+	NewValue string `json:"newValue"`
+}
+
 //VariablesResult Model
 type VariablesResult struct {
 	Variables []Variable
@@ -148,6 +155,8 @@ type EnvironmentsDiff struct {
 	TargetName  string `json:"targetName"`
 	SourceValue string `json:"sourceValue"`
 	TargetValue string `json:"targetValue"`
+	SourceVarID string `json:"sourceVarId"`
+	TargetVarID string `json:"targetVarId"`
 }
 
 //CompareEnvsResponse CompareEnvsResponse
