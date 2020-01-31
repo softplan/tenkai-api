@@ -47,6 +47,7 @@ type DataVariableElement struct {
 //CopyVariableValue CopyVariableValue
 type CopyVariableValue struct {
 	SrcVarID uint   `json:"srcVarId"`
+	TarEnvID uint   `json:"tarEnvId"`
 	TarVarID uint   `json:"tarVarId"`
 	NewValue string `json:"newValue"`
 }
