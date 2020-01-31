@@ -95,3 +95,41 @@ func (appContext *AppContext) getVariables(w http.ResponseWriter, r *http.Reques
 	w.Write(data)
 
 }
+
+func (appContext *AppContext) copyVariableValue(w http.ResponseWriter, r *http.Request) {
+
+	principal := util.GetPrincipal(r)
+	if !util.Contains(principal.Roles, constraints.TenkaiVariablesSave) {
+		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
+		return
+	}
+
+	var payload model.CopyVariableValue
+	var err error
+
+	if err = util.UnmarshalPayload(r, &payload); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var sourceVar *model.Variable
+	if sourceVar, err = appContext.Repositories.VariableDAO.GetByID(payload.SrcVarID); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var targetVar *model.Variable
+	if targetVar, err = appContext.Repositories.VariableDAO.GetByID(payload.TarVarID); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	targetVar.Value = sourceVar.Value
+	if err := appContext.Repositories.VariableDAO.EditVariable(*targetVar); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+
+}

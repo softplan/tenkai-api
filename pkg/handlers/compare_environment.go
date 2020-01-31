@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"hash/fnv"
 	"net/http"
 	"regexp"
@@ -132,8 +133,8 @@ func fieldRegExp(field string, value string) bool {
 }
 
 func (appContext *AppContext) compare(rmap map[uint32]model.EnvironmentsDiff,
-	filter model.CompareEnvironments, source map[string]map[string]string,
-	target map[string]map[string]string, reverse bool) {
+	filter model.CompareEnvironments, source map[string]map[string]model.Variable,
+	target map[string]map[string]model.Variable, reverse bool) {
 
 	for scope, srcVars := range source {
 		if shouldIgnoreChart(filter, scope) {
@@ -145,7 +146,7 @@ func (appContext *AppContext) compare(rmap map[uint32]model.EnvironmentsDiff,
 }
 
 func iterateOverSourceVars(filter model.CompareEnvironments, scope string,
-	srcVars map[string]string, target map[string]map[string]string,
+	srcVars map[string]model.Variable, target map[string]map[string]model.Variable,
 	reverse bool, rmap map[uint32]model.EnvironmentsDiff) {
 
 	for srcVarName, srcValue := range srcVars {
@@ -153,22 +154,22 @@ func iterateOverSourceVars(filter model.CompareEnvironments, scope string,
 			continue
 		}
 		if _, ok := target[scope][srcVarName]; !ok {
-			addToResp(rmap, filter, scope, scope, srcVarName, "", srcValue, "", reverse)
+			addToResp(rmap, filter, scope, scope, srcVarName, "", srcValue.Value, "", fmt.Sprint(srcValue.ID), "", reverse)
 			continue
 		}
-		iterateOverTargetVars(filter, scope, target, srcVarName, srcValue, reverse, rmap)
+		iterateOverTargetVars(filter, scope, target, srcValue, reverse, rmap)
 	}
 }
 
 func iterateOverTargetVars(filter model.CompareEnvironments, scope string,
-	target map[string]map[string]string, srcVarName string, srcValue string,
+	target map[string]map[string]model.Variable, srcVar model.Variable,
 	reverse bool, rmap map[uint32]model.EnvironmentsDiff) {
 
 	for tarVarName, tarValue := range target[scope] {
-		if shouldIgnoreVar(filter, tarVarName) || srcVarName != tarVarName || srcValue == tarValue {
+		if shouldIgnoreVar(filter, tarVarName) || srcVar.Name != tarVarName || srcVar.Value == tarValue.Value {
 			continue
 		} else {
-			addToResp(rmap, filter, scope, scope, srcVarName, tarVarName, srcValue, tarValue, reverse)
+			addToResp(rmap, filter, scope, scope, srcVar.Name, tarVarName, srcVar.Value, tarValue.Value, fmt.Sprint(srcVar.ID), fmt.Sprint(tarValue.ID), reverse)
 		}
 	}
 }
@@ -221,14 +222,14 @@ func shouldIgnoreChart(filter model.CompareEnvironments, scope string) bool {
 	return false
 }
 
-func toMap(vars []model.Variable) map[string]map[string]string {
-	sm := make(map[string]map[string]string)
+func toMap(vars []model.Variable) map[string]map[string]model.Variable {
+	sm := make(map[string]map[string]model.Variable)
 
 	for _, e := range vars {
 		if sm[e.Scope] == nil {
-			sm[e.Scope] = map[string]string{e.Name: e.Value}
+			sm[e.Scope] = map[string]model.Variable{e.Name: e}
 		} else {
-			sm[e.Scope][e.Name] = e.Value
+			sm[e.Scope][e.Name] = e
 		}
 	}
 
@@ -237,7 +238,7 @@ func toMap(vars []model.Variable) map[string]map[string]string {
 
 func addToResp(rmap map[uint32]model.EnvironmentsDiff, filter model.CompareEnvironments,
 	srcScope string, tarScope string, srcVarName string,
-	tarVarName string, srcValue string, tarValue string, reverse bool) {
+	tarVarName string, srcValue string, tarValue string, srcVarID string, tarVarID string, reverse bool) {
 
 	var e model.EnvironmentsDiff
 	e.SourceEnvID = filter.SourceEnvID
@@ -250,6 +251,8 @@ func addToResp(rmap map[uint32]model.EnvironmentsDiff, filter model.CompareEnvir
 		e.TargetName = srcVarName
 		e.SourceValue = tarValue
 		e.TargetValue = srcValue
+		e.SourceVarID = tarVarID
+		e.TargetVarID = srcVarID
 	} else {
 		e.SourceScope = srcScope
 		e.TargetScope = tarScope
@@ -257,6 +260,8 @@ func addToResp(rmap map[uint32]model.EnvironmentsDiff, filter model.CompareEnvir
 		e.TargetName = tarVarName
 		e.SourceValue = srcValue
 		e.TargetValue = tarValue
+		e.SourceVarID = srcVarID
+		e.TargetVarID = tarVarID
 	}
 
 	// Avoid duplicated entries
