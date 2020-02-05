@@ -12,6 +12,7 @@ type UserDAOInterface interface {
 	AssociateEnvironmentUser(userID int, environmentID int) error
 	ListAllUsers() ([]model2.User, error)
 	CreateOrUpdateUser(user model2.User) error
+	FindByEmail(email string) (model2.User, error)
 }
 
 //UserDAOImpl UserDAOImpl
@@ -138,4 +139,13 @@ func (dao UserDAOImpl) CreateOrUpdateUser(user model2.User) error {
 
 	return dao.createUser(user)
 
+}
+
+//FindByEmail FindByEmail
+func (dao UserDAOImpl) FindByEmail(email string) (model2.User, error) {
+	var user model2.User
+	if err := dao.Db.Where(&model2.User{Email: email}).Find(&user).Error; err != nil {
+		return user, err
+	}
+	return user, nil
 }

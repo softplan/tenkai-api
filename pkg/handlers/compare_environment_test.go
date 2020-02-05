@@ -559,6 +559,59 @@ func TestCompareEnvironmentsFilterCustom(t *testing.T) {
 	assert.Contains(t, r, `]}`)
 }
 
+func TestSaveCompareEnvironmentView(t *testing.T) {
+	appContext := AppContext{}
+
+	exceptCharts := make([]string, 0)
+	onlyCharts := make([]string, 0)
+	exceptFields := make([]string, 0)
+	onlyFields := make([]string, 0)
+
+	var p model.CompareEnvironments
+	p.SourceEnvID = 888
+	p.TargetEnvID = 999
+	p.ExceptCharts = exceptCharts
+	p.OnlyCharts = onlyCharts
+	p.ExceptFields = exceptFields
+	p.OnlyFields = onlyFields
+
+	var f1 model.FilterField
+	f1.FilterType = "Contains"
+	f1.FilterValue = "virtualservices"
+
+	var f2 model.FilterField
+	f2.FilterType = "StartsWith"
+	f2.FilterValue = "urlapi"
+
+	var f3 model.FilterField
+	f3.FilterType = "EndsWith"
+	f3.FilterValue = "tag"
+
+	var customFields []model.FilterField
+	customFields = append(customFields, f1)
+	customFields = append(customFields, f2)
+	customFields = append(customFields, f3)
+
+	p.CustomFields = customFields
+
+	mockVarDao := &mockRepo.VariableDAOInterface{}
+	sVars := mockSourceEnvsFilterFields()
+	tVars := mockTargetVarsFilterFields()
+	mockVarDao.On("GetAllVariablesByEnvironment", p.SourceEnvID).Return(sVars, nil)
+	mockVarDao.On("GetAllVariablesByEnvironment", p.TargetEnvID).Return(tVars, nil)
+	appContext.Repositories.VariableDAO = mockVarDao
+
+	req, err := http.NewRequest("POST", "/save-compare-env-query", payload(p))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.saveCompareEnvQuery)
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusCreated, rr.Code, "Response is not 201.")
+}
+
 func mockVar(id int, envID int, repo string, field string, value string) model.Variable {
 	var v model.Variable
 	v.ID = uint(id)

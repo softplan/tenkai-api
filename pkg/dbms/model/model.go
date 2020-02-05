@@ -2,6 +2,8 @@ package model
 
 import "github.com/jinzhu/gorm"
 
+import "github.com/jinzhu/gorm/dialects/postgres"
+
 //Environment - Environment Model
 type Environment struct {
 	gorm.Model
@@ -129,15 +131,39 @@ type InvalidVariable struct {
 	ValueRule    string `json:"valueRule"`
 }
 
+type selectItem struct {
+	Label string `json:"label"`
+	Value string `json:"value"`
+}
+
 //CompareEnvironments Model Payload
 type CompareEnvironments struct {
-	SourceEnvID  int           `json:"sourceEnvId"`
-	TargetEnvID  int           `json:"targetEnvId"`
-	ExceptCharts []string      `json:"exceptCharts"`
-	OnlyCharts   []string      `json:"onlyCharts"`
-	ExceptFields []string      `json:"exceptFields"`
-	OnlyFields   []string      `json:"onlyFields"`
-	CustomFields []FilterField `json:"customFields"`
+	SourceEnvID             int           `json:"sourceEnvId"`
+	TargetEnvID             int           `json:"targetEnvId"`
+	ExceptCharts            []string      `json:"exceptCharts"`
+	OnlyCharts              []string      `json:"onlyCharts"`
+	ExceptFields            []string      `json:"exceptFields"`
+	OnlyFields              []string      `json:"onlyFields"`
+	CustomFields            []FilterField `json:"customFields"`
+	FilterOnlyExceptChart   int           `json:"filterOnlyExceptChart"`
+	FilterOnlyExceptField   int           `json:"filterOnlyExceptField"`
+	SelectedFilterFieldType selectItem    `json:"selectedFilterFieldType"`
+	GlobalFilter            string        `json:"globalFilter"`
+}
+
+//SaveCompareEnvQuery SaveCompareEnvQuery
+type SaveCompareEnvQuery struct {
+	Name      string              `json:"name"`
+	UserEmail string              `json:"userEmail"`
+	Data      CompareEnvironments `json:"data"`
+}
+
+//CompareEnvsQuery CompareEnvsQuery
+type CompareEnvsQuery struct {
+	gorm.Model
+	Name   string         `json:"name"`
+	UserID int            `json:"userId"`
+	Query  postgres.Jsonb `json:"query"`
 }
 
 //FilterField Filters the CompareEnvironments result

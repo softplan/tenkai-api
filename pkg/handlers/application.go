@@ -23,16 +23,17 @@ import (
 
 //Repositories  Repositories
 type Repositories struct {
-	ConfigDAO        repository.ConfigDAOInterface
-	DockerDAO        repository.DockerDAOInterface
-	EnvironmentDAO   repository.EnvironmentDAOInterface
-	ProductDAO       repository.ProductDAOInterface
-	SolutionDAO      repository.SolutionDAOInterface
-	SolutionChartDAO repository.SolutionChartDAOInterface
-	UserDAO          repository.UserDAOInterface
-	VariableDAO      repository.VariableDAOInterface
-	ValueRuleDAO     repository.ValueRuleDAOInterface
-	VariableRuleDAO  repository.VariableRuleDAOInterface
+	ConfigDAO           repository.ConfigDAOInterface
+	DockerDAO           repository.DockerDAOInterface
+	EnvironmentDAO      repository.EnvironmentDAOInterface
+	ProductDAO          repository.ProductDAOInterface
+	SolutionDAO         repository.SolutionDAOInterface
+	SolutionChartDAO    repository.SolutionChartDAOInterface
+	UserDAO             repository.UserDAOInterface
+	VariableDAO         repository.VariableDAOInterface
+	ValueRuleDAO        repository.ValueRuleDAOInterface
+	VariableRuleDAO     repository.VariableRuleDAOInterface
+	CompareEnvsQueryDAO repository.CompareEnvsQueryDAOInterface
 }
 
 //AppContext AppContext
@@ -164,6 +165,8 @@ func defineRotes(r *mux.Router, appContext *AppContext) {
 	r.HandleFunc("/validateEnvVars/{envId}", appContext.validateEnvironmentVariables).Methods("POST")
 
 	r.HandleFunc("/compare-environments", appContext.compareEnvironments).Methods("POST")
+	r.HandleFunc("/compare-environments/save-query", appContext.saveCompareEnvQuery).Methods("POST")
+	r.HandleFunc("/compare-environments/load-queries", appContext.loadCompareEnvQueries).Methods("GET")
 
 	r.HandleFunc("/", appContext.rootHandler)
 

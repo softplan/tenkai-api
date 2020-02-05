@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/global"
 	"github.com/softplan/tenkai-api/pkg/util"
@@ -66,6 +67,64 @@ func (appContext *AppContext) compareEnvironments(w http.ResponseWriter, r *http
 	})
 
 	data, _ := json.Marshal(resp)
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+}
+
+func (appContext *AppContext) saveCompareEnvQuery(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set(global.ContentType, global.JSONContentType)
+
+	var payload model.SaveCompareEnvQuery
+
+	var e error
+	if e := util.UnmarshalPayload(r, &payload); e != nil {
+		http.Error(w, e.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var b []byte
+	if b, e = json.Marshal(payload.Data); e != nil {
+		http.Error(w, e.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var user model.User
+	if user, e = appContext.Repositories.UserDAO.FindByEmail(payload.UserEmail); e != nil {
+		http.Error(w, e.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var env model.CompareEnvsQuery
+	env.Name = payload.Name
+	env.UserID = int(user.ID)
+	env.Query = postgres.Jsonb{RawMessage: b}
+
+	if _, err := appContext.Repositories.CompareEnvsQueryDAO.CreateCompareEnvsQuery(env); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (appContext *AppContext) loadCompareEnvQueries(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set(global.ContentType, global.JSONContentType)
+	principal := util.GetPrincipal(r)
+
+	var user model.User
+	var e error
+	if user, e = appContext.Repositories.UserDAO.FindByEmail(principal.Email); e != nil {
+		http.Error(w, e.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var result []model.CompareEnvsQuery
+	if result, e = appContext.Repositories.CompareEnvsQueryDAO.GetByUser(int(user.ID)); e != nil {
+		http.Error(w, e.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data, _ := json.Marshal(result)
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 }
