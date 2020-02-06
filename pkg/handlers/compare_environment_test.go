@@ -1,14 +1,19 @@
 package handlers
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gorilla/mux"
+	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestCompareEnvironments(t *testing.T) {
@@ -559,6 +564,244 @@ func TestCompareEnvironmentsFilterCustom(t *testing.T) {
 	assert.Contains(t, r, `]}`)
 }
 
+func TestSaveCompareEnvironmentView(t *testing.T) {
+	appContext := AppContext{}
+
+	p := mockCompareEnvPayload()
+
+	var user model.User
+	user.ID = 999
+
+	mockUserDao := &mockRepo.UserDAOInterface{}
+	mockUserDao.On("FindByEmail", mock.Anything).Return(user, nil)
+
+	mockCompareEnvDao := &mockRepo.CompareEnvsQueryDAOInterface{}
+	mockCompareEnvDao.On("SaveCompareEnvsQuery", mock.Anything).Return(0, nil)
+
+	appContext.Repositories.UserDAO = mockUserDao
+	appContext.Repositories.CompareEnvsQueryDAO = mockCompareEnvDao
+
+	req, err := http.NewRequest("POST", "/save-compare-env-query", payload(p))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.saveCompareEnvQuery)
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusCreated, rr.Code, "Response is not 201.")
+}
+
+func TestSaveCompareEnvironmentView_UnmarshalError(t *testing.T) {
+	appContext := AppContext{}
+	rr := testUnmarshalPayloadError(t, "/save-compare-env-query", appContext.saveCompareEnvQuery)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestSaveCompareEnvironmentView_FindByEmailError(t *testing.T) {
+	appContext := AppContext{}
+
+	p := mockCompareEnvPayload()
+
+	var user model.User
+	user.ID = 999
+
+	mockUserDao := &mockRepo.UserDAOInterface{}
+	mockUserDao.On("FindByEmail", mock.Anything).Return(user, errors.New("some error"))
+
+	mockCompareEnvDao := &mockRepo.CompareEnvsQueryDAOInterface{}
+	mockCompareEnvDao.On("SaveCompareEnvsQuery", mock.Anything).Return(0, nil)
+
+	appContext.Repositories.UserDAO = mockUserDao
+
+	req, err := http.NewRequest("POST", "/save-compare-env-query", payload(p))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.saveCompareEnvQuery)
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestSaveCompareEnvironmentView_SaveError(t *testing.T) {
+	appContext := AppContext{}
+
+	p := mockCompareEnvPayload()
+
+	var user model.User
+	user.ID = 999
+
+	mockUserDao := &mockRepo.UserDAOInterface{}
+	mockUserDao.On("FindByEmail", mock.Anything).Return(user, nil)
+
+	mockCompareEnvDao := &mockRepo.CompareEnvsQueryDAOInterface{}
+	mockCompareEnvDao.On("SaveCompareEnvsQuery", mock.Anything).Return(0, errors.New("some errror"))
+
+	appContext.Repositories.UserDAO = mockUserDao
+	appContext.Repositories.CompareEnvsQueryDAO = mockCompareEnvDao
+
+	req, err := http.NewRequest("POST", "/save-compare-env-query", payload(p))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.saveCompareEnvQuery)
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestDeleteCompareEnvQuery(t *testing.T) {
+	appContext := AppContext{}
+
+	mockCompareEnvDao := &mockRepo.CompareEnvsQueryDAOInterface{}
+	mockCompareEnvDao.On("DeleteCompareEnvQuery", 999).Return(nil)
+
+	appContext.Repositories.CompareEnvsQueryDAO = mockCompareEnvDao
+
+	req, err := http.NewRequest("DELETE", "/compare-environments/delete-query/999", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/compare-environments/delete-query/{id}", appContext.deleteCompareEnvQuery).Methods("DELETE")
+	r.ServeHTTP(rr, req)
+
+	mockCompareEnvDao.AssertNumberOfCalls(t, "DeleteCompareEnvQuery", 1)
+	assert.Equal(t, http.StatusOK, rr.Code, "Response should be Ok.")
+}
+
+func TestDeleteCompareEnvQuery_Error(t *testing.T) {
+	appContext := AppContext{}
+
+	mockCompareEnvDao := &mockRepo.CompareEnvsQueryDAOInterface{}
+	mockCompareEnvDao.On("DeleteCompareEnvQuery", 999).Return(errors.New("some error"))
+
+	appContext.Repositories.CompareEnvsQueryDAO = mockCompareEnvDao
+
+	req, err := http.NewRequest("DELETE", "/compare-environments/delete-query/999", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/compare-environments/delete-query/{id}", appContext.deleteCompareEnvQuery).Methods("DELETE")
+	r.ServeHTTP(rr, req)
+
+	mockCompareEnvDao.AssertNumberOfCalls(t, "DeleteCompareEnvQuery", 1)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestLoadCompareEnvQueries(t *testing.T) {
+	appContext := AppContext{}
+
+	var user model.User
+	user.ID = 999
+
+	mockUserDao := &mockRepo.UserDAOInterface{}
+	mockUserDao.On("FindByEmail", mock.Anything).Return(user, nil)
+
+	var item model.CompareEnvsQuery
+	item.ID = 999
+	item.Name = "test"
+	item.UserID = 888
+
+	query := json.RawMessage(`{"foo":"bar"}`)
+	item.Query = postgres.Jsonb{RawMessage: query}
+
+	var result []model.CompareEnvsQuery
+	result = append(result, item)
+
+	mockCompareEnvDao := &mockRepo.CompareEnvsQueryDAOInterface{}
+	mockCompareEnvDao.On("GetByUser", mock.Anything).Return(result, nil)
+
+	appContext.Repositories.UserDAO = mockUserDao
+	appContext.Repositories.CompareEnvsQueryDAO = mockCompareEnvDao
+
+	req, err := http.NewRequest("GET", "/compare-environments/load-queries", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, "tenkai-user")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.loadCompareEnvQueries)
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code, "Response should be 200.")
+
+	response := string(rr.Body.Bytes())
+	assert.Contains(t, response, `[{"ID":999,`)
+	assert.Contains(t, response, `"name":"test","userId":888,"query":{"foo":"bar"}`)
+	assert.Contains(t, response, `}]`)
+}
+
+func TestLoadCompareEnvQueries_FindByEmailError(t *testing.T) {
+	appContext := AppContext{}
+
+	var user model.User
+	user.ID = 999
+
+	mockUserDao := &mockRepo.UserDAOInterface{}
+	mockUserDao.On("FindByEmail", mock.Anything).Return(user, errors.New("some error"))
+
+	appContext.Repositories.UserDAO = mockUserDao
+
+	req, err := http.NewRequest("GET", "/compare-environments/load-queries", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, "tenkai-user")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.loadCompareEnvQueries)
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestLoadCompareEnvQueries_GetByUserError(t *testing.T) {
+	appContext := AppContext{}
+
+	var user model.User
+	user.ID = 999
+
+	mockUserDao := &mockRepo.UserDAOInterface{}
+	mockUserDao.On("FindByEmail", mock.Anything).Return(user, nil)
+
+	var item model.CompareEnvsQuery
+	item.ID = 999
+	item.Name = "test"
+	item.UserID = 888
+
+	query := json.RawMessage(`{"foo":"bar"}`)
+	item.Query = postgres.Jsonb{RawMessage: query}
+
+	var result []model.CompareEnvsQuery
+	result = append(result, item)
+
+	mockCompareEnvDao := &mockRepo.CompareEnvsQueryDAOInterface{}
+	mockCompareEnvDao.On("GetByUser", mock.Anything).Return(result, errors.New("some error"))
+
+	appContext.Repositories.UserDAO = mockUserDao
+	appContext.Repositories.CompareEnvsQueryDAO = mockCompareEnvDao
+
+	req, err := http.NewRequest("GET", "/compare-environments/load-queries", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req, "tenkai-user")
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.loadCompareEnvQueries)
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
 func mockVar(id int, envID int, repo string, field string, value string) model.Variable {
 	var v model.Variable
 	v.ID = uint(id)
@@ -628,4 +871,46 @@ func mockTargetVarsFilterFields() []model.Variable {
 	tVars = append(tVars, mockVar(995, 999, "repo/chart2", "field1", "not-equal-2"))
 	tVars = append(tVars, mockVar(996, 999, "repo/chart2", "field2", "equal"))
 	return tVars
+}
+
+func mockCompareEnvPayload() model.SaveCompareEnvQuery {
+
+	exceptCharts := make([]string, 0)
+	onlyCharts := make([]string, 0)
+	exceptFields := make([]string, 0)
+	onlyFields := make([]string, 0)
+
+	var data model.CompareEnvironments
+	data.SourceEnvID = 888
+	data.TargetEnvID = 999
+	data.ExceptCharts = exceptCharts
+	data.OnlyCharts = onlyCharts
+	data.ExceptFields = exceptFields
+	data.OnlyFields = onlyFields
+
+	var f1 model.FilterField
+	f1.FilterType = "Contains"
+	f1.FilterValue = "virtualservices"
+
+	var f2 model.FilterField
+	f2.FilterType = "StartsWith"
+	f2.FilterValue = "urlapi"
+
+	var f3 model.FilterField
+	f3.FilterType = "EndsWith"
+	f3.FilterValue = "tag"
+
+	var customFields []model.FilterField
+	customFields = append(customFields, f1)
+	customFields = append(customFields, f2)
+	customFields = append(customFields, f3)
+
+	data.CustomFields = customFields
+
+	var p model.SaveCompareEnvQuery
+	p.Name = "my query"
+	p.UserEmail = "foo@bar.com"
+	p.Data = data
+
+	return p
 }
