@@ -153,6 +153,7 @@ type CompareEnvironments struct {
 
 //SaveCompareEnvQuery SaveCompareEnvQuery
 type SaveCompareEnvQuery struct {
+	ID        uint                `json:"id"`
 	Name      string              `json:"name"`
 	UserEmail string              `json:"userEmail"`
 	Data      CompareEnvironments `json:"data"`

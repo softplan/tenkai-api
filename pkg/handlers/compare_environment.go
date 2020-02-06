@@ -7,8 +7,10 @@ import (
 	"net/http"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 
+	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/global"
@@ -99,12 +101,28 @@ func (appContext *AppContext) saveCompareEnvQuery(w http.ResponseWriter, r *http
 	env.UserID = int(user.ID)
 	env.Query = postgres.Jsonb{RawMessage: b}
 
-	if _, err := appContext.Repositories.CompareEnvsQueryDAO.CreateCompareEnvsQuery(env); err != nil {
+	if payload.ID > 0 {
+		env.ID = payload.ID
+	}
+
+	if _, err := appContext.Repositories.CompareEnvsQueryDAO.SaveCompareEnvsQuery(env); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
+}
+
+func (appContext *AppContext) deleteCompareEnvQuery(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	sl := vars["id"]
+	id, _ := strconv.Atoi(sl)
+	w.Header().Set(global.ContentType, global.JSONContentType)
+	if err := appContext.Repositories.CompareEnvsQueryDAO.DeleteCompareEnvQuery(id); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 func (appContext *AppContext) loadCompareEnvQueries(w http.ResponseWriter, r *http.Request) {

@@ -39,7 +39,7 @@ func TestCreateCompareEnvsQuery(t *testing.T) {
 		WithArgs(item.CreatedAt, item.UpdatedAt, item.DeletedAt, item.Name, item.UserID, item.Query.RawMessage).
 		WillReturnRows(rows)
 
-	result, e := envDAO.CreateCompareEnvsQuery(item)
+	result, e := envDAO.SaveCompareEnvsQuery(item)
 	assert.Nil(t, e)
 	assert.Equal(t, 1, result)
 

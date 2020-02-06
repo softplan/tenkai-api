@@ -7,9 +7,8 @@ import (
 
 //CompareEnvsQueryDAOInterface CompareEnvsQueryDAOInterface
 type CompareEnvsQueryDAOInterface interface {
-	CreateCompareEnvsQuery(env model.CompareEnvsQuery) (int, error)
-	// EditCompareEnvsQuery(env model.CompareEnvsQuery) error
-	// DeleteCompareEnvsQuery(env model.CompareEnvsQuery) error
+	SaveCompareEnvsQuery(env model.CompareEnvsQuery) (int, error)
+	DeleteCompareEnvQuery(id int) error
 	GetByUser(userID int) ([]model.CompareEnvsQuery, error)
 }
 
@@ -18,9 +17,9 @@ type CompareEnvsQueryDAOImpl struct {
 	Db *gorm.DB
 }
 
-//CreateCompareEnvsQuery Create
-func (dao CompareEnvsQueryDAOImpl) CreateCompareEnvsQuery(compareEnvQuery model.CompareEnvsQuery) (int, error) {
-	if err := dao.Db.Create(&compareEnvQuery).Error; err != nil {
+//SaveCompareEnvsQuery Create or Update
+func (dao CompareEnvsQueryDAOImpl) SaveCompareEnvsQuery(compareEnvQuery model.CompareEnvsQuery) (int, error) {
+	if err := dao.Db.Save(&compareEnvQuery).Error; err != nil {
 		return -1, err
 	}
 	return int(compareEnvQuery.ID), nil
@@ -36,4 +35,9 @@ func (dao CompareEnvsQueryDAOImpl) GetByUser(userID int) ([]model.CompareEnvsQue
 		return nil, err
 	}
 	return list, nil
+}
+
+//DeleteCompareEnvQuery DeleteCompareEnvQuery
+func (dao CompareEnvsQueryDAOImpl) DeleteCompareEnvQuery(id int) error {
+	return dao.Db.Unscoped().Delete(model.CompareEnvsQuery{}, id).Error
 }

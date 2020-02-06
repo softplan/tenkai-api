@@ -167,6 +167,7 @@ func defineRotes(r *mux.Router, appContext *AppContext) {
 	r.HandleFunc("/compare-environments", appContext.compareEnvironments).Methods("POST")
 	r.HandleFunc("/compare-environments/save-query", appContext.saveCompareEnvQuery).Methods("POST")
 	r.HandleFunc("/compare-environments/load-queries", appContext.loadCompareEnvQueries).Methods("GET")
+	r.HandleFunc("/compare-environments/delete-query/{id}", appContext.deleteCompareEnvQuery).Methods("DELETE")
 
 	r.HandleFunc("/", appContext.rootHandler)
 
