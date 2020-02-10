@@ -32,6 +32,11 @@ func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.
 		return
 	}
 
+	//Avoid processing of empty payload
+	if len(payload.Data) == 0 {
+		return
+	}
+
 	firstVar := payload.Data[0]
 	targetEnvironment, err := appContext.Repositories.EnvironmentDAO.GetByID(int(firstVar.EnvironmentID))
 	if err != nil {
