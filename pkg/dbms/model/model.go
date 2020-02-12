@@ -1,6 +1,8 @@
 package model
 
-import "github.com/jinzhu/gorm"
+import (
+	"github.com/jinzhu/gorm"
+)
 
 import "github.com/jinzhu/gorm/dialects/postgres"
 
@@ -29,6 +31,14 @@ type User struct {
 	Email                string        `json:"email"`
 	DefaultEnvironmentID int           `json:"defaultEnvironmentID"`
 	Environments         []Environment `gorm:"many2many:user_environment;"`
+}
+
+//UserEnvironmentRole UserEnvironmentRole
+type UserEnvironmentRole struct {
+	gorm.Model
+	UserID uint
+	EnvironmentID uint
+	SecurityOperationID uint
 }
 
 //UserResult struct

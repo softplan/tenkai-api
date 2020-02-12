@@ -23,17 +23,19 @@ import (
 
 //Repositories  Repositories
 type Repositories struct {
-	ConfigDAO           repository.ConfigDAOInterface
-	DockerDAO           repository.DockerDAOInterface
-	EnvironmentDAO      repository.EnvironmentDAOInterface
-	ProductDAO          repository.ProductDAOInterface
-	SolutionDAO         repository.SolutionDAOInterface
-	SolutionChartDAO    repository.SolutionChartDAOInterface
-	UserDAO             repository.UserDAOInterface
-	VariableDAO         repository.VariableDAOInterface
-	ValueRuleDAO        repository.ValueRuleDAOInterface
-	VariableRuleDAO     repository.VariableRuleDAOInterface
-	CompareEnvsQueryDAO repository.CompareEnvsQueryDAOInterface
+	ConfigDAO              repository.ConfigDAOInterface
+	DockerDAO              repository.DockerDAOInterface
+	EnvironmentDAO         repository.EnvironmentDAOInterface
+	ProductDAO             repository.ProductDAOInterface
+	SolutionDAO            repository.SolutionDAOInterface
+	SolutionChartDAO       repository.SolutionChartDAOInterface
+	UserDAO                repository.UserDAOInterface
+	VariableDAO            repository.VariableDAOInterface
+	ValueRuleDAO           repository.ValueRuleDAOInterface
+	VariableRuleDAO        repository.VariableRuleDAOInterface
+	CompareEnvsQueryDAO    repository.CompareEnvsQueryDAOInterface
+	SecurityOperationDAO   repository.SecurityOperationDAOInterface
+	UserEnvironmentRoleDAO repository.UserEnvironmentRoleDAOInterface
 }
 
 //AppContext AppContext
@@ -168,6 +170,12 @@ func defineRotes(r *mux.Router, appContext *AppContext) {
 	r.HandleFunc("/compare-environments/save-query", appContext.saveCompareEnvQuery).Methods("POST")
 	r.HandleFunc("/compare-environments/load-queries", appContext.loadCompareEnvQueries).Methods("GET")
 	r.HandleFunc("/compare-environments/delete-query/{id}", appContext.deleteCompareEnvQuery).Methods("DELETE")
+
+	r.HandleFunc("/security-operations", appContext.listSecurityOperation).Methods("GET")
+	r.HandleFunc("/security-operations", appContext.createOrUpdateSecurityOperation).Methods("POST")
+
+	r.HandleFunc("/getUserPolicyByEnvironment", appContext.getUserPolicyByEnvironment).Methods("POST")
+	r.HandleFunc("/createOrUpdateUserEnvironmentRole", appContext.createOrUpdateUserEnvironmentRole).Methods("POST")
 
 	r.HandleFunc("/", appContext.rootHandler)
 

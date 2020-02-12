@@ -45,6 +45,8 @@ func (database *Database) Connect(dbmsURI string, local bool) {
 	database.Db.AutoMigrate(&model2.ValueRule{})
 	database.Db.AutoMigrate(&model2.VariableRule{})
 	database.Db.AutoMigrate(&model2.CompareEnvsQuery{})
+	database.Db.AutoMigrate(&model2.SecurityOperation{})
+	database.Db.AutoMigrate(&model2.UserEnvironmentRole{})
 
 	database.Db.Model(&model.ValueRule{}).
 		AddForeignKey("variable_rule_id", "variable_rules(id)", "CASCADE", "CASCADE")
