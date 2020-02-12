@@ -84,6 +84,9 @@ func initRepository(database *dbms.Database) handlers.Repositories {
 	repositories.VariableRuleDAO = &repository.VariableRuleDAOImpl{Db: database.Db}
 	repositories.ValueRuleDAO = &repository.ValueRuleDAOImpl{Db: database.Db}
 	repositories.CompareEnvsQueryDAO = &repository.CompareEnvsQueryDAOImpl{Db: database.Db}
+	repositories.SecurityOperationDAO = &repository.SecurityOperationDAOImpl{Db: database.Db}
+	repositories.UserEnvironmentRoleDAO = &repository.UserEnvironmentRoleDAOImpl{Db: database.Db}
+
 	return repositories
 }
 
