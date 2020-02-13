@@ -36,9 +36,9 @@ type User struct {
 //UserEnvironmentRole UserEnvironmentRole
 type UserEnvironmentRole struct {
 	gorm.Model
-	UserID uint
-	EnvironmentID uint
-	SecurityOperationID uint
+	UserID uint `json:"userId"`
+	EnvironmentID uint `json:"environmentId"`
+	SecurityOperationID uint `json:"securityOperationId"`
 }
 
 //UserResult struct

@@ -16,6 +16,6 @@ type SecurityOperationResponse struct {
 }
 
 type GetUserPolicyByEnvironmentRequest struct {
-	Email string
-	EnvironmentID int
+	Email string `json:"email"`
+	EnvironmentID int `json:"environmentId"`
 }
