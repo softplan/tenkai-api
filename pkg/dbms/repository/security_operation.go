@@ -5,25 +5,25 @@ import (
 	model2 "github.com/softplan/tenkai-api/pkg/dbms/model"
 )
 
-//SecurityOperationDAOInterface
+//SecurityOperationDAOInterface - SecurityOperationDAOInterface
 type SecurityOperationDAOInterface interface {
 	List() ([]model2.SecurityOperation, error)
 	CreateOrUpdate(so model2.SecurityOperation) error
+	Delete(id int) error
 }
 
-//SecurityOperationDAOImpl UserDAOImpl
+//SecurityOperationDAOImpl SecurityOperationDAOImpl
 type SecurityOperationDAOImpl struct {
 	Db *gorm.DB
 }
 
-
-//SecurityOperationDAOImpl - Create or update a security operation
+//CreateOrUpdate - Create or update a security operation
 func (dao SecurityOperationDAOImpl) CreateOrUpdate(so model2.SecurityOperation) error {
 	loadSO, err := dao.isEdit(so)
 	if err != nil {
 		return err
 	}
-	if loadSO  != nil {
+	if loadSO != nil {
 		return dao.edit(so, loadSO)
 	}
 	return dao.create(so)
@@ -40,7 +40,7 @@ func (dao SecurityOperationDAOImpl) isEdit(so model2.SecurityOperation) (*model2
 	return &loadSO, nil
 }
 
-func (dao SecurityOperationDAOImpl) edit(so model2.SecurityOperation,	loadSo *model2.SecurityOperation) error {
+func (dao SecurityOperationDAOImpl) edit(so model2.SecurityOperation, loadSo *model2.SecurityOperation) error {
 	loadSo.Policies = so.Policies
 	if err := dao.Db.Save(&so).Error; err != nil {
 		return err
@@ -55,7 +55,6 @@ func (dao SecurityOperationDAOImpl) create(so model2.SecurityOperation) error {
 	return nil
 }
 
-
 //List - List
 func (dao SecurityOperationDAOImpl) List() ([]model2.SecurityOperation, error) {
 	oss := make([]model2.SecurityOperation, 0)
@@ -63,4 +62,16 @@ func (dao SecurityOperationDAOImpl) List() ([]model2.SecurityOperation, error) {
 		return nil, err
 	}
 	return oss, nil
+}
+
+//Delete - Delete
+func (dao SecurityOperationDAOImpl) Delete(id int) error {
+	var item model2.SecurityOperation
+	if err := dao.Db.First(&item, id).Error; err != nil {
+		return err
+	}
+	if err := dao.Db.Unscoped().Delete(&item).Error; err != nil {
+		return err
+	}
+	return nil
 }

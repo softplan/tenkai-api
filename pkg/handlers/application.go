@@ -173,6 +173,7 @@ func defineRotes(r *mux.Router, appContext *AppContext) {
 
 	r.HandleFunc("/security-operations", appContext.listSecurityOperation).Methods("GET")
 	r.HandleFunc("/security-operations", appContext.createOrUpdateSecurityOperation).Methods("POST")
+	r.HandleFunc("/security-operations/{id}", appContext.deleteSecurityOperation).Methods("DELETE")
 
 	r.HandleFunc("/getUserPolicyByEnvironment", appContext.getUserPolicyByEnvironment).Methods("POST")
 	r.HandleFunc("/createOrUpdateUserEnvironmentRole", appContext.createOrUpdateUserEnvironmentRole).Methods("POST")
