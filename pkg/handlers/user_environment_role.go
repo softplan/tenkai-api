@@ -52,5 +52,4 @@ func (appContext *AppContext) getUserPolicyByEnvironment(w http.ResponseWriter, 
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 
-
 }
