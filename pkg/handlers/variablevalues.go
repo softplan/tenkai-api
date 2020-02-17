@@ -19,10 +19,10 @@ import (
 
 func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.Request) {
 
+	isAdmin := false
 	principal := util.GetPrincipal(r)
-	if !util.Contains(principal.Roles, constraints.TenkaiVariablesSave) {
-		http.Error(w, errors.New("Access Denied").Error(), http.StatusUnauthorized)
-		return
+	if util.Contains(principal.Roles, constraints.TenkaiAdmin) {
+		isAdmin = true
 	}
 
 	var payload model.VariableData
@@ -42,6 +42,20 @@ func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.
 	if err != nil {
 		http.Error(w, err.Error(), 501)
 		return
+	}
+
+	//If not admin, verify authorization of user for specific environment
+	if !isAdmin {
+		auth, _ := appContext.hasEnvironmentRole(principal, targetEnvironment.ID, "ACTION_SAVE_VARIABLES")
+		if !auth {
+
+			//Allow only save TAG
+			auth = payloadHasOnlyTag(payload)
+			if !auth {
+				http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
+				return
+			}
+		}
 	}
 
 	cacheVars := make(map[string]map[string]interface{})
@@ -74,6 +88,17 @@ func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.
 	}
 
 	w.WriteHeader(http.StatusCreated)
+}
+
+func payloadHasOnlyTag(payload model.VariableData) bool {
+	result := true
+	for _,e := range payload.Data {
+		if e.Name != "image.tag" {
+			result = false
+			break
+		}
+	}
+	return result
 }
 
 func (appContext *AppContext) loadChartVars(cacheVars map[string]map[string]interface{}, item model.Variable) error {

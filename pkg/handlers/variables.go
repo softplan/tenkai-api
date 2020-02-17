@@ -18,7 +18,7 @@ import (
 func (appContext *AppContext) deleteVariable(w http.ResponseWriter, r *http.Request) {
 
 	principal := util.GetPrincipal(r)
-	if !util.Contains(principal.Roles, constraints.TenkaiVariablesDelete) {
+	if !util.Contains(principal.Roles, constraints.TenkaiAdmin) {
 		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
 		return
 	}
@@ -38,10 +38,10 @@ func (appContext *AppContext) deleteVariable(w http.ResponseWriter, r *http.Requ
 
 func (appContext *AppContext) editVariable(w http.ResponseWriter, r *http.Request) {
 
+	isAdmin := false
 	principal := util.GetPrincipal(r)
-	if !util.Contains(principal.Roles, constraints.TenkaiVariablesSave) {
-		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
-		return
+	if util.Contains(principal.Roles, constraints.TenkaiAdmin) {
+		isAdmin = true
 	}
 
 	var payload model.DataVariableElement
@@ -49,6 +49,15 @@ func (appContext *AppContext) editVariable(w http.ResponseWriter, r *http.Reques
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	//If not admin, verify authorization of user for specific environment
+	if !isAdmin {
+		auth, _ := appContext.hasEnvironmentRole(principal, uint(payload.Data.EnvironmentID), "ACTION_SAVE_VARIABLES")
+		if !auth {
+			http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
+			return
+		}
 	}
 
 	if payload.Data.Secret {
@@ -99,7 +108,7 @@ func (appContext *AppContext) getVariables(w http.ResponseWriter, r *http.Reques
 func (appContext *AppContext) copyVariableValue(w http.ResponseWriter, r *http.Request) {
 
 	principal := util.GetPrincipal(r)
-	if !util.Contains(principal.Roles, constraints.TenkaiVariablesSave) {
+	if !util.Contains(principal.Roles, constraints.TenkaiAdmin) {
 		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
 		return
 	}

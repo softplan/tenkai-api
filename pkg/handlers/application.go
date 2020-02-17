@@ -262,6 +262,33 @@ func (appContext *AppContext) hasAccess(email string, envID int) (bool, error) {
 	return result, nil
 }
 
+func (appContext *AppContext) hasEnvironmentRole(principal model.Principal, envId uint, role string) (bool, error) {
+	var user model.User
+	var err error
+	if user, err = appContext.Repositories.UserDAO.FindByEmail(principal.Email); err != nil {
+		return false, err
+	}
+	result := &model.SecurityOperation{}
+	if result, err = appContext.Repositories.UserEnvironmentRoleDAO.
+		GetRoleByUserAndEnvironment(user, envId); err != nil {
+		return false, err
+	}
+	authorized := false
+	if result != nil {
+
+		for _, e := range result.Policies {
+			if e == role {
+				authorized = true
+				break
+			}
+		}
+	}
+	return authorized, nil
+}
+
+
+
+
 func (appContext *AppContext) rootHandler(w http.ResponseWriter, r *http.Request) {
 	data := map[string]string{
 		"service": "TENKAI",

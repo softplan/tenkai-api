@@ -2,9 +2,6 @@
 
 package constraints
 
-//TenkaiPromote - role
-const TenkaiPromote = "tenkai-promote"
-
 //TenkaiAdmin - role
 const TenkaiAdmin = "tenkai-admin"
 
@@ -16,6 +13,3 @@ const TenkaiVariablesDelete = "tenkai-variables-delete"
 
 //TenkaiHelmUpgrade - role
 const TenkaiHelmUpgrade = "tenkai-helm-upgrade"
-
-//TenkaiLockVersion - role
-const TenkaiLockVersion = "tenkai-lock-version"
