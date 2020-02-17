@@ -165,7 +165,7 @@ func TestCreateOrUpdateUser_Update(t *testing.T) {
 	userDAO.Db = gormDB
 
 	user := getUser()
-	user.ID = 888
+	user.ID = 999
 	env := getEnvironmentTestData()
 	env.ID = 999
 	user.Environments = append(user.Environments, env)
