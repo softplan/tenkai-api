@@ -38,7 +38,7 @@ func doTest(t *testing.T, mode string) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, constraints.TenkaiPromote)
+	mockPrincipal(req, constraints.TenkaiAdmin)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.promote)
@@ -81,7 +81,7 @@ func doTestParamsError(t *testing.T, url string) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, constraints.TenkaiPromote)
+	mockPrincipal(req, constraints.TenkaiAdmin)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.promote)
