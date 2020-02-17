@@ -393,3 +393,39 @@ func createPayloadWithScopeAndID(id int, scope string) *bytes.Buffer {
 
 	return bytes.NewBuffer(payloadStr)
 }
+
+func mockPolicies() []string {
+	var policies []string
+	policies = append(policies, "ACTION_DEPLOY")
+	return policies
+}
+
+func mockSecurityOperations() model.SecurityOperation {
+	var so model.SecurityOperation
+	so.ID = 999
+	so.Name = "ONLY_DEPLOY"
+	so.Policies = mockPolicies()
+	return so
+}
+
+func mockUser() model.User {
+	var user model.User
+	user.ID = 999
+	user.Email = "test@example.com"
+	return user
+}
+
+func getUserPolicyByEnv() model.GetUserPolicyByEnvironmentRequest {
+	var p model.GetUserPolicyByEnvironmentRequest
+	p.EnvironmentID = 999
+	p.Email = "test@example.com"
+	return p
+}
+
+func mockUserEnvRole() model.UserEnvironmentRole {
+	var u model.UserEnvironmentRole
+	u.UserID = 999
+	u.EnvironmentID = 888
+	u.SecurityOperationID = 777
+	return u
+}

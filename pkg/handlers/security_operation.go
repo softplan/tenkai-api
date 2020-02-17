@@ -46,6 +46,7 @@ func (appContext *AppContext) deleteSecurityOperation(w http.ResponseWriter, r *
 	principal := util.GetPrincipal(r)
 	if !util.Contains(principal.Roles, constraints.TenkaiAdmin) {
 		http.Error(w, errors.New("Acccess Denied").Error(), http.StatusUnauthorized)
+		return
 	}
 	vars := mux.Vars(r)
 	sl := vars["id"]

@@ -2,12 +2,10 @@ package handlers
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -16,26 +14,13 @@ import (
 func TestGetUserPolicyByEnvironment(t *testing.T) {
 	appContext := AppContext{}
 
-	var p model.GetUserPolicyByEnvironmentRequest
-	p.EnvironmentID = 999
-	p.Email = "test@example.com"
+	p := getUserPolicyByEnv()
 
-	var user model.User
-	user.ID = 999
-	user.Email = "test@example.com"
-
+	user := mockUser()
 	mockUserDao := &mockRepo.UserDAOInterface{}
 	mockUserDao.On("FindByEmail", mock.Anything).Return(user, nil)
 
-	var policies []string
-	policies = append(policies, "ACTION_DEPLOY")
-	policies = append(policies, "ACTION_SAVE_VARIABLES")
-
-	var result model.SecurityOperation
-	result.ID = 888
-	result.Name = "MASTER_OF_PUPPETS"
-	result.Policies = policies
-
+	result := mockSecurityOperations()
 	mockUserEnvRoleDao := &mockRepo.UserEnvironmentRoleDAOInterface{}
 	mockUserEnvRoleDao.On("GetRoleByUserAndEnvironment", user, uint(p.EnvironmentID)).
 		Return(&result, nil)
@@ -54,11 +39,9 @@ func TestGetUserPolicyByEnvironment(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Code, "Response should be Ok")
 
 	response := string(rr.Body.Bytes())
-	fmt.Println(response)
-	assert.Contains(t, response, `{"ID":888,`)
-	assert.Contains(t, response, `"name":"MASTER_OF_PUPPETS",`)
-	assert.Contains(t, response, `"policies":["ACTION_DEPLOY",`)
-	assert.Contains(t, response, `"ACTION_SAVE_VARIABLES"]}`)
+	assert.Contains(t, response, `{"ID":999,`)
+	assert.Contains(t, response, `"name":"ONLY_DEPLOY",`)
+	assert.Contains(t, response, `"policies":["ACTION_DEPLOY"]}`)
 }
 
 func TestGetUserPolicyByEnvironment_UnmarshalError(t *testing.T) {
@@ -70,13 +53,8 @@ func TestGetUserPolicyByEnvironment_UnmarshalError(t *testing.T) {
 func TestGetUserPolicyByEnvironment_UserError(t *testing.T) {
 	appContext := AppContext{}
 
-	var p model.GetUserPolicyByEnvironmentRequest
-	p.EnvironmentID = 999
-	p.Email = "test@example.com"
-
-	var user model.User
-	user.ID = 999
-	user.Email = "test@example.com"
+	p := getUserPolicyByEnv()
+	user := mockUser()
 
 	mockUserDao := &mockRepo.UserDAOInterface{}
 	mockUserDao.On("FindByEmail", mock.Anything).Return(user, errors.New("some error"))
@@ -97,23 +75,15 @@ func TestGetUserPolicyByEnvironment_UserError(t *testing.T) {
 func TestGetUserPolicyByEnvironment_RoleError(t *testing.T) {
 	appContext := AppContext{}
 
-	var p model.GetUserPolicyByEnvironmentRequest
-	p.EnvironmentID = 999
-	p.Email = "test@example.com"
-
-	var user model.User
-	user.ID = 999
-	user.Email = "test@example.com"
+	p := getUserPolicyByEnv()
+	user := mockUser()
 
 	mockUserDao := &mockRepo.UserDAOInterface{}
 	mockUserDao.On("FindByEmail", mock.Anything).Return(user, nil)
 
-	var result model.SecurityOperation
-	result.ID = 888
-
 	mockUserEnvRoleDao := &mockRepo.UserEnvironmentRoleDAOInterface{}
 	mockUserEnvRoleDao.On("GetRoleByUserAndEnvironment", user, uint(p.EnvironmentID)).
-		Return(&result, errors.New("some error"))
+		Return(nil, errors.New("some error"))
 
 	appContext.Repositories.UserDAO = mockUserDao
 	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDao
@@ -131,10 +101,8 @@ func TestGetUserPolicyByEnvironment_RoleError(t *testing.T) {
 
 func TestCreateOrUpdateUserEnvironmentRole(t *testing.T) {
 	appContext := AppContext{}
-	var p model.UserEnvironmentRole
-	p.UserID = 999
-	p.EnvironmentID = 888
-	p.SecurityOperationID = 777
+
+	p := mockUserEnvRole()
 
 	mockUserEnvRoleDao := &mockRepo.UserEnvironmentRoleDAOInterface{}
 	mockUserEnvRoleDao.On("CreateOrUpdate", p).Return(nil)
@@ -153,16 +121,14 @@ func TestCreateOrUpdateUserEnvironmentRole(t *testing.T) {
 
 func TestCreateOrUpdateUserEnvironmentRole_UnmarshalError(t *testing.T) {
 	appContext := AppContext{}
-	rr := testUnmarshalPayloadError(t, "/createOrUpdateUserEnvironmentRole", appContext.getUserPolicyByEnvironment)
+	rr := testUnmarshalPayloadError(t, "/createOrUpdateUserEnvironmentRole", appContext.createOrUpdateUserEnvironmentRole)
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
 
 func TestCreateOrUpdateUserEnvironmentRoleError(t *testing.T) {
 	appContext := AppContext{}
-	var p model.UserEnvironmentRole
-	p.UserID = 999
-	p.EnvironmentID = 888
-	p.SecurityOperationID = 777
+
+	p := mockUserEnvRole()
 
 	mockUserEnvRoleDao := &mockRepo.UserEnvironmentRoleDAOInterface{}
 	mockUserEnvRoleDao.On("CreateOrUpdate", p).Return(errors.New("some error"))
