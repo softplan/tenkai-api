@@ -43,7 +43,9 @@ func (appContext *AppContext) getUserPolicyByEnvironment(w http.ResponseWriter, 
 	}
 
 	result := &model.SecurityOperation{}
-	if result, err = appContext.Repositories.UserEnvironmentRoleDAO.GetRoleByUserAndEnvironment(user, uint(payload.EnvironmentID)); err != nil {
+	if result, err = appContext.Repositories.UserEnvironmentRoleDAO.
+		GetRoleByUserAndEnvironment(user, uint(payload.EnvironmentID)); err != nil {
+
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
