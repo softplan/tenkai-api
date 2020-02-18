@@ -19,6 +19,10 @@ import (
 
 func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.Request) {
 
+	logFields := global.AppFields{global.Function: "saveVariableValues"}
+
+	global.Logger.Info(logFields, "Entering saveVariableValues method!")
+
 	isAdmin := false
 	principal := util.GetPrincipal(r)
 	if util.Contains(principal.Roles, constraints.TenkaiAdmin) {
@@ -28,6 +32,7 @@ func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.
 	var payload model.VariableData
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
+		global.Logger.Error(logFields, "Error util.UnmarshalPayload")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -40,6 +45,7 @@ func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.
 	firstVar := payload.Data[0]
 	targetEnvironment, err := appContext.Repositories.EnvironmentDAO.GetByID(int(firstVar.EnvironmentID))
 	if err != nil {
+		global.Logger.Error(logFields, "Error appContext.Repositories.EnvironmentDAO.GetByID")
 		http.Error(w, err.Error(), 501)
 		return
 	}
@@ -53,6 +59,7 @@ func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.
 			//Allow only save TAG
 			auth := payloadHasOnlyTag(payload)
 			if !auth {
+				global.Logger.Error(logFields, "Error payloadHasOnlyTag(payload)")
 				http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
 				return
 			}
@@ -65,11 +72,13 @@ func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.
 
 		has, err := appContext.hasAccess(principal.Email, int(targetEnvironment.ID))
 		if err != nil || !has {
+			global.Logger.Error(logFields, "Error appContext.hasAccess")
 			http.Error(w, errors.New("Access Denied in environment "+targetEnvironment.Namespace).Error(), http.StatusUnauthorized)
 			return
 		}
 
 		if err := appContext.loadChartVars(cacheVars, item); err != nil {
+			global.Logger.Error(logFields, "Error appContext.loadChartVars")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -77,6 +86,7 @@ func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.
 		var updated bool
 		var auditValues map[string]string
 		if auditValues, updated, err = appContext.Repositories.VariableDAO.CreateVariable(item); err != nil {
+			global.Logger.Error(logFields, "Error appContext.Repositories.VariableDAO.CreateVariable")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -86,9 +96,12 @@ func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.
 	if hasSaveVariablesRole || isAdmin {
 		// Save variables with default values specified in values.yaml
 		if err := appContext.saveVariablesWithDefaultValue(cacheVars, firstVar, targetEnvironment, r, principal); err != nil {
+			global.Logger.Error(logFields, "Error appContext.saveVariablesWithDefaultValue")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
+
+	global.Logger.Info(logFields, "Exiting saveVariableValues method!")
 
 	w.WriteHeader(http.StatusCreated)
 }
