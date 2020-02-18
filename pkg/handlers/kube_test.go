@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
-	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -78,7 +77,7 @@ func TestDeletePods(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, constraints.TenkaiAdmin)
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()

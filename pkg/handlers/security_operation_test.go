@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
-	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
 	"github.com/stretchr/testify/assert"
@@ -123,7 +122,7 @@ func TestDeleteSecurityOperation(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, constraints.TenkaiAdmin)
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -141,8 +140,6 @@ func TestDeleteSecurityOperation_PrincipalError(t *testing.T) {
 	req, err := http.NewRequest("DELETE", "/security-operations/999", nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
-
-	mockPrincipal(req, "tenkai-ordinary-user")
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -164,7 +161,7 @@ func TestDeleteSecurityOperation_Error(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, constraints.TenkaiAdmin)
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()

@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
-	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -26,7 +25,7 @@ func TestNewEnvironmentPermission(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, constraints.TenkaiAdmin)
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -47,7 +46,7 @@ func TestNewEnvironmentPermission_UserIDError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, constraints.TenkaiAdmin)
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -65,7 +64,7 @@ func TestNewEnvironmentPermission_EnvironmentIDError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, constraints.TenkaiAdmin)
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -88,8 +87,6 @@ func TestNewEnvironmentPermission_Unauthorized(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-user")
-
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
 	r.HandleFunc("/permissions/users/{userId}/environments/{environmentId}", appContext.newEnvironmentPermission).Methods("GET")
@@ -111,7 +108,7 @@ func TestNewEnvironmentPermission_Error(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, constraints.TenkaiAdmin)
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()

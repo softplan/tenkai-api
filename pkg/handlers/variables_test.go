@@ -12,6 +12,7 @@ import (
 	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
+	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -36,7 +37,20 @@ func TestEditVariable(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-variables-save")
+	mockPrincipal(req)
+
+	user := mockUser()
+	mockUserDAO := &mockRepo.UserDAOInterface{}
+	mockUserDAO.On("FindByEmail", user.Email).Return(user, nil)
+
+	secOper := mockSecurityOperations()
+	secOper.Policies = append(secOper.Policies, "ACTION_SAVE_VARIABLES")
+	mockUserEnvRoleDAO := &mockRepo.UserEnvironmentRoleDAOInterface{}
+	mockUserEnvRoleDAO.On("GetRoleByUserAndEnvironment", user, mock.Anything).
+		Return(&secOper, nil)
+
+	appContext.Repositories.UserDAO = mockUserDAO
+	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.editVariable)
@@ -61,7 +75,7 @@ func TestDeleteVariable(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	roles := []string{constraints.TenkaiVariablesDelete}
+	roles := []string{constraints.TenkaiAdmin}
 	principal := model.Principal{Name: "alfa", Email: "beta@gmail.com", Roles: roles}
 	pSe, _ := json.Marshal(principal)
 	req.Header.Set("principal", string(pSe))
@@ -83,8 +97,6 @@ func TestDeleteVariable_Unauthorized(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-user")
-
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
 	r.HandleFunc("/variables/delete/{id}", appContext.deleteVariable).Methods("DELETE")
@@ -104,7 +116,7 @@ func TestDeleteVariable_DeleteVariableError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-variables-delete")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -117,11 +129,22 @@ func TestDeleteVariable_DeleteVariableError(t *testing.T) {
 func TestEditVariable_Unauthorized(t *testing.T) {
 	appContext := AppContext{}
 
-	req, err := http.NewRequest("POST", "/variables", nil)
+	user := mockUser()
+	mockUserDAO := &mockRepo.UserDAOInterface{}
+	mockUserDAO.On("FindByEmail", mock.Anything).Return(user, nil)
+
+	secOper := mockSecurityOperations()
+	secOper.Policies = make([]string, 0)
+	mockUserEnvRoleDAO := &mockRepo.UserEnvironmentRoleDAOInterface{}
+	mockUserEnvRoleDAO.On("GetRoleByUserAndEnvironment", user, mock.Anything).
+		Return(&secOper, nil)
+
+	appContext.Repositories.UserDAO = mockUserDAO
+	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
+
+	req, err := http.NewRequest("POST", "/variables", payload(getDataVariableElement(true)))
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
-
-	mockPrincipal(req, "tenkai-user")
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.editVariable)
@@ -146,7 +169,7 @@ func TestEditVariable_EditVariableError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-variables-save")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.editVariable)
@@ -164,7 +187,7 @@ func TestGetVariables(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-user")
+	mockPrincipal(req)
 	mockEnvDao := mockGetAllEnvironments(&appContext)
 
 	rr := httptest.NewRecorder()
@@ -210,7 +233,7 @@ func TestGetVariables_GetAllVarByEnvError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-user")
+	mockPrincipal(req)
 	mockEnvDao := mockGetAllEnvironments(&appContext)
 
 	rr := httptest.NewRecorder()
@@ -270,7 +293,7 @@ func TestCopyVariableValue(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-variables-save")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.copyVariableValue)
@@ -318,7 +341,7 @@ func TestCopyEntireVariable(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-variables-save")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.copyVariableValue)

@@ -19,7 +19,9 @@ import (
 )
 
 //mockPrincipal injects a http header with the specified role to be used only for testing.
-func mockPrincipal(req *http.Request, roles ...string) {
+func mockPrincipal(req *http.Request) {
+	var roles []string
+	roles = append(roles, "tenkai-admin")
 	principal := model.Principal{Name: "alfa", Email: "beta@alfa.com", Roles: roles}
 	pSe, _ := json.Marshal(principal)
 	req.Header.Set("principal", string(pSe))
@@ -174,7 +176,7 @@ func testUnmarshalPayloadErrorWithPrincipal(t *testing.T, endpoint string, handF
 	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer([]byte(`["invalid": 123]`)))
 	assert.NoError(t, err)
 
-	mockPrincipal(req, role)
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(handFunc)
@@ -187,7 +189,7 @@ func commonTestHasAccessError(t *testing.T, endpoint string, handFunc testHandle
 	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer([]byte(`{"data":[{"environmentId":999}]}`)))
 	assert.NoError(t, err)
 
-	mockPrincipal(req, "tenkai-variables-save")
+	mockPrincipal(req)
 
 	var envs []model.Environment
 	envs = append(envs, mockGetEnv())
@@ -411,14 +413,14 @@ func mockSecurityOperations() model.SecurityOperation {
 func mockUser() model.User {
 	var user model.User
 	user.ID = 999
-	user.Email = "test@example.com"
+	user.Email = "beta@alfa.com"
 	return user
 }
 
 func getUserPolicyByEnv() model.GetUserPolicyByEnvironmentRequest {
 	var p model.GetUserPolicyByEnvironmentRequest
 	p.EnvironmentID = 999
-	p.Email = "test@example.com"
+	p.Email = "beta@alfa.com"
 	return p
 }
 
