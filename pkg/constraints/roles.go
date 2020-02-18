@@ -5,11 +5,11 @@ package constraints
 //TenkaiAdmin - role
 const TenkaiAdmin = "tenkai-admin"
 
-//TenkaiVariablesSave - role
-const TenkaiVariablesSave = "tenkai-variables-save"
+// //TenkaiVariablesSave - role
+// const TenkaiVariablesSave = "tenkai-variables-save"
 
-//TenkaiVariablesDelete - role
-const TenkaiVariablesDelete = "tenkai-variables-delete"
+// //TenkaiVariablesDelete - role
+// const TenkaiVariablesDelete = "tenkai-variables-delete"
 
-//TenkaiHelmUpgrade - role
-const TenkaiHelmUpgrade = "tenkai-helm-upgrade"
+// //TenkaiHelmUpgrade - role
+// const TenkaiHelmUpgrade = "tenkai-helm-upgrade"

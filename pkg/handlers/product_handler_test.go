@@ -452,7 +452,7 @@ func TestLockProductVersion(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-lock-version")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -472,8 +472,6 @@ func TestLockProductVersion_Unauthorized(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-user")
-
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
 	r.HandleFunc("/productVersions/lock/{id}", appContext.lockProductVersion).Methods("GET")
@@ -489,7 +487,7 @@ func TestLockProductVersion_StringConvError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-lock-version")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -514,7 +512,7 @@ func TestLockProductVersion_ListProductVersionsByIDError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-lock-version")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -542,7 +540,7 @@ func TestLockProductVersion_EditProductVersionError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-lock-version")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -572,7 +570,7 @@ func TestUnlockProductVersion(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-lock-version")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -592,8 +590,6 @@ func TestUnlockProductVersion_Unauthorized(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-user")
-
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
 	r.HandleFunc("/productVersions/unlock/{id}", appContext.unlockProductVersion).Methods("GET")
@@ -610,7 +606,7 @@ func TestUnlockProductVersion_StringConvError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-lock-version")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -635,7 +631,7 @@ func TestUnlockProductVersion_ListProductVersionsByIDError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-lock-version")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -663,7 +659,7 @@ func TestUnlockProductVersion_EditProductVersionError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-lock-version")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()

@@ -3,12 +3,12 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/stretchr/testify/mock"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/softplan/tenkai-api/pkg/constraints"
+	"github.com/stretchr/testify/mock"
+
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 )
 
@@ -40,7 +40,7 @@ func TestDeployTrafficRule(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mockPrincipal(req, constraints.TenkaiAdmin)
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.deployTrafficRule)

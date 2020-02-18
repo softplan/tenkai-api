@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -50,7 +49,6 @@ func TestCompareEnvironments(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 
 	r := string(rr.Body.Bytes())
-	fmt.Println(r)
 	assert.Contains(t, r, `{"list":[`)
 	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"f1","targetName":"f1","sourceValue":"equal","targetValue":"equal","sourceVarId":"882","targetVarId":"991"}`)
 	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart2","targetScope":"repo/chart2","sourceName":"f1","targetName":"f1","sourceValue":"equal","targetValue":"equal","sourceVarId":"884","targetVarId":"994"}`)
@@ -104,7 +102,6 @@ func TestCompareEnvironmentsFilterExceptCharts(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 
 	r := string(rr.Body.Bytes())
-	fmt.Println(r)
 	assert.Contains(t, r, `{"list":[`)
 	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"f1","targetName":"f1","sourceValue":"equal","targetValue":"equal","sourceVarId":"882","targetVarId":"991"}`)
 	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart2","targetScope":"repo/chart2","sourceName":"f1","targetName":"f1","sourceValue":"equal","targetValue":"equal","sourceVarId":"884","targetVarId":"994"}`)
@@ -158,7 +155,6 @@ func TestCompareEnvironmentsFilterOnlyCharts(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 
 	r := string(rr.Body.Bytes())
-	fmt.Println(r)
 	assert.Contains(t, r, `{"list":[`)
 	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"f1","targetName":"f1","sourceValue":"equal","targetValue":"equal","sourceVarId":"882","targetVarId":"991"}`)
 	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart2","targetScope":"repo/chart2","sourceName":"f1","targetName":"f1","sourceValue":"equal","targetValue":"equal","sourceVarId":"884","targetVarId":"994"}`)
@@ -210,7 +206,6 @@ func TestCompareEnvironmentsFilterExceptFields(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 
 	r := string(rr.Body.Bytes())
-	fmt.Println(r)
 	assert.Contains(t, r, `{"list":[`)
 	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"f1","targetName":"f1","sourceValue":"equal","targetValue":"equal","sourceVarId":"882","targetVarId":"991"}`)
 	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart2","targetScope":"repo/chart2","sourceName":"f1","targetName":"f1","sourceValue":"equal","targetValue":"equal","sourceVarId":"884","targetVarId":"994"}`)
@@ -262,7 +257,6 @@ func TestCompareEnvironmentsFilterOnlyFields(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 
 	r := string(rr.Body.Bytes())
-	fmt.Println(r)
 	assert.Contains(t, r, `{"list":[`)
 	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"f1","targetName":"f1","sourceValue":"equal","targetValue":"equal","sourceVarId":"882","targetVarId":"991"}`)
 	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart2","targetScope":"repo/chart2","sourceName":"f1","targetName":"f1","sourceValue":"equal","targetValue":"equal","sourceVarId":"884","targetVarId":"994"}`)
@@ -322,7 +316,6 @@ func TestCompareEnvironmentsFilterCustomByStartsWith(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 
 	r := string(rr.Body.Bytes())
-	fmt.Println(r)
 	assert.Contains(t, r, `{"list":[`)
 	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"urlapiMyService","targetName":"urlapiMyService","sourceValue":"not-equal-1","targetValue":"not-equal-2","sourceVarId":"881","targetVarId":"991"}`)
 	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"istio.virtualservices.enabled","targetName":"istio.virtualservices.enabled","sourceValue":"true","targetValue":"false","sourceVarId":"882","targetVarId":"992"}`)
@@ -377,7 +370,6 @@ func TestCompareEnvironmentsFilterCustomByContains(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 
 	r := string(rr.Body.Bytes())
-	fmt.Println(r)
 	assert.Contains(t, r, `{"list":[`)
 	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"urlapiMyService","targetName":"urlapiMyService","sourceValue":"not-equal-1","targetValue":"not-equal-2","sourceVarId":"881","targetVarId":"991"}`)
 	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"istio.virtualservices.enabled","targetName":"istio.virtualservices.enabled","sourceValue":"true","targetValue":"false","sourceVarId":"882","targetVarId":"992"}`)
@@ -432,7 +424,6 @@ func TestCompareEnvironmentsFilterCustomByEndsWith(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 
 	r := string(rr.Body.Bytes())
-	fmt.Println(r)
 	assert.Contains(t, r, `{"list":[`)
 	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"urlapiMyService","targetName":"urlapiMyService","sourceValue":"not-equal-1","targetValue":"not-equal-2","sourceVarId":"881","targetVarId":"991"}`)
 	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"istio.virtualservices.enabled","targetName":"istio.virtualservices.enabled","sourceValue":"true","targetValue":"false","sourceVarId":"882","targetVarId":"992"}`)
@@ -487,7 +478,6 @@ func TestCompareEnvironmentsFilterCustomByRegex(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 
 	r := string(rr.Body.Bytes())
-	fmt.Println(r)
 	assert.Contains(t, r, `{"list":[`)
 	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"urlapiMyService","targetName":"urlapiMyService","sourceValue":"not-equal-1","targetValue":"not-equal-2","sourceVarId":"881","targetVarId":"991"}`)
 	assert.NotContains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"istio.virtualservices.enabled","targetName":"istio.virtualservices.enabled","sourceValue":"true","targetValue":"false","sourceVarId":"882","targetVarId":"992"}`)
@@ -552,7 +542,6 @@ func TestCompareEnvironmentsFilterCustom(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 
 	r := string(rr.Body.Bytes())
-	fmt.Println(r)
 	assert.Contains(t, r, `{"list":[`)
 	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"urlapiMyService","targetName":"urlapiMyService","sourceValue":"not-equal-1","targetValue":"not-equal-2","sourceVarId":"881","targetVarId":"991"}`)
 	assert.Contains(t, r, `{"sourceEnvId":888,"targetEnvId":999,"sourceScope":"repo/chart1","targetScope":"repo/chart1","sourceName":"istio.virtualservices.enabled","targetName":"istio.virtualservices.enabled","sourceValue":"true","targetValue":"false","sourceVarId":"882","targetVarId":"992"}`)
@@ -725,7 +714,7 @@ func TestLoadCompareEnvQueries(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-user")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.loadCompareEnvQueries)
@@ -754,7 +743,7 @@ func TestLoadCompareEnvQueries_FindByEmailError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-user")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.loadCompareEnvQueries)
@@ -793,7 +782,7 @@ func TestLoadCompareEnvQueries_GetByUserError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-user")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.loadCompareEnvQueries)
