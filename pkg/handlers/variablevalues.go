@@ -45,12 +45,13 @@ func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.
 	}
 
 	//If not admin, verify authorization of user for specific environment
+	hasSaveVariablesRole := false
 	if !isAdmin {
-		auth, _ := appContext.hasEnvironmentRole(principal, targetEnvironment.ID, "ACTION_SAVE_VARIABLES")
-		if !auth {
+		hasSaveVariablesRole, _ = appContext.hasEnvironmentRole(principal, targetEnvironment.ID, "ACTION_SAVE_VARIABLES")
+		if !hasSaveVariablesRole {
 
 			//Allow only save TAG
-			auth = payloadHasOnlyTag(payload)
+			auth := payloadHasOnlyTag(payload)
 			if !auth {
 				http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
 				return
@@ -82,9 +83,11 @@ func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.
 		appContext.audit(updated, auditValues, targetEnvironment, principal, r)
 	}
 
-	// Save variables with default values specified in values.yaml
-	if err := appContext.saveVariablesWithDefaultValue(cacheVars, firstVar, targetEnvironment, r, principal); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if hasSaveVariablesRole || isAdmin {
+		// Save variables with default values specified in values.yaml
+		if err := appContext.saveVariablesWithDefaultValue(cacheVars, firstVar, targetEnvironment, r, principal); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	}
 
 	w.WriteHeader(http.StatusCreated)
@@ -92,7 +95,7 @@ func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.
 
 func payloadHasOnlyTag(payload model.VariableData) bool {
 	result := true
-	for _,e := range payload.Data {
+	for _, e := range payload.Data {
 		if e.Name != "image.tag" {
 			result = false
 			break
