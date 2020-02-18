@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/gorilla/mux"
+	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/global"
 	"github.com/softplan/tenkai-api/pkg/util"
@@ -79,7 +80,11 @@ func (appContext *AppContext) pods(w http.ResponseWriter, r *http.Request) {
 
 func (appContext *AppContext) deletePod(w http.ResponseWriter, r *http.Request) {
 
+	isAdmin := false
 	principal := util.GetPrincipal(r)
+	if util.Contains(principal.Roles, constraints.TenkaiAdmin) {
+		isAdmin = true
+	}
 
 	environmentIDs, ok := r.URL.Query()["environmentID"]
 	if !ok || len(environmentIDs[0]) < 1 {
@@ -100,6 +105,15 @@ func (appContext *AppContext) deletePod(w http.ResponseWriter, r *http.Request) 
 	if err != nil || !has {
 		http.Error(w, errors.New("Access Denied in this environment").Error(), http.StatusUnauthorized)
 		return
+	}
+
+	//If not admin, verify authorization of user for specific environment
+	if !isAdmin {
+		auth, _ := appContext.hasEnvironmentRole(principal, uint(envID), "ACTION_DELETE_POD")
+		if !auth {
+			http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
+			return
+		}
 	}
 
 	environment, err := appContext.Repositories.EnvironmentDAO.GetByID(int(envID))
