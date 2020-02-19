@@ -97,20 +97,21 @@ func (svc HelmServiceImpl) GetValues(chartName string, version string) ([]byte, 
 
 	global.Logger.Info(logFields, "insp.prepare()")
 	if err := insp.prepare(chartName); err != nil {
+		global.Logger.Error(logFields, "Error insp.prepare(): "+err.Error()+" on chart: "+chartName+" - "+version)
 		return nil, err
 	}
 
 	global.Logger.Info(logFields, "before insp.run()")
 	values, err := insp.run()
 	if err != nil {
-		global.Logger.Error(logFields, err.Error())
+		global.Logger.Error(logFields, "Error insp.run(): "+err.Error()+" on chart: "+chartName+" - "+version)
 		return nil, err
 	}
 
 	j2, err := yaml.YAMLToJSON([]byte(values.Raw))
 
 	if err != nil {
-		global.Logger.Error(logFields, err.Error())
+		global.Logger.Error(logFields, "Error YAMLToJSON(): "+err.Error()+" on chart: "+chartName+" - "+version)
 		return nil, err
 	}
 
