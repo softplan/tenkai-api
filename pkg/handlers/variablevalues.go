@@ -39,6 +39,8 @@ func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.
 
 	//Avoid processing of empty payload
 	if len(payload.Data) == 0 {
+		global.Logger.Info(logFields, "payload.Data is empty")
+		w.WriteHeader(http.StatusCreated)
 		return
 	}
 
@@ -69,6 +71,8 @@ func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.
 	cacheVars := make(map[string]map[string]interface{})
 
 	for _, item := range payload.Data {
+
+		global.Logger.Info(logFields, "Item: "+item.Scope+" => "+item.Name)
 
 		has, err := appContext.hasAccess(principal.Email, int(targetEnvironment.ID))
 		if err != nil || !has {
