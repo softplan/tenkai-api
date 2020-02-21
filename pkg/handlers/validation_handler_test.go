@@ -35,7 +35,7 @@ func TestValidateVariables_NotEmpty(t *testing.T) {
 	appContext.Repositories.VariableDAO = mockVariableDAO
 	appContext.Repositories.VariableRuleDAO = mockVariableRuleDAO
 
-	mockPrincipal(req, "tenkai-user")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.validateVariables)
@@ -71,7 +71,7 @@ func TestValidateVariables_VariabeRule_UsingRegex_NotEmpty(t *testing.T) {
 	appContext.Repositories.VariableDAO = mockVariableDAO
 	appContext.Repositories.VariableRuleDAO = mockVariableRuleDAO
 
-	mockPrincipal(req, "tenkai-user")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.validateVariables)
@@ -107,7 +107,7 @@ func TestValidateVariables_VariabeRule_UsingRegex_NotMatch(t *testing.T) {
 	appContext.Repositories.VariableDAO = mockVariableDAO
 	appContext.Repositories.VariableRuleDAO = mockVariableRuleDAO
 
-	mockPrincipal(req, "tenkai-user")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.validateVariables)
@@ -220,7 +220,7 @@ func TestValidateEnvironmentVariables(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-user")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -252,7 +252,7 @@ func TestValidateEnvironmentVariables_Error1(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-user")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -286,7 +286,7 @@ func TestValidateEnvironmentVariables_Error2(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-user")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()

@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
-	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
 	"github.com/stretchr/testify/assert"
@@ -29,7 +28,7 @@ func TestNewUser(t *testing.T) {
 	req, err := http.NewRequest("POST", "/user", payload(p))
 	assert.NoError(t, err)
 
-	mockPrincipal(req, constraints.TenkaiAdmin)
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.newUser)
@@ -44,8 +43,6 @@ func TestNewUser_Unauthorized(t *testing.T) {
 
 	req, err := http.NewRequest("POST", "/user", nil)
 	assert.NoError(t, err)
-
-	mockPrincipal(req, "tenkai-user")
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.newUser)
@@ -75,7 +72,7 @@ func TestNewUser_Error(t *testing.T) {
 	req, err := http.NewRequest("POST", "/user", payload(p))
 	assert.NoError(t, err)
 
-	mockPrincipal(req, constraints.TenkaiAdmin)
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.newUser)
@@ -190,7 +187,7 @@ func TestDeleteUser(t *testing.T) {
 	req, err := http.NewRequest("DELETE", "/users/9999", nil)
 	assert.NoError(t, err)
 
-	mockPrincipal(req, constraints.TenkaiAdmin)
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -234,7 +231,7 @@ func TestDeleteUser_Error(t *testing.T) {
 	req, err := http.NewRequest("DELETE", "/users/9999", nil)
 	assert.NoError(t, err)
 
-	mockPrincipal(req, constraints.TenkaiAdmin)
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()

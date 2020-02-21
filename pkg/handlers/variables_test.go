@@ -12,6 +12,7 @@ import (
 	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
+	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -36,7 +37,20 @@ func TestEditVariable(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-variables-save")
+	mockPrincipal(req)
+
+	user := mockUser()
+	mockUserDAO := &mockRepo.UserDAOInterface{}
+	mockUserDAO.On("FindByEmail", user.Email).Return(user, nil)
+
+	secOper := mockSecurityOperations()
+	secOper.Policies = append(secOper.Policies, "ACTION_SAVE_VARIABLES")
+	mockUserEnvRoleDAO := &mockRepo.UserEnvironmentRoleDAOInterface{}
+	mockUserEnvRoleDAO.On("GetRoleByUserAndEnvironment", user, mock.Anything).
+		Return(&secOper, nil)
+
+	appContext.Repositories.UserDAO = mockUserDAO
+	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.editVariable)
@@ -61,7 +75,7 @@ func TestDeleteVariable(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	roles := []string{constraints.TenkaiVariablesDelete}
+	roles := []string{constraints.TenkaiAdmin}
 	principal := model.Principal{Name: "alfa", Email: "beta@gmail.com", Roles: roles}
 	pSe, _ := json.Marshal(principal)
 	req.Header.Set("principal", string(pSe))
@@ -83,8 +97,6 @@ func TestDeleteVariable_Unauthorized(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-user")
-
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
 	r.HandleFunc("/variables/delete/{id}", appContext.deleteVariable).Methods("DELETE")
@@ -104,7 +116,7 @@ func TestDeleteVariable_DeleteVariableError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-variables-delete")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -117,11 +129,22 @@ func TestDeleteVariable_DeleteVariableError(t *testing.T) {
 func TestEditVariable_Unauthorized(t *testing.T) {
 	appContext := AppContext{}
 
-	req, err := http.NewRequest("POST", "/variables", nil)
+	user := mockUser()
+	mockUserDAO := &mockRepo.UserDAOInterface{}
+	mockUserDAO.On("FindByEmail", mock.Anything).Return(user, nil)
+
+	secOper := mockSecurityOperations()
+	secOper.Policies = make([]string, 0)
+	mockUserEnvRoleDAO := &mockRepo.UserEnvironmentRoleDAOInterface{}
+	mockUserEnvRoleDAO.On("GetRoleByUserAndEnvironment", user, mock.Anything).
+		Return(&secOper, nil)
+
+	appContext.Repositories.UserDAO = mockUserDAO
+	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
+
+	req, err := http.NewRequest("POST", "/variables", payload(getDataVariableElement(true)))
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
-
-	mockPrincipal(req, "tenkai-user")
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.editVariable)
@@ -146,7 +169,7 @@ func TestEditVariable_EditVariableError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-variables-save")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.editVariable)
@@ -164,7 +187,7 @@ func TestGetVariables(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-user")
+	mockPrincipal(req)
 	mockEnvDao := mockGetAllEnvironments(&appContext)
 
 	rr := httptest.NewRecorder()
@@ -210,7 +233,7 @@ func TestGetVariables_GetAllVarByEnvError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-user")
+	mockPrincipal(req)
 	mockEnvDao := mockGetAllEnvironments(&appContext)
 
 	rr := httptest.NewRecorder()
@@ -221,6 +244,112 @@ func TestGetVariables_GetAllVarByEnvError(t *testing.T) {
 	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironment", 1)
 	mockEnvDao.AssertNumberOfCalls(t, "GetAllEnvironments", 1)
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
+
+func TestCopyVariableValue(t *testing.T) {
+	config := configs.Configuration{
+		App: configs.App{
+			Passkey: "qwert",
+		},
+	}
+
+	appContext := &AppContext{Configuration: &config}
+	appContext.K8sConfigPath = "/tmp/"
+
+	mockVariableDAO := &mocks.VariableDAOInterface{}
+	mockVariableDAO.On("EditVariable", mock.Anything).Return(nil)
+
+	var srcVar model.Variable
+	srcVar.ID = 999
+	srcVar.Scope = "foo"
+	srcVar.Name = "foo"
+	srcVar.Value = "foo"
+	srcVar.Secret = false
+	srcVar.Description = "foo"
+	srcVar.EnvironmentID = 999
+
+	var tarVar model.Variable
+	tarVar.ID = 888
+	tarVar.Scope = "foo"
+	tarVar.Name = "foo"
+	tarVar.Value = "bar"
+	tarVar.Secret = false
+	tarVar.Description = "foo"
+	tarVar.EnvironmentID = 888
+
+	mockVariableDAO.On("GetByID", srcVar.ID).Return(&srcVar, nil)
+	mockVariableDAO.On("GetByID", tarVar.ID).Return(&tarVar, nil)
+
+	appContext.Repositories = Repositories{}
+	appContext.Repositories.VariableDAO = mockVariableDAO
+
+	var p model.CopyVariableValue
+	p.SrcVarID = 999
+	p.TarEnvID = 888
+	p.TarVarID = 888
+	p.NewValue = "foo"
+
+	req, err := http.NewRequest("POST", "/variables/copy-value", payload(p))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.copyVariableValue)
+	handler.ServeHTTP(rr, req)
+
+	mockVariableDAO.AssertNumberOfCalls(t, "EditVariable", 1)
+	mockVariableDAO.AssertNumberOfCalls(t, "GetByID", 2)
+	assert.Equal(t, http.StatusCreated, rr.Code, "Response is not Ok.")
+}
+
+func TestCopyEntireVariable(t *testing.T) {
+	config := configs.Configuration{
+		App: configs.App{
+			Passkey: "qwert",
+		},
+	}
+
+	appContext := &AppContext{Configuration: &config}
+	appContext.K8sConfigPath = "/tmp/"
+
+	mockVariableDAO := &mocks.VariableDAOInterface{}
+	mockVariableDAO.On("EditVariable", mock.Anything).Return(nil)
+
+	var srcVar model.Variable
+	srcVar.ID = 999
+	srcVar.Scope = "foo"
+	srcVar.Name = "foo"
+	srcVar.Value = "foo"
+	srcVar.Secret = false
+	srcVar.Description = "foo"
+	srcVar.EnvironmentID = 999
+
+	mockVariableDAO.On("GetByID", srcVar.ID).Return(&srcVar, nil)
+
+	appContext.Repositories = Repositories{}
+	appContext.Repositories.VariableDAO = mockVariableDAO
+
+	var p model.CopyVariableValue
+	p.SrcVarID = 999
+	p.TarEnvID = 888
+	p.TarVarID = 0
+	p.NewValue = "foo"
+
+	req, err := http.NewRequest("POST", "/variables/copy-value", payload(p))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	mockPrincipal(req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.copyVariableValue)
+	handler.ServeHTTP(rr, req)
+
+	mockVariableDAO.AssertNumberOfCalls(t, "EditVariable", 1)
+	mockVariableDAO.AssertNumberOfCalls(t, "GetByID", 1)
+	assert.Equal(t, http.StatusCreated, rr.Code, "Response is not Ok.")
 }
 
 func getDataVariableElement(secret bool) model.DataVariableElement {

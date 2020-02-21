@@ -15,6 +15,7 @@ type VariableDAOInterface interface {
 	GetAllVariablesByEnvironmentAndScope(envID int, scope string) ([]model2.Variable, error)
 	DeleteVariable(id int) error
 	DeleteVariableByEnvironmentID(envID int) error
+	GetByID(id uint) (*model2.Variable, error)
 }
 
 //VariableDAOImpl VariableDAOImpl
@@ -141,4 +142,13 @@ func (dao VariableDAOImpl) DeleteVariable(id int) error {
 //DeleteVariableByEnvironmentID - Delete environment
 func (dao VariableDAOImpl) DeleteVariableByEnvironmentID(envID int) error {
 	return dao.Db.Unscoped().Where(model2.Variable{EnvironmentID: envID}).Delete(model2.Variable{}).Error
+}
+
+//GetByID GetByID
+func (dao VariableDAOImpl) GetByID(id uint) (*model2.Variable, error) {
+	var result model2.Variable
+	if err := dao.Db.First(&result, id).Error; err != nil {
+		return nil, err
+	}
+	return &result, nil
 }

@@ -72,7 +72,7 @@ func TestDeleteHelmRelease(t *testing.T) {
 	appContext.Repositories.EnvironmentDAO = mockEnvDao
 	appContext.HelmServiceAPI = mockHelmSvc
 
-	mockPrincipal(req, "tenkai-helm-upgrade")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.deleteHelmRelease)
@@ -92,7 +92,7 @@ func TestDeleteHelmRelease_EnvironmentIDQueryError(t *testing.T) {
 	req, err := http.NewRequest("DELETE", "/deleteHelmRelease?xxxxYYYY=999&releaseName=foo&purge=false", nil)
 	assert.NoError(t, err)
 
-	mockPrincipal(req, "tenkai-helm-upgrade")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.deleteHelmRelease)
@@ -106,7 +106,7 @@ func TestDeleteHelmRelease_ReleaseNameQueryError(t *testing.T) {
 	req, err := http.NewRequest("DELETE", "/deleteHelmRelease?environmentID=999&xxxxYYYY=foo&purge=false", nil)
 	assert.NoError(t, err)
 
-	mockPrincipal(req, "tenkai-helm-upgrade")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.deleteHelmRelease)
@@ -120,7 +120,7 @@ func TestDeleteHelmRelease_PurgeQueryError(t *testing.T) {
 	req, err := http.NewRequest("DELETE", "/deleteHelmRelease?environmentID=999&releaseName=foo&xxxxYYYY=false", nil)
 	assert.NoError(t, err)
 
-	mockPrincipal(req, "tenkai-helm-upgrade")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.deleteHelmRelease)
@@ -142,7 +142,7 @@ func TestDeleteHelmRelease_HasAccessError(t *testing.T) {
 	appContext.Repositories = Repositories{}
 	appContext.Repositories.EnvironmentDAO = mockEnvDao
 
-	mockPrincipal(req, "tenkai-helm-upgrade")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.deleteHelmRelease)
@@ -166,7 +166,7 @@ func TestDeleteHelmRelease_GetByIDError(t *testing.T) {
 	appContext.Repositories = Repositories{}
 	appContext.Repositories.EnvironmentDAO = mockEnvDao
 
-	mockPrincipal(req, "tenkai-helm-upgrade")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.deleteHelmRelease)
@@ -202,7 +202,7 @@ func TestDeleteHelmRelease_DeleteHelmReleaseError(t *testing.T) {
 	appContext.Repositories.EnvironmentDAO = mockEnvDao
 	appContext.HelmServiceAPI = mockHelmSvc
 
-	mockPrincipal(req, "tenkai-helm-upgrade")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.deleteHelmRelease)
@@ -581,7 +581,7 @@ func TestGetHelmCommand(t *testing.T) {
 	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
 	mockConvention := mockConventionInterface(&appContext)
 
-	mockPrincipal(req, "tenkai-helm-upgrade")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.getHelmCommand)
@@ -600,22 +600,6 @@ func TestGetHelmCommand(t *testing.T) {
 	assert.Contains(t, response, "foo --namespace=dev")
 }
 
-func TestGetHelmCommand_Unauthorized(t *testing.T) {
-	req, err := http.NewRequest("POST", "/getHelmCommand", getMultipleInstallPayload())
-	assert.NoError(t, err)
-	assert.NotNil(t, req)
-
-	appContext := AppContext{}
-
-	mockPrincipal(req, "tenkai-user")
-
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(appContext.getHelmCommand)
-	handler.ServeHTTP(rr, req)
-
-	assert.Equal(t, http.StatusUnauthorized, rr.Code, "Response should be 401.")
-}
-
 func TestGetHelmCommand_UnmarshalPayloadError(t *testing.T) {
 	appContext := AppContext{}
 	rr := testUnmarshalPayloadErrorWithPrincipal(t, "/getHelmCommand", appContext.getHelmCommand, "tenkai-helm-upgrade")
@@ -630,7 +614,7 @@ func TestGetHelmCommand_GetByIDError(t *testing.T) {
 	appContext := AppContext{}
 	mockEnvDao := mockGetByIDError(&appContext)
 
-	mockPrincipal(req, "tenkai-helm-upgrade")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.getHelmCommand)
@@ -645,7 +629,7 @@ func TestMultipleInstall(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-helm-upgrade")
+	mockPrincipal(req)
 
 	charts := getCharts()
 
@@ -656,12 +640,24 @@ func TestMultipleInstall(t *testing.T) {
 	mockHelmSvc := mockUpgrade(&appContext)
 	mockHelmSvc.On("SearchCharts", mock.Anything, false).Return(charts)
 
+	user := mockUser()
+	mockUserDAO := &mockRepo.UserDAOInterface{}
+	mockUserDAO.On("FindByEmail", user.Email).Return(user, nil)
+
+	secOper := mockSecurityOperations()
+	mockUserEnvRoleDAO := &mockRepo.UserEnvironmentRoleDAOInterface{}
+	mockUserEnvRoleDAO.On("GetRoleByUserAndEnvironment", user, mock.Anything).
+		Return(&secOper, nil)
+
 	var p model.ProductVersion
 	p.ID = uint(777)
 	p.Version = "19.0.1-0"
 	mockProductDAO := &mockRepo.ProductDAOInterface{}
 	mockProductDAO.On("ListProductVersionsByID", mock.Anything).Return(&p, nil)
+
 	appContext.Repositories.ProductDAO = mockProductDAO
+	appContext.Repositories.UserDAO = mockUserDAO
+	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
 
 	auditValues := make(map[string]string)
 	auditValues["environment"] = "bar"
@@ -689,7 +685,7 @@ func TestInstall(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-helm-upgrade")
+	mockPrincipal(req)
 
 	charts := getCharts()
 
@@ -699,6 +695,18 @@ func TestInstall(t *testing.T) {
 	mockConvention := mockConventionInterface(&appContext)
 	mockHelmSvc := mockUpgrade(&appContext)
 	mockHelmSvc.On("SearchCharts", mock.Anything, false).Return(charts)
+
+	user := mockUser()
+	mockUserDAO := &mockRepo.UserDAOInterface{}
+	mockUserDAO.On("FindByEmail", user.Email).Return(user, nil)
+
+	secOper := mockSecurityOperations()
+	mockUserEnvRoleDAO := &mockRepo.UserEnvironmentRoleDAOInterface{}
+	mockUserEnvRoleDAO.On("GetRoleByUserAndEnvironment", user, mock.Anything).
+		Return(&secOper, nil)
+
+	appContext.Repositories.UserDAO = mockUserDAO
+	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.install)

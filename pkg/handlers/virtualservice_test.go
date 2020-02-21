@@ -37,7 +37,7 @@ func TestGetVirtualServices(t *testing.T) {
 	req, err := http.NewRequest("GET", "/getVirtualServices?environmentID=999", bytes.NewBuffer(nil))
 	assert.NoError(t, err)
 
-	mockPrincipal(req, "tenkai-helm-upgrade")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.getVirtualServices)

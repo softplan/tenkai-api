@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
-	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
 	mockSvc "github.com/softplan/tenkai-api/pkg/service/_helm/mocks"
@@ -57,7 +56,7 @@ func TestNewRepository(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, constraints.TenkaiAdmin)
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -143,7 +142,7 @@ func TestGetDefaultRepo(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-user")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.getDefaultRepo)
@@ -168,7 +167,7 @@ func TestGetDefaultRepo_GetConfigByNameError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-user")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.getDefaultRepo)
@@ -189,7 +188,7 @@ func TestDeleteRepository(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-admin")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -206,8 +205,6 @@ func TestDeleteRepository_Unauthorized(t *testing.T) {
 	req, err := http.NewRequest("DELETE", "/repositories/xyz", nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
-
-	mockPrincipal(req, "tenkai")
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -228,7 +225,7 @@ func TestDeleteRepository_RemoveRepositoryError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-admin")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()

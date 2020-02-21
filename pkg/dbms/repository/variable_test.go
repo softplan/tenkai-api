@@ -437,3 +437,31 @@ func TestDeleteVariableByEnvironmentID(t *testing.T) {
 
 	mock.ExpectationsWereMet()
 }
+
+func TestVariableGetByID(t *testing.T) {
+	db, mock, err := sqlmock.New()
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	assert.Nil(t, err)
+
+	varDAO := VariableDAOImpl{}
+	varDAO.Db = gormDB
+
+	mock.MatchExpectationsInOrder(false)
+
+	var v model.Variable
+	v.ID = 999
+	row := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "deleted_at"}).
+		AddRow(v.ID, v.CreatedAt, v.UpdatedAt, v.DeletedAt)
+
+	mock.ExpectQuery(`SELECT (.*) FROM "variables"`).
+		WillReturnRows(row)
+
+	result, err := varDAO.GetByID(999)
+	assert.Nil(t, err)
+	assert.Equal(t, v.ID, result.ID)
+
+	mock.ExpectationsWereMet()
+}

@@ -19,37 +19,70 @@ import (
 
 func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.Request) {
 
+	logFields := global.AppFields{global.Function: "saveVariableValues"}
+
+	global.Logger.Info(logFields, "Entering saveVariableValues method!")
+
+	isAdmin := false
 	principal := util.GetPrincipal(r)
-	if !util.Contains(principal.Roles, constraints.TenkaiVariablesSave) {
-		http.Error(w, errors.New("Access Denied").Error(), http.StatusUnauthorized)
-		return
+	if util.Contains(principal.Roles, constraints.TenkaiAdmin) {
+		isAdmin = true
 	}
 
 	var payload model.VariableData
 
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
+		global.Logger.Error(logFields, "Error util.UnmarshalPayload")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	//Avoid processing of empty payload
+	if len(payload.Data) == 0 {
+		global.Logger.Info(logFields, "payload.Data is empty")
+		w.WriteHeader(http.StatusCreated)
 		return
 	}
 
 	firstVar := payload.Data[0]
 	targetEnvironment, err := appContext.Repositories.EnvironmentDAO.GetByID(int(firstVar.EnvironmentID))
 	if err != nil {
+		global.Logger.Error(logFields, "Error appContext.Repositories.EnvironmentDAO.GetByID")
 		http.Error(w, err.Error(), 501)
 		return
+	}
+
+	//If not admin, verify authorization of user for specific environment
+	hasSaveVariablesRole := false
+	if !isAdmin {
+		hasSaveVariablesRole, _ = appContext.hasEnvironmentRole(principal, targetEnvironment.ID, "ACTION_SAVE_VARIABLES")
+		if !hasSaveVariablesRole {
+
+			//Allow only save TAG
+			auth := payloadHasOnlyTag(payload)
+			if !auth {
+				global.Logger.Error(logFields, "Error payloadHasOnlyTag(payload)")
+				http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
+				return
+			}
+		}
 	}
 
 	cacheVars := make(map[string]map[string]interface{})
 
 	for _, item := range payload.Data {
 
+		global.Logger.Info(logFields, "Item: "+item.Scope+" => "+item.Name)
+
 		has, err := appContext.hasAccess(principal.Email, int(targetEnvironment.ID))
 		if err != nil || !has {
+			global.Logger.Error(logFields, "Error appContext.hasAccess")
 			http.Error(w, errors.New("Access Denied in environment "+targetEnvironment.Namespace).Error(), http.StatusUnauthorized)
 			return
 		}
 
 		if err := appContext.loadChartVars(cacheVars, item); err != nil {
+			global.Logger.Error(logFields, "Error appContext.loadChartVars")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -57,18 +90,35 @@ func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.
 		var updated bool
 		var auditValues map[string]string
 		if auditValues, updated, err = appContext.Repositories.VariableDAO.CreateVariable(item); err != nil {
+			global.Logger.Error(logFields, "Error appContext.Repositories.VariableDAO.CreateVariable")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		appContext.audit(updated, auditValues, targetEnvironment, principal, r)
 	}
 
-	// Save variables with default values specified in values.yaml
-	if err := appContext.saveVariablesWithDefaultValue(cacheVars, firstVar, targetEnvironment, r, principal); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if hasSaveVariablesRole || isAdmin {
+		// Save variables with default values specified in values.yaml
+		if err := appContext.saveVariablesWithDefaultValue(cacheVars, firstVar, targetEnvironment, r, principal); err != nil {
+			global.Logger.Error(logFields, "Error appContext.saveVariablesWithDefaultValue")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	}
 
+	global.Logger.Info(logFields, "Exiting saveVariableValues method!")
+
 	w.WriteHeader(http.StatusCreated)
+}
+
+func payloadHasOnlyTag(payload model.VariableData) bool {
+	result := true
+	for _, e := range payload.Data {
+		if e.Name != "image.tag" {
+			result = false
+			break
+		}
+	}
+	return result
 }
 
 func (appContext *AppContext) loadChartVars(cacheVars map[string]map[string]interface{}, item model.Variable) error {
@@ -89,7 +139,7 @@ func (appContext *AppContext) saveVariablesWithDefaultValue(cacheVars map[string
 		for varName, varDefaultValue := range charts {
 			defaultValue := fmt.Sprintf("%v", varDefaultValue)
 
-			if strings.HasPrefix(defaultValue, "[map") {
+			if strings.HasPrefix(defaultValue, "[map") || varName == "dateHour" || varName == "version" {
 				continue
 			}
 
