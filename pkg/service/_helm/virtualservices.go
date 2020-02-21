@@ -53,17 +53,19 @@ func (svc HelmServiceImpl) GetVirtualServices(kubeconfig string, namespace strin
 					for _, k := range http {
 						httpMap := k.(map[string]interface{})
 						uri := httpMap["match"]
-						matchArray := uri.([]interface{})
-						for _, matchElement := range matchArray {
-							prefixName := ""
-							uriValue := matchElement.(map[string]interface{})["uri"]
-							if uriValue != nil {
-								prefix := uriValue.(map[string]interface{})["prefix"]
-								if prefix != nil {
-									prefixName = prefix.(string)
+						if uri != nil {
+							matchArray := uri.([]interface{})
+							for _, matchElement := range matchArray {
+								prefixName := ""
+								uriValue := matchElement.(map[string]interface{})["uri"]
+								if uriValue != nil {
+									prefix := uriValue.(map[string]interface{})["prefix"]
+									if prefix != nil {
+										prefixName = prefix.(string)
+									}
 								}
+								hostName = hostName + prefixName
 							}
-							hostName = hostName + prefixName
 						}
 					}
 				}

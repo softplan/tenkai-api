@@ -76,7 +76,7 @@ func TestDeleteEnvironment(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-admin")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -95,8 +95,6 @@ func TestDeleteEnvironment_Unauthorized(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-user")
-
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
 	r.HandleFunc("/environments/delete/{id}", appContext.deleteEnvironment).Methods("DELETE")
@@ -112,7 +110,7 @@ func TestDeleteEnvironment_StringConvError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-admin")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -131,7 +129,7 @@ func TestDeleteEnvironment_GetByIDError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-admin")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -153,7 +151,7 @@ func TestDeleteEnvironment_DeleteEnvironmentError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-admin")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -181,7 +179,7 @@ func TestEditEnvironment(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-admin")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.editEnvironment)
@@ -198,8 +196,6 @@ func TestEditEnvironment_Unauthorized(t *testing.T) {
 	req, err := http.NewRequest("POST", "/environments/edit", payload(mockGetEnv()))
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
-
-	mockPrincipal(req, "tenkai-user")
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.editEnvironment)
@@ -229,7 +225,7 @@ func TestEditEnvironment_GetByIDError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-admin")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.editEnvironment)
@@ -255,7 +251,7 @@ func TestEditEnvironment_EditEnvironmentError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-admin")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.editEnvironment)
@@ -282,14 +278,14 @@ func TestDuplicateEnvironments(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-admin")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
 	r.HandleFunc("/environments/duplicate/{id}", appContext.duplicateEnvironments).Methods("GET")
 	r.ServeHTTP(rr, req)
 
-	mockPrincipal(req, "tenkai-admin")
+	mockPrincipal(req)
 
 	mockEnvDAO.AssertNumberOfCalls(t, "GetByID", 1)
 	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironment", 1)
@@ -304,8 +300,6 @@ func TestDuplicateEnvironments_Unauthorized(t *testing.T) {
 	req, err := http.NewRequest("GET", "/environments/duplicate/999", nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
-
-	mockPrincipal(req, "tenkai-user")
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -322,7 +316,7 @@ func TestDuplicateEnvironments_StringConvError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-admin")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -342,7 +336,7 @@ func TestDuplicateEnvironments_GetByIDError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-admin")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -364,7 +358,7 @@ func TestDuplicateEnvironments_GetAllVarByEnvError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-admin")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -388,7 +382,7 @@ func TestDuplicateEnvironments_CreateEnvError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-admin")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -414,7 +408,7 @@ func TestDuplicateEnvironments_CreateVarError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-admin")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
@@ -436,7 +430,7 @@ func TestGetEnvironments(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-user")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.getEnvironments)
@@ -477,7 +471,7 @@ func TestGetEnvironments_GetAllEnvError(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
-	mockPrincipal(req, "tenkai-user")
+	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.getEnvironments)

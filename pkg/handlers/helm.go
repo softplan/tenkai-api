@@ -47,7 +47,11 @@ func (appContext *AppContext) listCharts(w http.ResponseWriter, r *http.Request)
 
 func (appContext *AppContext) deleteHelmRelease(w http.ResponseWriter, r *http.Request) {
 
+	isAdmin := false
 	principal := util.GetPrincipal(r)
+	if util.Contains(principal.Roles, constraints.TenkaiAdmin) {
+		isAdmin = true
+	}
 
 	environmentIDs, ok := r.URL.Query()["environmentID"]
 	if !ok || len(environmentIDs[0]) < 1 {
@@ -74,6 +78,15 @@ func (appContext *AppContext) deleteHelmRelease(w http.ResponseWriter, r *http.R
 	if err != nil || !has {
 		http.Error(w, errors.New("Access Denied in this environment").Error(), http.StatusUnauthorized)
 		return
+	}
+
+	//If not admin, verify authorization of user for specific environment
+	if !isAdmin {
+		auth, _ := appContext.hasEnvironmentRole(principal, uint(envID), "ACTION_HELM_PURGE")
+		if !auth {
+			http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
+			return
+		}
 	}
 
 	environment, err := appContext.Repositories.EnvironmentDAO.GetByID(int(envID))
@@ -278,12 +291,6 @@ func (appContext *AppContext) getChartVariables(w http.ResponseWriter, r *http.R
 
 func (appContext *AppContext) getHelmCommand(w http.ResponseWriter, r *http.Request) {
 
-	principal := util.GetPrincipal(r)
-	if !util.Contains(principal.Roles, constraints.TenkaiHelmUpgrade) {
-		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
-		return
-	}
-
 	w.Header().Set(global.ContentType, global.JSONContentType)
 	var payload model.MultipleInstallPayload
 
@@ -321,10 +328,10 @@ func (appContext *AppContext) getHelmCommand(w http.ResponseWriter, r *http.Requ
 
 func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Request) {
 
+	isAdmin := false
 	principal := util.GetPrincipal(r)
-	if !util.Contains(principal.Roles, constraints.TenkaiHelmUpgrade) {
-		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
-		return
+	if util.Contains(principal.Roles, constraints.TenkaiAdmin) {
+		isAdmin = true
 	}
 
 	w.Header().Set(global.ContentType, global.JSONContentType)
@@ -346,6 +353,15 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 		}
 		http.Error(w, msg, http.StatusInternalServerError)
 		return
+	}
+
+	//If not admin, verify authorization of user for specific environment
+	if !isAdmin {
+		auth, _ := appContext.hasEnvironmentRole(principal, environment.ID, "ACTION_DEPLOY")
+		if !auth {
+			http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
+			return
+		}
 	}
 
 	for _, element := range payload.Deployables {
@@ -384,10 +400,10 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 
 func (appContext *AppContext) install(w http.ResponseWriter, r *http.Request) {
 
+	isAdmin := false
 	principal := util.GetPrincipal(r)
-	if !util.Contains(principal.Roles, constraints.TenkaiHelmUpgrade) {
-		http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
-		return
+	if util.Contains(principal.Roles, constraints.TenkaiAdmin) {
+		isAdmin = true
 	}
 
 	w.Header().Set(global.ContentType, global.JSONContentType)
@@ -405,6 +421,16 @@ func (appContext *AppContext) install(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	//If not admin, verify authorization of user for specific environment
+	if !isAdmin {
+
+		auth, _ := appContext.hasEnvironmentRole(principal, environment.ID, "ACTION_DEPLOY")
+		if !auth {
+			http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
+			return
+		}
 	}
 
 	_, err = appContext.simpleInstall(environment, payload, out, false, false)

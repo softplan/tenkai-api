@@ -1,6 +1,10 @@
 package model
 
-import "github.com/jinzhu/gorm"
+import (
+	"github.com/jinzhu/gorm"
+)
+
+import "github.com/jinzhu/gorm/dialects/postgres"
 
 //Environment - Environment Model
 type Environment struct {
@@ -29,6 +33,14 @@ type User struct {
 	Environments         []Environment `gorm:"many2many:user_environment;"`
 }
 
+//UserEnvironmentRole UserEnvironmentRole
+type UserEnvironmentRole struct {
+	gorm.Model
+	UserID              uint `json:"userId"`
+	EnvironmentID       uint `json:"environmentId"`
+	SecurityOperationID uint `json:"securityOperationId"`
+}
+
 //UserResult struct
 type UserResult struct {
 	Users []User `json:"users"`
@@ -42,6 +54,14 @@ type DataElement struct {
 //DataVariableElement dataElement
 type DataVariableElement struct {
 	Data Variable `json:"data"`
+}
+
+//CopyVariableValue CopyVariableValue
+type CopyVariableValue struct {
+	SrcVarID uint   `json:"srcVarId"`
+	TarEnvID uint   `json:"tarEnvId"`
+	TarVarID uint   `json:"tarVarId"`
+	NewValue string `json:"newValue"`
 }
 
 //VariablesResult Model
@@ -121,14 +141,46 @@ type InvalidVariable struct {
 	ValueRule    string `json:"valueRule"`
 }
 
+type selectItem struct {
+	Label string `json:"label"`
+	Value string `json:"value"`
+}
+
 //CompareEnvironments Model Payload
 type CompareEnvironments struct {
-	SourceEnvID  int      `json:"sourceEnvId"`
-	TargetEnvID  int      `json:"targetEnvId"`
-	ExceptCharts []string `json:"exceptCharts"`
-	OnlyCharts   []string `json:"onlyCharts"`
-	ExceptFields []string `json:"exceptFields"`
-	OnlyFields   []string `json:"onlyFields"`
+	SourceEnvID             int           `json:"sourceEnvId"`
+	TargetEnvID             int           `json:"targetEnvId"`
+	ExceptCharts            []string      `json:"exceptCharts"`
+	OnlyCharts              []string      `json:"onlyCharts"`
+	ExceptFields            []string      `json:"exceptFields"`
+	OnlyFields              []string      `json:"onlyFields"`
+	CustomFields            []FilterField `json:"customFields"`
+	FilterOnlyExceptChart   int           `json:"filterOnlyExceptChart"`
+	FilterOnlyExceptField   int           `json:"filterOnlyExceptField"`
+	SelectedFilterFieldType selectItem    `json:"selectedFilterFieldType"`
+	GlobalFilter            string        `json:"globalFilter"`
+}
+
+//SaveCompareEnvQuery SaveCompareEnvQuery
+type SaveCompareEnvQuery struct {
+	ID        uint                `json:"id"`
+	Name      string              `json:"name"`
+	UserEmail string              `json:"userEmail"`
+	Data      CompareEnvironments `json:"data"`
+}
+
+//CompareEnvsQuery CompareEnvsQuery
+type CompareEnvsQuery struct {
+	gorm.Model
+	Name   string         `json:"name"`
+	UserID int            `json:"userId"`
+	Query  postgres.Jsonb `json:"query"`
+}
+
+//FilterField Filters the CompareEnvironments result
+type FilterField struct {
+	FilterType  string `json:"filterType"`
+	FilterValue string `json:"filterValue"`
 }
 
 //EnvironmentsDiff Model Response
@@ -141,6 +193,8 @@ type EnvironmentsDiff struct {
 	TargetName  string `json:"targetName"`
 	SourceValue string `json:"sourceValue"`
 	TargetValue string `json:"targetValue"`
+	SourceVarID string `json:"sourceVarId"`
+	TargetVarID string `json:"targetVarId"`
 }
 
 //CompareEnvsResponse CompareEnvsResponse

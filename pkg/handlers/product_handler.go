@@ -258,7 +258,7 @@ func (appContext *AppContext) listProductVersions(w http.ResponseWriter, r *http
 
 func (appContext *AppContext) lockUnlockCommon(w http.ResponseWriter, r *http.Request) (*model.ProductVersion, int, error) {
 	principal := util.GetPrincipal(r)
-	if !util.Contains(principal.Roles, constraints.TenkaiLockVersion) {
+	if !util.Contains(principal.Roles, constraints.TenkaiAdmin) {
 		return nil, http.StatusUnauthorized, errors.New(global.AccessDenied)
 	}
 

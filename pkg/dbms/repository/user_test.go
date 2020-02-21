@@ -165,7 +165,7 @@ func TestCreateOrUpdateUser_Update(t *testing.T) {
 	userDAO.Db = gormDB
 
 	user := getUser()
-	user.ID = 888
+	user.ID = 999
 	env := getEnvironmentTestData()
 	env.ID = 999
 	user.Environments = append(user.Environments, env)
@@ -239,6 +239,34 @@ func TestCreateOrUpdateUser_Create(t *testing.T) {
 
 	e := userDAO.CreateOrUpdateUser(user)
 	assert.NoError(t, e)
+
+	mock.ExpectationsWereMet()
+}
+
+func TestFindByEmail(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	mock.MatchExpectationsInOrder(false)
+	assert.Nil(t, err)
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	userDAO := UserDAOImpl{}
+	userDAO.Db = gormDB
+
+	payload := getUser()
+	payload.ID = 888
+
+	row1 := sqlmock.NewRows([]string{"id", "email", "default_environment_id"}).
+		AddRow(payload.ID, payload.Email, payload.DefaultEnvironmentID)
+
+	mock.ExpectQuery(`SELECT .+ FROM "users" WHERE "users"."deleted_at" IS NULL AND \(\("users"."email" =`).
+		WithArgs("musk@mars.com").
+		WillReturnRows(row1)
+
+	u, e := userDAO.FindByEmail("musk@mars.com")
+	assert.NoError(t, e)
+	assert.NotNil(t, u)
 
 	mock.ExpectationsWereMet()
 }

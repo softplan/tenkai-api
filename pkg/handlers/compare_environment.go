@@ -2,10 +2,16 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"hash/fnv"
 	"net/http"
+	"regexp"
 	"sort"
+	"strconv"
+	"strings"
 
+	"github.com/gorilla/mux"
+	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/global"
 	"github.com/softplan/tenkai-api/pkg/util"
@@ -55,7 +61,7 @@ func (appContext *AppContext) compareEnvironments(w http.ResponseWriter, r *http
 	appContext.compare(rmap, payload, toMap(targetVars), toMap(sourceVars), true)
 
 	for _, v := range rmap {
-		resp.List = append(resp.List, v)
+		appContext.applyFilters(payload, v, &resp)
 	}
 
 	sort.Slice(resp.List, func(i int, j int) bool {
@@ -67,9 +73,145 @@ func (appContext *AppContext) compareEnvironments(w http.ResponseWriter, r *http
 	w.Write(data)
 }
 
+func (appContext *AppContext) saveCompareEnvQuery(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set(global.ContentType, global.JSONContentType)
+
+	var payload model.SaveCompareEnvQuery
+
+	var e error
+	if e := util.UnmarshalPayload(r, &payload); e != nil {
+		http.Error(w, e.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var b []byte
+	if b, e = json.Marshal(payload.Data); e != nil {
+		http.Error(w, e.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var user model.User
+	if user, e = appContext.Repositories.UserDAO.FindByEmail(payload.UserEmail); e != nil {
+		http.Error(w, e.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var env model.CompareEnvsQuery
+	env.Name = payload.Name
+	env.UserID = int(user.ID)
+	env.Query = postgres.Jsonb{RawMessage: b}
+
+	if payload.ID > 0 {
+		env.ID = payload.ID
+	}
+
+	if _, err := appContext.Repositories.CompareEnvsQueryDAO.SaveCompareEnvsQuery(env); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (appContext *AppContext) deleteCompareEnvQuery(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	sl := vars["id"]
+	id, _ := strconv.Atoi(sl)
+	w.Header().Set(global.ContentType, global.JSONContentType)
+	if err := appContext.Repositories.CompareEnvsQueryDAO.DeleteCompareEnvQuery(id); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (appContext *AppContext) loadCompareEnvQueries(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set(global.ContentType, global.JSONContentType)
+	principal := util.GetPrincipal(r)
+
+	var user model.User
+	var e error
+	if user, e = appContext.Repositories.UserDAO.FindByEmail(principal.Email); e != nil {
+		http.Error(w, e.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var result []model.CompareEnvsQuery
+	if result, e = appContext.Repositories.CompareEnvsQueryDAO.GetByUser(int(user.ID)); e != nil {
+		http.Error(w, e.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data, _ := json.Marshal(result)
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+}
+
+func (appContext *AppContext) applyFilters(payload model.CompareEnvironments,
+	v model.EnvironmentsDiff, resp *model.CompareEnvsResponse) {
+
+	var fieldName string
+	if v.SourceName != "" {
+		fieldName = v.SourceName
+	} else {
+		fieldName = v.TargetName
+	}
+
+	if len(payload.CustomFields) == 0 {
+		resp.List = append(resp.List, v)
+	} else {
+		filterMatch := false
+		for _, filter := range payload.CustomFields {
+			if fieldFilter(filter.FilterType)(fieldName, filter.FilterValue) {
+				filterMatch = true
+				break
+			}
+		}
+
+		if filterMatch {
+			resp.List = append(resp.List, v)
+		}
+	}
+}
+
+func fieldFilter(filterType string) myFn {
+	m := make(map[string]myFn)
+
+	m["Contains"] = fieldContains
+	m["StartsWith"] = fieldStartsWith
+	m["EndsWith"] = fieldEndsWith
+	m["RegEx"] = fieldRegExp
+
+	return m[filterType]
+}
+
+type myFn func(field string, value string) bool
+
+func fieldStartsWith(field string, value string) bool {
+	return strings.HasPrefix(field, value)
+}
+
+func fieldContains(field string, value string) bool {
+	return strings.Contains(field, value)
+}
+
+func fieldEndsWith(field string, value string) bool {
+	return strings.HasSuffix(field, value)
+}
+
+func fieldRegExp(field string, value string) bool {
+	result, err := regexp.MatchString(value, field)
+
+	if err != nil {
+		return false
+	}
+
+	return result
+}
+
 func (appContext *AppContext) compare(rmap map[uint32]model.EnvironmentsDiff,
-	filter model.CompareEnvironments, source map[string]map[string]string,
-	target map[string]map[string]string, reverse bool) {
+	filter model.CompareEnvironments, source map[string]map[string]model.Variable,
+	target map[string]map[string]model.Variable, reverse bool) {
 
 	for scope, srcVars := range source {
 		if shouldIgnoreChart(filter, scope) {
@@ -81,7 +223,7 @@ func (appContext *AppContext) compare(rmap map[uint32]model.EnvironmentsDiff,
 }
 
 func iterateOverSourceVars(filter model.CompareEnvironments, scope string,
-	srcVars map[string]string, target map[string]map[string]string,
+	srcVars map[string]model.Variable, target map[string]map[string]model.Variable,
 	reverse bool, rmap map[uint32]model.EnvironmentsDiff) {
 
 	for srcVarName, srcValue := range srcVars {
@@ -89,22 +231,22 @@ func iterateOverSourceVars(filter model.CompareEnvironments, scope string,
 			continue
 		}
 		if _, ok := target[scope][srcVarName]; !ok {
-			addToResp(rmap, filter, scope, scope, srcVarName, "", srcValue, "", reverse)
+			addToResp(rmap, filter, scope, scope, srcVarName, "", srcValue.Value, "", fmt.Sprint(srcValue.ID), "", reverse)
 			continue
 		}
-		iterateOverTargetVars(filter, scope, target, srcVarName, srcValue, reverse, rmap)
+		iterateOverTargetVars(filter, scope, target, srcValue, reverse, rmap)
 	}
 }
 
 func iterateOverTargetVars(filter model.CompareEnvironments, scope string,
-	target map[string]map[string]string, srcVarName string, srcValue string,
+	target map[string]map[string]model.Variable, srcVar model.Variable,
 	reverse bool, rmap map[uint32]model.EnvironmentsDiff) {
 
 	for tarVarName, tarValue := range target[scope] {
-		if shouldIgnoreVar(filter, tarVarName) || srcVarName != tarVarName || srcValue == tarValue {
+		if shouldIgnoreVar(filter, tarVarName) || srcVar.Name != tarVarName || srcVar.Value == tarValue.Value {
 			continue
 		} else {
-			addToResp(rmap, filter, scope, scope, srcVarName, tarVarName, srcValue, tarValue, reverse)
+			addToResp(rmap, filter, scope, scope, srcVar.Name, tarVarName, srcVar.Value, tarValue.Value, fmt.Sprint(srcVar.ID), fmt.Sprint(tarValue.ID), reverse)
 		}
 	}
 }
@@ -157,14 +299,14 @@ func shouldIgnoreChart(filter model.CompareEnvironments, scope string) bool {
 	return false
 }
 
-func toMap(vars []model.Variable) map[string]map[string]string {
-	sm := make(map[string]map[string]string)
+func toMap(vars []model.Variable) map[string]map[string]model.Variable {
+	sm := make(map[string]map[string]model.Variable)
 
 	for _, e := range vars {
 		if sm[e.Scope] == nil {
-			sm[e.Scope] = map[string]string{e.Name: e.Value}
+			sm[e.Scope] = map[string]model.Variable{e.Name: e}
 		} else {
-			sm[e.Scope][e.Name] = e.Value
+			sm[e.Scope][e.Name] = e
 		}
 	}
 
@@ -173,7 +315,7 @@ func toMap(vars []model.Variable) map[string]map[string]string {
 
 func addToResp(rmap map[uint32]model.EnvironmentsDiff, filter model.CompareEnvironments,
 	srcScope string, tarScope string, srcVarName string,
-	tarVarName string, srcValue string, tarValue string, reverse bool) {
+	tarVarName string, srcValue string, tarValue string, srcVarID string, tarVarID string, reverse bool) {
 
 	var e model.EnvironmentsDiff
 	e.SourceEnvID = filter.SourceEnvID
@@ -186,6 +328,8 @@ func addToResp(rmap map[uint32]model.EnvironmentsDiff, filter model.CompareEnvir
 		e.TargetName = srcVarName
 		e.SourceValue = tarValue
 		e.TargetValue = srcValue
+		e.SourceVarID = tarVarID
+		e.TargetVarID = srcVarID
 	} else {
 		e.SourceScope = srcScope
 		e.TargetScope = tarScope
@@ -193,6 +337,8 @@ func addToResp(rmap map[uint32]model.EnvironmentsDiff, filter model.CompareEnvir
 		e.TargetName = tarVarName
 		e.SourceValue = srcValue
 		e.TargetValue = tarValue
+		e.SourceVarID = srcVarID
+		e.TargetVarID = tarVarID
 	}
 
 	// Avoid duplicated entries
