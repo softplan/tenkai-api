@@ -52,6 +52,7 @@ type AppContext struct {
 	Mutex               sync.Mutex
 	ChartImageCache     sync.Map
 	DockerTagsCache     sync.Map
+	ConfigMapCache      sync.Map
 }
 
 func defineRotes(r *mux.Router, appContext *AppContext) {

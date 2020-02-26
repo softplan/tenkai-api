@@ -634,11 +634,24 @@ func TestMultipleInstall(t *testing.T) {
 	charts := getCharts()
 
 	appContext := AppContext{}
+
+	mockConfigDAO := &mockRepo.ConfigDAOInterface{}
+
+	var config model.ConfigMap
+	config.Name = "mykey"
+	config.Value = "myvalue"
+	mockConfigDAO.On("GetConfigByName", "commonValuesConfigMapChart").
+		Return(config, nil)
+
 	mockEnvDao := mockGetByID(&appContext)
 	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
 	mockConvention := mockConventionInterface(&appContext)
 	mockHelmSvc := mockUpgrade(&appContext)
 	mockHelmSvc.On("SearchCharts", mock.Anything, false).Return(charts)
+
+	result := []byte("it doesn't have a config map")
+	mockHelmSvc.On("GetTemplate", mock.Anything, mock.Anything, mock.Anything,
+		mock.Anything).Return(result, nil)
 
 	user := mockUser()
 	mockUserDAO := &mockRepo.UserDAOInterface{}
@@ -658,6 +671,8 @@ func TestMultipleInstall(t *testing.T) {
 	appContext.Repositories.ProductDAO = mockProductDAO
 	appContext.Repositories.UserDAO = mockUserDAO
 	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
+	appContext.Repositories.ConfigDAO = mockConfigDAO
+	appContext.HelmServiceAPI = mockHelmSvc
 
 	auditValues := make(map[string]string)
 	auditValues["environment"] = "bar"
