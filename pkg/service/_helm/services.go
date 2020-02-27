@@ -20,7 +20,9 @@ func (svc HelmServiceImpl) GetServices(kubeconfig string, namespace string) ([]m
 	}
 	opts := &metav1.ListOptions{}
 	list, err := client.CoreV1().Services(namespace).List(*opts)
-
+	if err != nil {
+		return services, err
+	}
 	var service *model.Service
 	for _, element := range list.Items {
 		service = fillService(element)
