@@ -709,7 +709,6 @@ func TestMultipleInstall(t *testing.T) {
 
 	mockProductDAO.AssertNumberOfCalls(t, "ListProductsVersionServices", 1)
 	mockVariableDAO.AssertNumberOfCalls(t, "GetVarImageTagByEnvAndScope", 1)
-	mockVariableDAO.AssertNumberOfCalls(t, "EditVariable", 1)
 
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 }

@@ -464,16 +464,14 @@ func (appContext *AppContext) updateImageTagBeforeInstallProduct(productVersionI
 		if err != nil {
 			return err
 		}
-		varImgTag, err := appContext.Repositories.VariableDAO.GetVarImageTagByEnvAndScope(envID, chart)
-		if err != nil {
-			return err
-		}
-
-		for _, pvsvc := range pvs {
-			if varImgTag.Scope == strings.Split(pvsvc.ServiceName, " - ")[0] {
-				varImgTag.Value = pvsvc.DockerImageTag
-				if err := appContext.Repositories.VariableDAO.EditVariable(varImgTag); err != nil {
-					return err
+		varImgTag, _ := appContext.Repositories.VariableDAO.GetVarImageTagByEnvAndScope(envID, chart)
+		if varImgTag.ID > 0 {
+			for _, pvsvc := range pvs {
+				if varImgTag.Scope == strings.Split(pvsvc.ServiceName, " - ")[0] {
+					varImgTag.Value = pvsvc.DockerImageTag
+					if err := appContext.Repositories.VariableDAO.EditVariable(varImgTag); err != nil {
+						return err
+					}
 				}
 			}
 		}
