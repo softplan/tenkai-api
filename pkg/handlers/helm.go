@@ -419,6 +419,12 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 	}
 
 	for _, element := range payload.Deployables {
+		if err = appContext.updateImageTagBeforeInstallProduct(payload.ProductVersionID,
+			int(environment.ID), element.Chart); err != nil {
+
+			http.Error(w, err.Error(), 500)
+			return
+		}
 
 		_, err = appContext.simpleInstall(environment, element, out, false, false)
 		if err != nil {
@@ -450,6 +456,30 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 
 	w.WriteHeader(http.StatusOK)
 
+}
+
+func (appContext *AppContext) updateImageTagBeforeInstallProduct(productVersionID int, envID int, chart string) error {
+	if productVersionID > 0 {
+		pvs, err := appContext.Repositories.ProductDAO.ListProductsVersionServices(productVersionID)
+		if err != nil {
+			return err
+		}
+		varImgTag, err := appContext.Repositories.VariableDAO.GetVarImageTagByEnvAndScope(envID, chart)
+		if err != nil {
+			return err
+		}
+
+		for _, pvsvc := range pvs {
+			if varImgTag.Scope == strings.Split(pvsvc.ServiceName, " - ")[0] {
+				varImgTag.Value = pvsvc.DockerImageTag
+				if err := appContext.Repositories.VariableDAO.EditVariable(varImgTag); err != nil {
+					return err
+				}
+			}
+		}
+
+	}
+	return nil
 }
 
 func (appContext *AppContext) install(w http.ResponseWriter, r *http.Request) {
