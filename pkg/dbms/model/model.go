@@ -2,9 +2,8 @@ package model
 
 import (
 	"github.com/jinzhu/gorm"
+	"github.com/jinzhu/gorm/dialects/postgres"
 )
-
-import "github.com/jinzhu/gorm/dialects/postgres"
 
 //Environment - Environment Model
 type Environment struct {
@@ -18,6 +17,10 @@ type Environment struct {
 	Gateway        string `json:"gateway"`
 	ProductVersion string `json:"productVersion"`
 	CurrentRelease string `json:"currentRelease"`
+	EnvType        string `json:"envType"`
+	Host           string `json:"host"`
+	Username       string `json:"username"`
+	Password       string `json:"password"`
 }
 
 //EnvResult Model

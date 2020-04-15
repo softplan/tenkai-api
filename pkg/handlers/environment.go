@@ -179,8 +179,10 @@ func (appContext *AppContext) addEnvironments(w http.ResponseWriter, r *http.Req
 
 	env := payload.Data
 
-	createEnvironmentFile(env.Name, env.Token, appContext.K8sConfigPath+env.Group+"_"+env.Name,
-		env.CACertificate, env.ClusterURI, env.Namespace)
+	if env.EnvType == "k8s" {
+		createEnvironmentFile(env.Name, env.Token, appContext.K8sConfigPath+env.Group+"_"+env.Name,
+			env.CACertificate, env.ClusterURI, env.Namespace)
+	}
 
 	if _, err := appContext.Repositories.EnvironmentDAO.CreateEnvironment(env); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
