@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -440,13 +441,15 @@ func TestGetEnvironments(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Code, "Response should be Ok.")
 
 	response := string(rr.Body.Bytes())
+	fmt.Printf(response)
 	assert.Contains(t, response, `{"Envs":[{"ID":999`)
 	assert.Contains(t, response, `"group":"foo","name":"bar"`)
 	assert.Contains(t, response, `"cluster_uri":"https://rancher-k8s-my-domain.com/k8s/clusters/c-kbfxr"`)
 	assert.Contains(t, response, `"ca_certificate":"my-certificate"`)
 	assert.Contains(t, response, `"token":"kubeconfig-user-ph111:abbkdd57t68tq2lppg6lwb65sb69282jhsmh3ndwn4vhjtt8blmhh2"`)
 	assert.Contains(t, response, `"namespace":"dev","gateway":"my-gateway.istio-system.svc.cluster.local"`)
-	assert.Contains(t, response, `"productVersion":"","currentRelease":""}]}`)
+	assert.Contains(t, response, `"productVersion":"","currentRelease":""`)
+	assert.Contains(t, response, `"envType":"","host":"","username":"","password":""}]}`)
 }
 
 func TestGetEnvironments_AccessDenied(t *testing.T) {
@@ -556,7 +559,8 @@ func TestGetAllEnvironments(t *testing.T) {
 	assert.Contains(t, response, `"ca_certificate":"my-certificate"`)
 	assert.Contains(t, response, `"token":"kubeconfig-user-ph111:abbkdd57t68tq2lppg6lwb65sb69282jhsmh3ndwn4vhjtt8blmhh2"`)
 	assert.Contains(t, response, `"namespace":"dev","gateway":"my-gateway.istio-system.svc.cluster.local"`)
-	assert.Contains(t, response, `"productVersion":"","currentRelease":""}]}`)
+	assert.Contains(t, response, `"productVersion":"","currentRelease":"",`)
+	assert.Contains(t, response, `"envType":"","host":"","username":"","password":""}]}`)
 }
 
 func TestGetAllEnvironments_GetAllEnvError(t *testing.T) {
