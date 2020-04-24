@@ -1,10 +1,11 @@
 package main
 
 import (
+	"testing"
+
 	dbms2 "github.com/softplan/tenkai-api/pkg/dbms"
 	"github.com/softplan/tenkai-api/pkg/handlers"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestInitRepository(t *testing.T) {
@@ -14,7 +15,6 @@ func TestInitRepository(t *testing.T) {
 	assert.NotNil(t, repos.ConfigDAO)
 	assert.NotNil(t, repos.VariableDAO)
 	assert.NotNil(t, repos.ConfigDAO)
-	assert.NotNil(t, repos.DockerDAO)
 	assert.NotNil(t, repos.EnvironmentDAO)
 	assert.NotNil(t, repos.ProductDAO)
 	assert.NotNil(t, repos.UserDAO)

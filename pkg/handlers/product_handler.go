@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"sort"
 	"strconv"
@@ -447,6 +449,22 @@ func (appContext *AppContext) getImageName(serviceName string) (string, error) {
 	return result, nil
 }
 
+func (appContext *AppContext) getDockerTagsWithDate(p model.ListDockerTagsRequest) (model.ListDockerTagsResult, error) {
+	var result model.ListDockerTagsResult
+
+	url := fmt.Sprintf("%s/listDockerTags", appContext.Configuration.App.DockerAPIURL)
+	m, _ := json.Marshal(p)
+
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(m))
+	if err != nil {
+		return result, err
+	}
+
+	defer resp.Body.Close()
+	json.NewDecoder(resp.Body).Decode(&result)
+	return result, nil
+}
+
 func (appContext *AppContext) verifyNewVersion(serviceName string, dockerImageTag string) (string, error) {
 
 	currentTag := getNumberOfTag(dockerImageTag)
@@ -460,7 +478,7 @@ func (appContext *AppContext) verifyNewVersion(serviceName string, dockerImageTa
 	}
 
 	//Get version tags
-	result, err := appContext.DockerServiceAPI.GetDockerTagsWithDate(payload, appContext.Repositories.DockerDAO, &appContext.DockerTagsCache)
+	result, err := appContext.getDockerTagsWithDate(payload)
 	if err != nil {
 		return "", err
 	}

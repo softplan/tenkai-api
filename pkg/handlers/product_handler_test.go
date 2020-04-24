@@ -11,7 +11,7 @@ import (
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
 	mockSvc "github.com/softplan/tenkai-api/pkg/service/_helm/mocks"
-	"github.com/softplan/tenkai-api/pkg/service/docker/mocks"
+	"github.com/softplan/tenkai-docker-api/pkg/service/docker/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -1204,7 +1204,6 @@ func TestVerifyNewVersion_GetDockerTagsWithDateError(t *testing.T) {
 	mockDockerSvc := &mocks.DockerServiceInterface{}
 	mockDockerSvc.On("GetDockerTagsWithDate", mock.Anything, mock.Anything, mock.Anything).
 		Return(nil, errors.New("some error"))
-	appContext.DockerServiceAPI = mockDockerSvc
 
 	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "19.0.1-0")
 	assert.Error(t, err)
@@ -1316,8 +1315,7 @@ func TestValidateVersion_Invalid9(t *testing.T) {
 
 func mockGetDockerTagsWithDate(appContext *AppContext, result *model.ListDockerTagsResult) *mocks.DockerServiceInterface {
 	mockDockerSvc := &mocks.DockerServiceInterface{}
-	mockDockerSvc.On("GetDockerTagsWithDate", mock.Anything, mock.Anything, mock.Anything).Return(result, nil)
-	appContext.DockerServiceAPI = mockDockerSvc
+	mockDockerSvc.On("getDockerTagsWithDate", mock.Anything, mock.Anything, mock.Anything).Return(result, nil)
 
 	return mockDockerSvc
 }

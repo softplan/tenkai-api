@@ -1,14 +1,14 @@
 package handlers
 
 import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/configs"
 	"github.com/softplan/tenkai-api/pkg/util"
 	"github.com/stretchr/testify/assert"
-	"net/http"
-	"net/http/httptest"
-	"sync"
-	"testing"
 )
 
 func checkTestingFatalError(t *testing.T, err error) {
@@ -30,7 +30,6 @@ func GetAppContext() *AppContext {
 	}
 
 	appContext := &AppContext{Configuration: &config}
-	appContext.DockerTagsCache = sync.Map{}
 	return appContext
 }
 

@@ -1,6 +1,10 @@
 package main
 
 import (
+	"log"
+	"os"
+	"sync"
+
 	audit2 "github.com/softplan/tenkai-api/pkg/audit"
 	"github.com/softplan/tenkai-api/pkg/configs"
 	"github.com/softplan/tenkai-api/pkg/dbms"
@@ -9,10 +13,6 @@ import (
 	"github.com/softplan/tenkai-api/pkg/handlers"
 	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"github.com/softplan/tenkai-api/pkg/service/core"
-	dockerapi "github.com/softplan/tenkai-api/pkg/service/docker"
-	"log"
-	"os"
-	"sync"
 )
 
 const (
@@ -58,15 +58,11 @@ func initializeHelm(appContext *handlers.AppContext) {
 }
 
 func initCache(appContext *handlers.AppContext) {
-	appContext.DockerTagsCache = sync.Map{}
 	appContext.ChartImageCache = sync.Map{}
 }
 
 func initAPIs(appContext *handlers.AppContext) {
-
-	appContext.DockerServiceAPI = dockerapi.DockerServiceBuilder()
 	appContext.HelmServiceAPI = helmapi.HelmServiceBuilder()
-
 	appContext.Auditing = audit2.AuditingBuilder()
 	appContext.ConventionInterface = &core.ConventionImpl{}
 }
@@ -74,7 +70,6 @@ func initAPIs(appContext *handlers.AppContext) {
 func initRepository(database *dbms.Database) handlers.Repositories {
 	repositories := handlers.Repositories{}
 	repositories.ConfigDAO = &repository.ConfigDAOImpl{Db: database.Db}
-	repositories.DockerDAO = &repository.DockerDAOImpl{Db: database.Db}
 	repositories.EnvironmentDAO = &repository.EnvironmentDAOImpl{Db: database.Db}
 	repositories.ProductDAO = &repository.ProductDAOImpl{Db: database.Db}
 	repositories.SolutionDAO = &repository.SolutionDAOImpl{Db: database.Db}

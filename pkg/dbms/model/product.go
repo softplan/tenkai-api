@@ -46,3 +46,20 @@ type ProductVersionRequestReponse struct {
 type ProductVersionServiceRequestReponse struct {
 	List []ProductVersionService `json:"list"`
 }
+
+//ListDockerTagsRequest structure
+type ListDockerTagsRequest struct {
+	ImageName string `json:"imageName"`
+	From      string `json:"from"`
+}
+
+//ListDockerTagsResult structure
+type ListDockerTagsResult struct {
+	TagResponse []TagResponse `json:"tags"`
+}
+
+//TagResponse Structure
+type TagResponse struct {
+	Created time.Time `json:"created"`
+	Tag     string    `json:"tag"`
+}

@@ -25,9 +25,10 @@ type Dbms struct {
 
 //App struct
 type App struct {
-	Passkey string
-	Dbms    Dbms
-	Elastic Elastic
+	Passkey      string
+	Dbms         Dbms
+	Elastic      Elastic
+	DockerAPIURL string
 }
 
 //Elastic Config Structure

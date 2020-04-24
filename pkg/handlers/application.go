@@ -3,6 +3,11 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
+	"strings"
+	"sync"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 	"github.com/olivere/elastic"
@@ -14,17 +19,11 @@ import (
 	"github.com/softplan/tenkai-api/pkg/global"
 	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"github.com/softplan/tenkai-api/pkg/service/core"
-	dockerapi "github.com/softplan/tenkai-api/pkg/service/docker"
-	"log"
-	"net/http"
-	"strings"
-	"sync"
 )
 
 //Repositories  Repositories
 type Repositories struct {
 	ConfigDAO              repository.ConfigDAOInterface
-	DockerDAO              repository.DockerDAOInterface
 	EnvironmentDAO         repository.EnvironmentDAOInterface
 	ProductDAO             repository.ProductDAOInterface
 	SolutionDAO            repository.SolutionDAOInterface
@@ -41,7 +40,6 @@ type Repositories struct {
 //AppContext AppContext
 type AppContext struct {
 	ConventionInterface core.ConventionInterface
-	DockerServiceAPI    dockerapi.DockerServiceInterface
 	HelmServiceAPI      helmapi.HelmServiceInterface
 	Auditing            audit.AuditingInterface
 	K8sConfigPath       string
@@ -51,7 +49,6 @@ type AppContext struct {
 	Elk                 *elastic.Client
 	Mutex               sync.Mutex
 	ChartImageCache     sync.Map
-	DockerTagsCache     sync.Map
 	ConfigMapCache      sync.Map
 }
 
@@ -123,10 +120,6 @@ func defineRotes(r *mux.Router, appContext *AppContext) {
 	r.HandleFunc("/productVersionServices/edit", appContext.editProductVersionService).Methods("POST")
 	r.HandleFunc("/productVersionServices/{id}", appContext.deleteProductVersionService).Methods("DELETE")
 
-	r.HandleFunc("/dockerRepo", appContext.listDockerRepositories).Methods("GET")
-	r.HandleFunc("/dockerRepo", appContext.newDockerRepository).Methods("POST")
-	r.HandleFunc("/dockerRepo/{id}", appContext.deleteDockerRepository).Methods("DELETE")
-
 	r.HandleFunc("/solutionCharts", appContext.listSolutionCharts).Methods("GET")
 	r.HandleFunc("/solutionCharts", appContext.newSolutionChart).Methods("POST")
 	r.HandleFunc("/solutionCharts/{id}", appContext.deleteSolutionChart).Methods("DELETE")
@@ -145,8 +138,6 @@ func defineRotes(r *mux.Router, appContext *AppContext) {
 	r.HandleFunc("/users/{id}", appContext.deleteUser).Methods("DELETE")
 
 	r.HandleFunc("/promote", appContext.promote).Methods("GET")
-
-	r.HandleFunc("/listDockerTags", appContext.listDockerTags).Methods("POST")
 
 	r.HandleFunc("/permissions/users/{userId}/environments/{environmentId}",
 		appContext.newEnvironmentPermission).Methods("GET")

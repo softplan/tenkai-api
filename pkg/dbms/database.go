@@ -38,7 +38,6 @@ func (database *Database) Connect(dbmsURI string, local bool) {
 	database.Db.AutoMigrate(&model2.SolutionChart{}) //.AddForeignKey("solution_id", "solution(id)", "CASCADE", "RESTRICT")
 	database.Db.AutoMigrate(&model2.User{})
 	database.Db.AutoMigrate(&model2.ConfigMap{})
-	database.Db.AutoMigrate(&model2.DockerRepo{})
 	database.Db.AutoMigrate(&model2.Product{})
 	database.Db.AutoMigrate(&model2.ProductVersion{})
 	database.Db.AutoMigrate(&model2.ProductVersionService{})
