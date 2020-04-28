@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -11,7 +12,7 @@ import (
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
 	mockSvc "github.com/softplan/tenkai-api/pkg/service/_helm/mocks"
-	"github.com/softplan/tenkai-docker-api/pkg/service/docker/mocks"
+	mockHTTP "github.com/softplan/tenkai-api/pkg/service/httpsvc/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -689,7 +690,8 @@ func TestListProductVersionServices(t *testing.T) {
 
 	appContext.ChartImageCache.Store("repo/my-chart", "myrepo.com/my-chart")
 
-	mockDockerSvc := mockGetDockerTagsWithDate(&appContext, getTagResponse("19.0.2-0"))
+	tagResp := getTagResponse("19.0.2-0")
+	mockHTTPSvc := mockHTTPSvcPost(&appContext, tagResp)
 
 	req, err := http.NewRequest("GET", "/productVersionServices/?productVersionId=999", nil)
 	assert.NoError(t, err)
@@ -701,7 +703,7 @@ func TestListProductVersionServices(t *testing.T) {
 
 	mockProductDAO.AssertNumberOfCalls(t, "ListProductsVersionServices", 1)
 	mockHelmSvc.AssertNumberOfCalls(t, "SearchCharts", 1)
-	mockDockerSvc.AssertNumberOfCalls(t, "GetDockerTagsWithDate", 1)
+	mockHTTPSvc.AssertNumberOfCalls(t, "Post", 1)
 
 	assert.Equal(t, http.StatusOK, rr.Code, "Response should be Ok.")
 
@@ -1130,7 +1132,7 @@ func TestVerifyNewVersion(t *testing.T) {
 
 	appContext.ChartImageCache.Store("repo/my-chart - 0.1.0", "myrepo.com/my-chart")
 
-	mockDockerSvc := mockGetDockerTagsWithDate(&appContext, getTagResponse("19.0.2-0"))
+	mockHTTPSvc := mockHTTPSvcPost(&appContext, getTagResponse("19.0.2-0"))
 
 	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "19.0.1-0")
 	assert.NoError(t, err)
@@ -1138,7 +1140,7 @@ func TestVerifyNewVersion(t *testing.T) {
 
 	assert.Equal(t, "19.0.2-0", version)
 
-	mockDockerSvc.AssertNumberOfCalls(t, "GetDockerTagsWithDate", 1)
+	mockHTTPSvc.AssertNumberOfCalls(t, "Post", 1)
 }
 
 func TestVerifyNewVersion_NotOk(t *testing.T) {
@@ -1146,7 +1148,7 @@ func TestVerifyNewVersion_NotOk(t *testing.T) {
 
 	appContext.ChartImageCache.Store("foo", "bar")
 
-	mockDockerSvc := mockGetDockerTagsWithDate(&appContext, getTagResponse("19.0.2-0"))
+	mockHTTPSvc := mockHTTPSvcPost(&appContext, getTagResponse("19.0.2-0"))
 	mockHelmSvc := &mockSvc.HelmServiceInterface{}
 	appContext.HelmServiceAPI = mockHelmSvc
 
@@ -1159,7 +1161,7 @@ func TestVerifyNewVersion_NotOk(t *testing.T) {
 
 	assert.Equal(t, "19.0.2-0", version)
 
-	mockDockerSvc.AssertNumberOfCalls(t, "GetDockerTagsWithDate", 1)
+	mockHTTPSvc.AssertNumberOfCalls(t, "Post", 1)
 }
 
 func TestVerifyNewVersion_NotOk_Error(t *testing.T) {
@@ -1198,19 +1200,16 @@ func TestVerifyNewVersion_NotOk_UnmarshalError(t *testing.T) {
 
 func TestVerifyNewVersion_GetDockerTagsWithDateError(t *testing.T) {
 	appContext := AppContext{}
-
 	appContext.ChartImageCache.Store("repo/my-chart - 0.1.0", "myrepo.com/my-chart")
 
-	mockDockerSvc := &mocks.DockerServiceInterface{}
-	mockDockerSvc.On("GetDockerTagsWithDate", mock.Anything, mock.Anything, mock.Anything).
-		Return(nil, errors.New("some error"))
+	mockHTTPSvc := mockHTTPSvcPostError(&appContext)
 
 	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "19.0.1-0")
 	assert.Error(t, err)
 	assert.NotNil(t, version)
 	assert.Equal(t, "", version)
 
-	mockDockerSvc.AssertNumberOfCalls(t, "GetDockerTagsWithDate", 1)
+	mockHTTPSvc.AssertNumberOfCalls(t, "Post", 1)
 }
 
 func TestVerifyNewVersion_NoNewVersion(t *testing.T) {
@@ -1218,7 +1217,7 @@ func TestVerifyNewVersion_NoNewVersion(t *testing.T) {
 
 	appContext.ChartImageCache.Store("repo/my-chart - 0.1.0", "myrepo.com/my-chart")
 
-	mockDockerSvc := mockGetDockerTagsWithDate(&appContext, getTagResponse("19.0.1-0"))
+	mockHTTPSvc := mockHTTPSvcPost(&appContext, getTagResponse("19.0.1-0"))
 
 	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "19.0.1-0")
 	assert.NoError(t, err)
@@ -1226,7 +1225,7 @@ func TestVerifyNewVersion_NoNewVersion(t *testing.T) {
 
 	assert.Equal(t, "", version)
 
-	mockDockerSvc.AssertNumberOfCalls(t, "GetDockerTagsWithDate", 1)
+	mockHTTPSvc.AssertNumberOfCalls(t, "Post", 1)
 }
 
 func TestValidateVersion_Valid1(t *testing.T) {
@@ -1313,11 +1312,31 @@ func TestValidateVersion_Invalid9(t *testing.T) {
 	assert.False(t, valid)
 }
 
-func mockGetDockerTagsWithDate(appContext *AppContext, result *model.ListDockerTagsResult) *mocks.DockerServiceInterface {
-	mockDockerSvc := &mocks.DockerServiceInterface{}
-	mockDockerSvc.On("getDockerTagsWithDate", mock.Anything, mock.Anything, mock.Anything).Return(result, nil)
+func mockHTTPSvcPost(appContext *AppContext, result *model.ListDockerTagsResult) *mockHTTP.HTTPServiceInterface {
+	mockConfigAppDockerAPIURL(appContext)
 
-	return mockDockerSvc
+	mockHTTPSvc := &mockHTTP.HTTPServiceInterface{}
+
+	r, _ := json.Marshal(result)
+
+	mockHTTPSvc.On("Post", mock.Anything, mock.Anything).Return(r, nil)
+
+	appContext.HTTPServiceAPI = mockHTTPSvc
+	return mockHTTPSvc
+}
+
+func mockHTTPSvcPostError(appContext *AppContext) *mockHTTP.HTTPServiceInterface {
+	mockConfigAppDockerAPIURL(appContext)
+
+	mockHTTPSvc := &mockHTTP.HTTPServiceInterface{}
+
+	result := &model.ListDockerTagsResult{}
+	r, _ := json.Marshal(result)
+
+	mockHTTPSvc.On("Post", mock.Anything, mock.Anything).Return(r, errors.New("some error"))
+
+	appContext.HTTPServiceAPI = mockHTTPSvc
+	return mockHTTPSvc
 }
 
 func getTagResponse(tag string) *model.ListDockerTagsResult {
