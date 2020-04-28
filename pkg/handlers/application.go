@@ -19,6 +19,7 @@ import (
 	"github.com/softplan/tenkai-api/pkg/global"
 	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"github.com/softplan/tenkai-api/pkg/service/core"
+	"github.com/softplan/tenkai-api/pkg/service/httpsvc"
 )
 
 //Repositories  Repositories
@@ -39,6 +40,7 @@ type Repositories struct {
 
 //AppContext AppContext
 type AppContext struct {
+	HTTPServiceAPI      httpsvc.HTTPServiceInterface
 	ConventionInterface core.ConventionInterface
 	HelmServiceAPI      helmapi.HelmServiceInterface
 	Auditing            audit.AuditingInterface

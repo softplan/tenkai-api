@@ -13,6 +13,7 @@ import (
 	"github.com/softplan/tenkai-api/pkg/handlers"
 	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"github.com/softplan/tenkai-api/pkg/service/core"
+	"github.com/softplan/tenkai-api/pkg/service/httpsvc"
 )
 
 const (
@@ -65,6 +66,7 @@ func initAPIs(appContext *handlers.AppContext) {
 	appContext.HelmServiceAPI = helmapi.HelmServiceBuilder()
 	appContext.Auditing = audit2.AuditingBuilder()
 	appContext.ConventionInterface = &core.ConventionImpl{}
+	appContext.HTTPServiceAPI = httpsvc.HTTPServiceBuilder()
 }
 
 func initRepository(database *dbms.Database) handlers.Repositories {

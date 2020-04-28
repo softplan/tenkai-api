@@ -455,13 +455,16 @@ func (appContext *AppContext) getDockerTagsWithDate(p model.ListDockerTagsReques
 	url := fmt.Sprintf("%s/listDockerTags", appContext.Configuration.App.DockerAPIURL)
 	m, _ := json.Marshal(p)
 
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(m))
+	body, err := appContext.HTTPServiceAPI.Post(url, bytes.NewBuffer(m))
 	if err != nil {
 		return result, err
 	}
 
-	defer resp.Body.Close()
-	json.NewDecoder(resp.Body).Decode(&result)
+	d := json.NewDecoder(bytes.NewReader(body))
+	err = d.Decode(&result)
+	if err != nil {
+		return result, err
+	}
 	return result, nil
 }
 

@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	mockAud "github.com/softplan/tenkai-api/pkg/audit/mocks"
+	"github.com/softplan/tenkai-api/pkg/configs"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
 	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
@@ -434,4 +435,14 @@ func mockUserEnvRole() model.UserEnvironmentRole {
 	u.EnvironmentID = 888
 	u.SecurityOperationID = 777
 	return u
+}
+
+func mockConfigAppDockerAPIURL(appContext *AppContext) {
+	config := configs.Configuration{
+		App: configs.App{
+			DockerAPIURL: "http://localhost:8081",
+		},
+	}
+
+	appContext.Configuration = &config
 }
