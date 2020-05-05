@@ -2,11 +2,12 @@ package repository
 
 import (
 	"errors"
+	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/jinzhu/gorm"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestEditVariable(t *testing.T) {
@@ -392,6 +393,31 @@ func TestGetAllVariablesByEnvironmentAndScopeWithoutContext_Error(t *testing.T) 
 	variables, err := dao.GetAllVariablesByEnvironmentAndScope(999, "alfa")
 	assert.Error(t, err)
 	assert.Nil(t, variables)
+
+	mock.ExpectationsWereMet()
+
+}
+
+func TestGetVarImageTagByEnvAndScope(t *testing.T) {
+
+	db, mock, err := sqlmock.New()
+	assert.Nil(t, err)
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	dao := VariableDAOImpl{}
+	dao.Db = gormDB
+
+	mock.MatchExpectationsInOrder(false)
+	rows1 := sqlmock.NewRows([]string{"id", "scope", "name", "value", "description", "environment_id", "secret"}).
+		AddRow(888, "repo/my-chart", "env-name", "env-value", "description_value", 999, false)
+
+	mock.ExpectQuery(`SELECT (.*) FROM "variables" WHERE (.*)`).WithArgs(999, "repo/my-chart").
+		WillReturnRows(rows1)
+
+	variable, err := dao.GetVarImageTagByEnvAndScope(999, "repo/my-chart")
+	assert.Nil(t, err)
+	assert.NotNil(t, variable)
 
 	mock.ExpectationsWereMet()
 

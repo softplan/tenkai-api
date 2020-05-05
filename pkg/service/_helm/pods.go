@@ -30,11 +30,12 @@ func (svc HelmServiceImpl) GetPods(kubeconfig string, namespace string) ([]model
 	}
 	opts := &metav1.ListOptions{}
 	list, err := client.CoreV1().Pods(namespace).List(*opts)
+	if err != nil {
+		return pods, err
+	}
 	var pod *model.Pod
 	for _, element := range list.Items {
-
 		pod = fillPod(element)
-
 		pods = append(pods, *pod)
 	}
 	return pods, nil

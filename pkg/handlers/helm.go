@@ -245,14 +245,13 @@ func (appContext *AppContext) hasConfigMap(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	result, err := appContext.HelmServiceAPI.GetTemplate(&appContext.Mutex, payload.ChartName, payload.ChartVersion, "deployment")
+	hasConfigMap, err := appContext.hasConfigMapCached(payload.ChartName, payload.ChartVersion)
 
 	w.WriteHeader(http.StatusOK)
 	if err != nil {
 		w.Write([]byte("{\"result\":\"false\"}"))
 	} else {
-		deployment := string(result)
-		if strings.Index(deployment, "gcm") > 0 {
+		if hasConfigMap {
 			w.Write([]byte("{\"result\":\"true\"}"))
 		} else {
 			w.Write([]byte("{\"result\":\"false\"}"))
@@ -326,6 +325,54 @@ func (appContext *AppContext) getHelmCommand(w http.ResponseWriter, r *http.Requ
 
 }
 
+func (appContext *AppContext) hasConfigMapCached(chart string, version string) (bool, error) {
+	cmKey := chart + version
+	cachedValue, ok := appContext.ConfigMapCache.Load(cmKey)
+	var hasConfigMap bool
+	if ok {
+		hasConfigMap = cachedValue.(bool)
+	} else if !ok || cachedValue == "" {
+		result, err := appContext.HelmServiceAPI.GetTemplate(&appContext.Mutex, chart, version, "deployment")
+		if err != nil {
+			return false, err
+		}
+
+		deployment := string(result)
+		hasConfigMap = strings.Index(deployment, "gcm") > 0
+
+		appContext.ConfigMapCache.Store(cmKey, hasConfigMap)
+	}
+	return hasConfigMap, nil
+}
+
+func (appContext *AppContext) loadConfigMap(deployables []model.InstallPayload) ([]model.InstallPayload, error) {
+	configMaps := make([]model.InstallPayload, 0)
+
+	var config model.ConfigMap
+	var err error
+	if config, err = appContext.Repositories.ConfigDAO.GetConfigByName("commonValuesConfigMapChart"); err != nil {
+		return configMaps, err
+	}
+
+	for _, d := range deployables {
+		configMaps = append(configMaps, d)
+		hasConfigMap, err := appContext.hasConfigMapCached(d.Chart, d.ChartVersion)
+		if err != nil {
+			return deployables, err
+		}
+
+		if hasConfigMap {
+			var ip model.InstallPayload
+			ip.Name = d.Name + "-gcm"
+			ip.Chart = config.Value
+			ip.EnvironmentID = d.EnvironmentID
+
+			configMaps = append(configMaps, ip)
+		}
+	}
+	return configMaps, nil
+}
+
 func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Request) {
 
 	isAdmin := false
@@ -341,6 +388,13 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 		http.Error(w, err.Error(), 501)
 		return
 	}
+
+	configMaps, err := appContext.loadConfigMap(payload.Deployables)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	payload.Deployables = configMaps
 
 	out := &bytes.Buffer{}
 
@@ -365,6 +419,12 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 	}
 
 	for _, element := range payload.Deployables {
+		if err = appContext.updateImageTagBeforeInstallProduct(payload.ProductVersionID,
+			int(environment.ID), element.Chart); err != nil {
+
+			http.Error(w, err.Error(), 500)
+			return
+		}
 
 		_, err = appContext.simpleInstall(environment, element, out, false, false)
 		if err != nil {
@@ -396,6 +456,28 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 
 	w.WriteHeader(http.StatusOK)
 
+}
+
+func (appContext *AppContext) updateImageTagBeforeInstallProduct(productVersionID int, envID int, chart string) error {
+	if productVersionID > 0 {
+		pvs, err := appContext.Repositories.ProductDAO.ListProductsVersionServices(productVersionID)
+		if err != nil {
+			return err
+		}
+		varImgTag, _ := appContext.Repositories.VariableDAO.GetVarImageTagByEnvAndScope(envID, chart)
+		if varImgTag.ID > 0 {
+			for _, pvsvc := range pvs {
+				if varImgTag.Scope == strings.Split(pvsvc.ServiceName, " - ")[0] {
+					varImgTag.Value = pvsvc.DockerImageTag
+					if err := appContext.Repositories.VariableDAO.EditVariable(varImgTag); err != nil {
+						return err
+					}
+				}
+			}
+		}
+
+	}
+	return nil
 }
 
 func (appContext *AppContext) install(w http.ResponseWriter, r *http.Request) {
