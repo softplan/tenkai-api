@@ -287,10 +287,13 @@ func createEnvironmentFile(clusterName string, clusterUserToken string,
 	ca = strings.TrimSuffix(ca, "\n")
 	caBase64 := base64.StdEncoding.EncodeToString([]byte(ca))
 
-	startIndex := strings.Index(clusterUserToken, "kubeconfig-") + 11
-	endIndex := strings.Index(clusterUserToken, ":")
-
-	clusterUser := clusterUserToken[startIndex:endIndex]
+	startIndex := strings.Index(clusterUserToken, "kubeconfig-")
+	clusterUser := "xpto"
+	if startIndex > 0 {
+		startIndex = startIndex + 11
+		endIndex := strings.Index(clusterUserToken, ":")
+		clusterUser = clusterUserToken[startIndex:endIndex]
+	}
 
 	file.WriteString("apiVersion: v1\n")
 	file.WriteString("clusters:\n")

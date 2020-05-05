@@ -182,3 +182,24 @@ func (_m *VariableDAOInterface) GetByID(id uint) (*model.Variable, error) {
 
 	return r0, r1
 }
+
+// GetVarImageTagByEnvAndScope provides a mock function with given fields: envID, scope
+func (_m *VariableDAOInterface) GetVarImageTagByEnvAndScope(envID int, scope string) (model.Variable, error) {
+	ret := _m.Called(envID, scope)
+
+	var r0 model.Variable
+	if rf, ok := ret.Get(0).(func(int, string) model.Variable); ok {
+		r0 = rf(envID, scope)
+	} else {
+		r0 = ret.Get(0).(model.Variable)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(int, string) error); ok {
+		r1 = rf(envID, scope)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}

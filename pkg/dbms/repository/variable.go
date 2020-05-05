@@ -1,9 +1,10 @@
 package repository
 
 import (
+	"strings"
+
 	"github.com/jinzhu/gorm"
 	model2 "github.com/softplan/tenkai-api/pkg/dbms/model"
-	"strings"
 )
 
 //VariableDAOInterface VariableDAOInterface
@@ -16,6 +17,7 @@ type VariableDAOInterface interface {
 	DeleteVariable(id int) error
 	DeleteVariableByEnvironmentID(envID int) error
 	GetByID(id uint) (*model2.Variable, error)
+	GetVarImageTagByEnvAndScope(envID int, scope string) (model2.Variable, error)
 }
 
 //VariableDAOImpl VariableDAOImpl
@@ -132,6 +134,18 @@ func (dao VariableDAOImpl) GetAllVariablesByEnvironmentAndScope(envID int, scope
 	}
 
 	return variables, nil
+}
+
+// GetVarImageTagByEnvAndScope - Retrieve image tag variable of a specific environment and scope
+func (dao VariableDAOImpl) GetVarImageTagByEnvAndScope(envID int, scope string) (model2.Variable, error) {
+	var variable model2.Variable
+
+	condition := "environment_id = ? AND scope = ? AND name = 'image.tag'"
+	if err := dao.Db.Where(condition, envID, scope).First(&variable).Error; err != nil {
+		return variable, err
+	}
+
+	return variable, nil
 }
 
 //DeleteVariable - Delete environment

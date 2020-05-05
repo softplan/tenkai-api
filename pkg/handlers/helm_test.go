@@ -504,9 +504,9 @@ func TestHasConfigMap(t *testing.T) {
 
 	mockHelmSvc := &mockSvc.HelmServiceInterface{}
 
-	partialDeploymentYaml := "...name: {{ template \"foo.name\" . }}-gcm-{{ .Release.Namespace }}..."
+	partialDeploymentYaml := "...name: {{ template \"my-chart.name\" . }}-gcm-{{ .Release.Namespace }}..."
 	result := []byte(partialDeploymentYaml)
-	mockHelmSvc.On("GetTemplate", mock.Anything, "foo", "0.1.0", "deployment").Return(result, nil)
+	mockHelmSvc.On("GetTemplate", mock.Anything, "repo/my-chart", "0.1.0", "deployment").Return(result, nil)
 
 	appContext := AppContext{}
 	appContext.HelmServiceAPI = mockHelmSvc
@@ -594,10 +594,10 @@ func TestGetHelmCommand(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Code, "Response should be Ok.")
 
 	response := string(rr.Body.Bytes())
-	assert.Contains(t, response, "helm upgrade --install my-foo-dev")
+	assert.Contains(t, response, "helm upgrade --install my-chart-dev")
 	assert.Contains(t, response, "--set \"app.username=user")
 	assert.Contains(t, response, "istio.virtualservices.gateways[0]=my-gateway.istio-system.svc.cluster.local")
-	assert.Contains(t, response, "foo --namespace=dev")
+	assert.Contains(t, response, "repo/my-chart - 0.1.0 --namespace=dev")
 }
 
 func TestGetHelmCommand_UnmarshalPayloadError(t *testing.T) {
@@ -634,11 +634,24 @@ func TestMultipleInstall(t *testing.T) {
 	charts := getCharts()
 
 	appContext := AppContext{}
+
+	mockConfigDAO := &mockRepo.ConfigDAOInterface{}
+
+	var config model.ConfigMap
+	config.Name = "mykey"
+	config.Value = "myvalue"
+	mockConfigDAO.On("GetConfigByName", "commonValuesConfigMapChart").
+		Return(config, nil)
+
 	mockEnvDao := mockGetByID(&appContext)
 	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
 	mockConvention := mockConventionInterface(&appContext)
 	mockHelmSvc := mockUpgrade(&appContext)
 	mockHelmSvc.On("SearchCharts", mock.Anything, false).Return(charts)
+
+	result := []byte("it doesn't have a config map")
+	mockHelmSvc.On("GetTemplate", mock.Anything, mock.Anything, mock.Anything,
+		mock.Anything).Return(result, nil)
 
 	user := mockUser()
 	mockUserDAO := &mockRepo.UserDAOInterface{}
@@ -655,14 +668,31 @@ func TestMultipleInstall(t *testing.T) {
 	mockProductDAO := &mockRepo.ProductDAOInterface{}
 	mockProductDAO.On("ListProductVersionsByID", mock.Anything).Return(&p, nil)
 
+	pvs := make([]model.ProductVersionService, 0)
+	pvs = append(pvs, getProductVersionSvcParams(999, "repo/my-chart - 0.1.0", 777, p.Version))
+	mockProductDAO.On("ListProductsVersionServices", int(p.ID)).Return(pvs, nil)
+
+	var varImgTag model.Variable
+	varImgTag.Scope = "repo/my-chart"
+	varImgTag.Name = "image.tag"
+	varImgTag.Value = "18.0.1-0"
+	varImgTag.EnvironmentID = 999
+
+	mockVariableDAO.On("GetVarImageTagByEnvAndScope", 999, "repo/my-chart - 0.1.0").
+		Return(varImgTag, nil)
+
+	mockVariableDAO.On("EditVariable", mock.Anything).Return(nil)
+
 	appContext.Repositories.ProductDAO = mockProductDAO
 	appContext.Repositories.UserDAO = mockUserDAO
 	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
+	appContext.Repositories.ConfigDAO = mockConfigDAO
+	appContext.HelmServiceAPI = mockHelmSvc
 
 	auditValues := make(map[string]string)
 	auditValues["environment"] = "bar"
-	auditValues["chartName"] = "foo"
-	auditValues["name"] = "my-foo"
+	auditValues["chartName"] = "repo/my-chart - 0.1.0"
+	auditValues["name"] = "my-chart"
 	mockAudit := mockDoAudit(&appContext, "deploy", auditValues)
 
 	mockEnvDao.On("EditEnvironment", mock.Anything).Return(nil)
@@ -676,6 +706,9 @@ func TestMultipleInstall(t *testing.T) {
 	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironmentAndScope", 2)
 	mockHelmSvc.AssertNumberOfCalls(t, "Upgrade", 1)
 	mockAudit.AssertNumberOfCalls(t, "DoAudit", 1)
+
+	mockProductDAO.AssertNumberOfCalls(t, "ListProductsVersionServices", 1)
+	mockVariableDAO.AssertNumberOfCalls(t, "GetVarImageTagByEnvAndScope", 1)
 
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 }
@@ -822,9 +855,9 @@ func mockHelmSvcWithLotOfThings(appContext *AppContext) *mockSvc.HelmServiceInte
 func getMultipleInstallPayload() *bytes.Buffer {
 	var ip model.InstallPayload
 	ip.EnvironmentID = 999
-	ip.Chart = "foo"
+	ip.Chart = "repo/my-chart - 0.1.0"
 	ip.ChartVersion = "0.1.0"
-	ip.Name = "my-foo"
+	ip.Name = "my-chart"
 
 	var payload model.MultipleInstallPayload
 	payload.EnvironmentID = 999
@@ -836,7 +869,7 @@ func getMultipleInstallPayload() *bytes.Buffer {
 
 func getPayloadChartRequest() *bytes.Buffer {
 	var p model.GetChartRequest
-	p.ChartName = "foo"
+	p.ChartName = "repo/my-chart"
 	p.ChartVersion = "0.1.0"
 	pStr, _ := json.Marshal(p)
 	return bytes.NewBuffer(pStr)

@@ -299,6 +299,10 @@ func getProductVersionWithoutID(copyRelease bool) model.ProductVersion {
 }
 
 func getProductVersionSvc() model.ProductVersionService {
+	return getProductVersionSvcParams(888, "repo/my-chart - 0.1.0", 999, "19.0.1-0")
+}
+
+func getProductVersionSvcParams(id int, svcName string, productID int, tag string) model.ProductVersionService {
 	var pvs model.ProductVersionService
 	pvs.ID = 888
 	pvs.ServiceName = "repo/my-chart - 0.1.0"
