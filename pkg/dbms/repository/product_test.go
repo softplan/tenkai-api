@@ -2,12 +2,13 @@ package repository
 
 import (
 	"errors"
+	"testing"
+	"time"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/jinzhu/gorm"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func getProductVersion() *model.ProductVersion {
@@ -19,7 +20,7 @@ func getProductVersion() *model.ProductVersion {
 	item.ProductID = 1
 	item.Date = now
 	item.Version = "1.0"
-	item.CopyLatestRelease = true
+	item.BaseRelease = -1
 	item.Locked = false
 	return &item
 }
@@ -449,95 +450,6 @@ func TestListProductsVersionServices_Error(t *testing.T) {
 		WillReturnError(errors.New("mock error"))
 
 	_, err = produtDAO.ListProductsVersionServices(999)
-	assert.Error(t, err)
-
-	mock.ExpectationsWereMet()
-}
-
-func TestListProductVersionServicesLatest(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	mock.MatchExpectationsInOrder(false)
-	assert.Nil(t, err)
-
-	gormDB, err := gorm.Open("postgres", db)
-	defer gormDB.Close()
-
-	produtDAO := ProductDAOImpl{}
-	produtDAO.Db = gormDB
-
-	productID := 999
-	productVersionID := 777
-
-	rows1 := sqlmock.NewRows([]string{"id", "product_id", "version"}).AddRow(productVersionID, productID, "19.0.1-0")
-
-	mock.ExpectQuery(`SELECT (.+) FROM "product_versions"`).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg()).
-		WillReturnRows(rows1)
-
-	rows2 := sqlmock.NewRows([]string{"id", "product_version_id", "service_name", "docker_image_tag", "latest_version", "chart_latest_version"}).
-		AddRow(1, productVersionID, "alfa", "latest", "alfa", "latest")
-
-	mock.ExpectQuery(`SELECT (.+) FROM "product_version_services"`).
-		WithArgs(productVersionID).
-		WillReturnRows(rows2)
-
-	result, err := produtDAO.ListProductVersionServicesLatest(productID, productVersionID)
-	assert.Nil(t, err)
-	assert.NotNil(t, result)
-
-	mock.ExpectationsWereMet()
-}
-
-func TestListProductVersionServicesLatest_ErrorNotFound(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	mock.MatchExpectationsInOrder(false)
-	assert.Nil(t, err)
-
-	gormDB, err := gorm.Open("postgres", db)
-	defer gormDB.Close()
-
-	produtDAO := ProductDAOImpl{}
-	produtDAO.Db = gormDB
-
-	productID := 999
-	productVersionID := 777
-
-	mock.ExpectQuery(`SELECT (.+) FROM "product_versions"`).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg()).
-		WillReturnError(gorm.ErrRecordNotFound)
-
-	result, err := produtDAO.ListProductVersionServicesLatest(productID, productVersionID)
-	assert.Nil(t, err)
-	assert.Empty(t, result)
-
-	mock.ExpectationsWereMet()
-}
-
-func TestListProductVersionServicesLatest_Error(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	mock.MatchExpectationsInOrder(false)
-	assert.Nil(t, err)
-
-	gormDB, err := gorm.Open("postgres", db)
-	defer gormDB.Close()
-
-	produtDAO := ProductDAOImpl{}
-	produtDAO.Db = gormDB
-
-	productID := 999
-	productVersionID := 777
-
-	rows1 := sqlmock.NewRows([]string{"id", "product_id", "version"}).AddRow(productVersionID, productID, "19.0.1-0")
-
-	mock.ExpectQuery(`SELECT (.+) FROM "product_versions"`).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg()).
-		WillReturnRows(rows1)
-
-	mock.ExpectQuery(`SELECT (.+) FROM "product_version_services"`).
-		WithArgs(productVersionID).
-		WillReturnError(errors.New("mock error"))
-
-	_, err = produtDAO.ListProductVersionServicesLatest(productID, productVersionID)
 	assert.Error(t, err)
 
 	mock.ExpectationsWereMet()
