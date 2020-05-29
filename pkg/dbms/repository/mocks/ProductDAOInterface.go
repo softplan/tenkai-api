@@ -180,29 +180,6 @@ func (_m *ProductDAOInterface) EditProductVersionService(e model.ProductVersionS
 	return r0
 }
 
-// ListProductVersionServicesLatest provides a mock function with given fields: productID, productVersionID
-func (_m *ProductDAOInterface) ListProductVersionServicesLatest(productID int, productVersionID int) ([]model.ProductVersionService, error) {
-	ret := _m.Called(productID, productVersionID)
-
-	var r0 []model.ProductVersionService
-	if rf, ok := ret.Get(0).(func(int, int) []model.ProductVersionService); ok {
-		r0 = rf(productID, productVersionID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]model.ProductVersionService)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(int, int) error); ok {
-		r1 = rf(productID, productVersionID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // ListProductVersionsByID provides a mock function with given fields: id
 func (_m *ProductDAOInterface) ListProductVersionsByID(id int) (*model.ProductVersion, error) {
 	ret := _m.Called(id)

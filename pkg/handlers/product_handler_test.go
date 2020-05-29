@@ -237,7 +237,7 @@ func TestListProducts_Error(t *testing.T) {
 func TestNewProductVersion(t *testing.T) {
 	appContext := AppContext{}
 
-	pv := getProductVersionWithoutID(false)
+	pv := getProductVersionWithoutID(0)
 	mockProductDAO := &mockRepo.ProductDAOInterface{}
 	mockProductDAO.On("CreateProductVersionCopying", mock.Anything).Return(999, nil)
 	appContext.Repositories.ProductDAO = mockProductDAO
@@ -263,7 +263,7 @@ func TestNewProductVersion_UnmarshalPayloadError(t *testing.T) {
 func TestNewProductVersion_Error(t *testing.T) {
 	appContext := AppContext{}
 
-	pv := getProductVersionWithoutID(false)
+	pv := getProductVersionWithoutID(0)
 	mockProductDAO := &mockRepo.ProductDAOInterface{}
 	mockProductDAO.On("CreateProductVersionCopying", mock.Anything).Return(0, errors.New("Some error"))
 	appContext.Repositories.ProductDAO = mockProductDAO
@@ -278,6 +278,56 @@ func TestNewProductVersion_Error(t *testing.T) {
 
 	mockProductDAO.AssertNumberOfCalls(t, "CreateProductVersionCopying", 1)
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500")
+}
+
+func TestEditProductVersion(t *testing.T) {
+	appContext := AppContext{}
+
+	pv := getProductVersionWithoutID(0)
+	mockProductDAO := &mockRepo.ProductDAOInterface{}
+	mockProductDAO.On("EditProductVersion", mock.Anything).Return(nil)
+	appContext.Repositories.ProductDAO = mockProductDAO
+
+	req, err := http.NewRequest("POST", "/productVersions/edit", payload(pv))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.editProductVersion)
+	handler.ServeHTTP(rr, req)
+
+	mockProductDAO.AssertNumberOfCalls(t, "EditProductVersion", 1)
+	assert.Equal(t, http.StatusCreated, rr.Code, "Response should be Created")
+}
+
+func TestEditProductVersion_UnmarshalPayloadError(t *testing.T) {
+	appContext := AppContext{}
+	rr := testUnmarshalPayloadError(t, "/productVersions/edit",
+		appContext.editProductVersion)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code,
+		"Response should be 500.")
+}
+
+func TestEditProductVersion_Error(t *testing.T) {
+	appContext := AppContext{}
+
+	pv := getProductVersionWithoutID(0)
+	mockProductDAO := &mockRepo.ProductDAOInterface{}
+	mockProductDAO.On("EditProductVersion", mock.Anything).
+		Return(errors.New("Some error"))
+	appContext.Repositories.ProductDAO = mockProductDAO
+
+	req, err := http.NewRequest("POST", "/productVersions/edit", payload(pv))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.editProductVersion)
+	handler.ServeHTTP(rr, req)
+
+	mockProductDAO.AssertNumberOfCalls(t, "EditProductVersion", 1)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code,
+		"Response should be 500")
 }
 
 func TestDeleteProductVersion(t *testing.T) {
@@ -399,7 +449,7 @@ func TestListProductVersions(t *testing.T) {
 	response := string(rr.Body.Bytes())
 	assert.Contains(t, response, `{"list":[{"ID":777,`)
 	assert.Contains(t, response, `"version":"19.0.1-0",`)
-	assert.Contains(t, response, `"copyLatestRelease":false,`)
+	assert.Contains(t, response, `"baseRelease":0,`)
 	assert.Contains(t, response, `"locked":false}]}`)
 }
 
@@ -754,7 +804,7 @@ func TestNewProductVersionService(t *testing.T) {
 	pvs := getProductVersionSvc()
 	mockProductDAO := &mockRepo.ProductDAOInterface{}
 
-	pv := getProductVersionWithoutID(false)
+	pv := getProductVersionWithoutID(0)
 	pv.ID = 999
 	mockProductDAO.On("ListProductVersionsByID", 999).Return(&pv, nil)
 
@@ -808,7 +858,7 @@ func TestNewProductVersionService_Error2(t *testing.T) {
 	pvs := getProductVersionSvc()
 	mockProductDAO := &mockRepo.ProductDAOInterface{}
 
-	pv := getProductVersionWithoutID(false)
+	pv := getProductVersionWithoutID(0)
 	pv.ID = 999
 	pv.Locked = true
 	mockProductDAO.On("ListProductVersionsByID", 999).Return(&pv, nil)
@@ -833,7 +883,7 @@ func TestNewProductVersionService_Error3(t *testing.T) {
 
 	mockProductDAO := &mockRepo.ProductDAOInterface{}
 
-	pv := getProductVersionWithoutID(false)
+	pv := getProductVersionWithoutID(0)
 	pv.ID = 999
 	mockProductDAO.On("ListProductVersionsByID", 999).Return(&pv, nil)
 
@@ -860,7 +910,7 @@ func TestNewProductVersionService_Error4(t *testing.T) {
 	pvs := getProductVersionSvc()
 	mockProductDAO := &mockRepo.ProductDAOInterface{}
 
-	pv := getProductVersionWithoutID(false)
+	pv := getProductVersionWithoutID(0)
 	pv.ID = 999
 	pv.Version = "19.0.2-0"
 	mockProductDAO.On("ListProductVersionsByID", 999).Return(&pv, nil)
@@ -887,7 +937,7 @@ func TestEditProductVersionService(t *testing.T) {
 	mockProductDAO := &mockRepo.ProductDAOInterface{}
 	mockProductDAO.On("EditProductVersionService", pvs).Return(nil)
 
-	pv := getProductVersionWithoutID(false)
+	pv := getProductVersionWithoutID(0)
 	pv.ID = 999
 	mockProductDAO.On("ListProductVersionsByID", 999).Return(&pv, nil)
 
@@ -940,7 +990,7 @@ func TestEditProductVersionService_ProductVersionLocked(t *testing.T) {
 	mockProductDAO := &mockRepo.ProductDAOInterface{}
 	mockProductDAO.On("EditProductVersionService", pvs).Return(nil)
 
-	pv := getProductVersionWithoutID(false)
+	pv := getProductVersionWithoutID(0)
 	pv.ID = 999
 	pv.Locked = true
 	mockProductDAO.On("ListProductVersionsByID", 999).Return(&pv, nil)
@@ -966,7 +1016,7 @@ func TestEditProductVersionService_EditProductVersionServiceError(t *testing.T) 
 
 	mockProductDAO := &mockRepo.ProductDAOInterface{}
 
-	pv := getProductVersionWithoutID(false)
+	pv := getProductVersionWithoutID(0)
 	pv.ID = 999
 	mockProductDAO.On("ListProductVersionsByID", 999).Return(&pv, nil)
 
@@ -995,7 +1045,7 @@ func TestDeleteProductVersionService(t *testing.T) {
 	pvs := getProductVersionSvc()
 	mockProductDAO.On("ListProductVersionsServiceByID", 888).Return(&pvs, nil)
 
-	pv := getProductVersionWithoutID(false)
+	pv := getProductVersionWithoutID(0)
 	pv.ID = 999
 	mockProductDAO.On("ListProductVersionsByID", 999).Return(&pv, nil)
 
@@ -1074,7 +1124,7 @@ func TestDeleteProductVersionService_Error3(t *testing.T) {
 	pvs := getProductVersionSvc()
 	mockProductDAO.On("ListProductVersionsServiceByID", 888).Return(&pvs, nil)
 
-	pv := getProductVersionWithoutID(false)
+	pv := getProductVersionWithoutID(0)
 	pv.ID = 999
 	mockProductDAO.On("ListProductVersionsByID", 999).Return(&pv, nil)
 
@@ -1103,7 +1153,7 @@ func TestDeleteProductVersionService_Locked(t *testing.T) {
 	pvs := getProductVersionSvc()
 	mockProductDAO.On("ListProductVersionsServiceByID", 888).Return(&pvs, nil)
 
-	pv := getProductVersionWithoutID(false)
+	pv := getProductVersionWithoutID(0)
 	pv.ID = 999
 	pv.Locked = true
 	mockProductDAO.On("ListProductVersionsByID", 999).Return(&pv, nil)
