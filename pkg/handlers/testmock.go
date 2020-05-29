@@ -289,11 +289,11 @@ func getProductWithoutID() model.Product {
 	return payload
 }
 
-func getProductVersionWithoutID(copyRelease bool) model.ProductVersion {
+func getProductVersionWithoutID(baseRelease int) model.ProductVersion {
 	var p model.ProductVersion
 	p.Version = "19.0.1-0"
 	p.ProductID = 999
-	p.CopyLatestRelease = copyRelease
+	p.BaseRelease = baseRelease
 	p.Locked = false
 	return p
 }
@@ -318,7 +318,7 @@ func getProductVersionSvcReqResp() *model.ProductVersionServiceRequestReponse {
 }
 
 func getProductVersionReqResp() *model.ProductVersionRequestReponse {
-	pv := getProductVersionWithoutID(false)
+	pv := getProductVersionWithoutID(0)
 	pv.ID = 777
 	l := &model.ProductVersionRequestReponse{}
 	l.List = append(l.List, pv)

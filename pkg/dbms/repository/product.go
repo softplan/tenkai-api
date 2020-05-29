@@ -37,8 +37,8 @@ func (dao ProductDAOImpl) CreateProductVersionCopying(payload model2.ProductVers
 		return -1, err
 	}
 
-	if payload.CopyLatestRelease {
-		list, err := dao.ListProductVersionServicesLatest(payload.ProductID, id)
+	if payload.BaseRelease > 0 {
+		list, err := dao.ListProductsVersionServices(payload.BaseRelease)
 		if err != nil {
 			return -1, err
 		}

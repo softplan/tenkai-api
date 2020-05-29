@@ -2,12 +2,13 @@ package repository
 
 import (
 	"errors"
+	"testing"
+	"time"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/jinzhu/gorm"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func getProductVersion() *model.ProductVersion {
@@ -19,7 +20,7 @@ func getProductVersion() *model.ProductVersion {
 	item.ProductID = 1
 	item.Date = now
 	item.Version = "1.0"
-	item.CopyLatestRelease = true
+	item.BaseRelease = -1
 	item.Locked = false
 	return &item
 }

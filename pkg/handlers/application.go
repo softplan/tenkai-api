@@ -3,6 +3,11 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
+	"strings"
+	"sync"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 	"github.com/olivere/elastic"
@@ -15,10 +20,6 @@ import (
 	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"github.com/softplan/tenkai-api/pkg/service/core"
 	dockerapi "github.com/softplan/tenkai-api/pkg/service/docker"
-	"log"
-	"net/http"
-	"strings"
-	"sync"
 )
 
 //Repositories  Repositories
@@ -114,6 +115,7 @@ func defineRotes(r *mux.Router, appContext *AppContext) {
 
 	r.HandleFunc("/productVersions", appContext.listProductVersions).Methods("GET")
 	r.HandleFunc("/productVersions", appContext.newProductVersion).Methods("POST")
+	r.HandleFunc("/productVersions/edit", appContext.editProductVersion).Methods("POST")
 	r.HandleFunc("/productVersions/{id}", appContext.deleteProductVersion).Methods("DELETE")
 	r.HandleFunc("/productVersions/lock/{id}", appContext.lockProductVersion).Methods("GET")
 	r.HandleFunc("/productVersions/unlock/{id}", appContext.unlockProductVersion).Methods("GET")
