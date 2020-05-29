@@ -20,7 +20,6 @@ type ProductDAOInterface interface {
 	ListProductsVersions(id int) ([]model2.ProductVersion, error)
 	ListProductVersionsServiceByID(id int) (*model2.ProductVersionService, error)
 	ListProductsVersionServices(id int) ([]model2.ProductVersionService, error)
-	ListProductVersionServicesLatest(productID, productVersionID int) ([]model2.ProductVersionService, error)
 	CreateProductVersionCopying(payload model2.ProductVersion) (int, error)
 	ListProductVersionsByID(id int) (*model2.ProductVersion, error)
 }
@@ -153,26 +152,6 @@ func (dao ProductDAOImpl) ListProductsVersionServices(id int) ([]model2.ProductV
 		}
 		return nil, err
 	}
-	return list, nil
-}
-
-//ListProductVersionServicesLatest - List from the latest Product Version
-func (dao ProductDAOImpl) ListProductVersionServicesLatest(productID, productVersionID int) ([]model2.ProductVersionService, error) {
-	item := model2.ProductVersion{}
-	list := make([]model2.ProductVersionService, 0)
-
-	if err := dao.Db.Where(&model2.ProductVersion{ProductID: productID}).Not("id", productVersionID).Order("created_at desc").Limit(1).Find(&item).Error; err != nil {
-		if gorm.IsRecordNotFoundError(err) {
-			return make([]model2.ProductVersionService, 0), nil
-		}
-		return list, err
-	}
-
-	list, err := dao.ListProductsVersionServices(int(item.ID))
-	if err != nil {
-		return list, err
-	}
-
 	return list, nil
 }
 
