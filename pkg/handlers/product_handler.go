@@ -109,6 +109,27 @@ func (appContext *AppContext) newProductVersion(w http.ResponseWriter, r *http.R
 
 }
 
+func (appContext *AppContext) editProductVersion(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set(global.ContentType, global.JSONContentType)
+	var payload model.ProductVersion
+
+	if err := util.UnmarshalPayload(r, &payload); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	payload.Date = time.Now()
+
+	if err := appContext.Repositories.ProductDAO.EditProductVersion(payload); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+
+}
+
 func (appContext *AppContext) deleteProductVersion(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
