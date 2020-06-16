@@ -345,6 +345,12 @@ func (appContext *AppContext) listProductVersionServices(w http.ResponseWriter, 
 	result := &model.ProductVersionServiceRequestReponse{}
 	var err error
 
+	var pv *model.ProductVersion
+	if pv, err = appContext.Repositories.ProductDAO.ListProductVersionsByID(id); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	if result.List, err = appContext.Repositories.ProductDAO.ListProductsVersionServices(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -368,12 +374,12 @@ func (appContext *AppContext) listProductVersionServices(w http.ResponseWriter, 
 			}
 
 			wg.Add(1)
-			go func(wg *sync.WaitGroup, serviceName string, tag string, index int, searchResult []model.SearchResult) {
+			go func(wg *sync.WaitGroup, serviceName string, tag string, index int, searchResult []model.SearchResult, productVersion string) {
 				defer wg.Done()
-				version, _ := appContext.verifyNewVersion(splitSrvNameIfNeeded(serviceName), tag)
+				version, _ := appContext.verifyNewVersion(splitSrvNameIfNeeded(serviceName), tag, productVersion)
 				result.List[index].LatestVersion = version
 				result.List[index].ChartLatestVersion = appContext.getChartLatestVersion(serviceName, searchResult)
-			}(wg, serviceName, tag, index, helmCharts[helmRepo])
+			}(wg, serviceName, tag, index, helmCharts[helmRepo], pv.Version)
 		}
 	}
 
@@ -468,9 +474,12 @@ func (appContext *AppContext) getImageName(serviceName string) (string, error) {
 	return result, nil
 }
 
-func (appContext *AppContext) verifyNewVersion(serviceName string, dockerImageTag string) (string, error) {
+func (appContext *AppContext) isDifferent(v1 bool, v2 bool, v3 bool) bool {
+	return !(v1 == v2 && v1 == v3)
+}
 
-	currentTag := getNumberOfTag(dockerImageTag)
+func (appContext *AppContext) verifyNewVersion(serviceName string,
+	dockerImageTag string, productVersion string) (string, error) {
 
 	var payload model.ListDockerTagsRequest
 	var err error
@@ -502,9 +511,36 @@ func (appContext *AppContext) verifyNewVersion(serviceName string, dockerImageTa
 
 	//Filter based on version tag
 	for _, e := range majorList {
+		// Avoid to compare a release candidate with a version
+		v1 := isReleasCandidate(dockerImageTag)
+		v2 := isReleasCandidate(e.Tag)
+		v3 := isReleasCandidate(productVersion)
 
-		elementTag := getNumberOfTag(e.Tag)
-		if elementTag > currentTag {
+		if appContext.isDifferent(v1, v2, v3) {
+			continue
+		}
+
+		// // Avoid to compare different major versions
+		majorVersion := appContext.getMajorVersion(productVersion)
+		if !strings.HasPrefix(e.Tag, majorVersion) {
+			continue
+		}
+
+		eleTagMinor := appContext.getMinorVersion(e.Tag)
+		curTagMinor := appContext.getMinorVersion(dockerImageTag)
+
+		var eMinor int
+		var err error
+		if eMinor, err = strconv.Atoi(eleTagMinor); err != nil {
+			continue
+		}
+
+		var cMinor int
+		if cMinor, err = strconv.Atoi(curTagMinor); err != nil {
+			continue
+		}
+
+		if eMinor > cMinor {
 			finalList = append(finalList, e)
 		}
 	}
@@ -519,34 +555,46 @@ func (appContext *AppContext) verifyNewVersion(serviceName string, dockerImageTa
 
 }
 
-func getNumberOfTag(tag string) uint64 {
+func isReleasCandidate(version string) bool {
+	return strings.Contains(version, "RC")
+}
 
-	//Count amount of delimiters
-	n := strings.Count(tag, "#")
-	n = n + strings.Count(tag, ".")
-	n = n + strings.Count(tag, "-")
+func (appContext *AppContext) getMajorVersion(version string) string {
+	major := ""
+	foundMajor := false
 
-	// Normalize delimiters to dot
-	r := strings.ReplaceAll(tag, "#", ".")
-	r = strings.ReplaceAll(r, ".", ".")
-	r = strings.ReplaceAll(r, "-", ".")
+	for i := len(version) - 1; i >= 0; i-- {
+		v := string(version[i])
 
-	// Add leading zeros when length is one
-	resultStr := ""
-	for _, s := range strings.Split(r, ".") {
-		if len(s) == 1 {
-			s = "0" + s
+		if foundMajor {
+			major = v + major
+		} else {
+			if v == "." || v == "-" {
+				foundMajor = true
+			}
 		}
-		resultStr += s
 	}
 
-	for i := 0; i < 6-n; i++ {
-		resultStr = resultStr + "00"
+	return major
+}
+
+func (appContext *AppContext) getMinorVersion(version string) string {
+	minor := ""
+	foundMinor := false
+
+	for i := len(version) - 1; i >= 0; i-- {
+		v := string(version[i])
+
+		if !foundMinor {
+			if v != "." && v != "-" {
+				minor = v + minor
+			} else {
+				return minor
+			}
+		}
 	}
 
-	result, _ := strconv.ParseUint(resultStr, 10, 64)
-
-	return result
+	return minor
 }
 
 func (appContext *AppContext) validateVersion(productVersion string, currentVersion string) bool {
