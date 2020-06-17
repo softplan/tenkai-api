@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"sort"
 	"strconv"
@@ -520,10 +521,21 @@ func (appContext *AppContext) verifyNewVersion(serviceName string,
 			continue
 		}
 
-		// // Avoid to compare different major versions
+		// Avoid to compare different major versions
 		majorVersion := appContext.getMajorVersion(productVersion)
 		if !strings.HasPrefix(e.Tag, majorVersion) {
 			continue
+		}
+
+		// Avoid to compare different minor versions
+		splited := strings.Split(e.Tag, majorVersion)
+
+		if len(splited) == 2 {
+			minVer := strings.Split(normalize(splited[1]), ".")
+			if len(minVer) > 2 {
+				fmt.Println("Ignoring: " + serviceName + " - " + e.Tag)
+				continue
+			}
 		}
 
 		eleTagMinor := appContext.getMinorVersion(e.Tag)
