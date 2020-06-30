@@ -3,6 +3,11 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
+	"strings"
+	"sync"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 	"github.com/olivere/elastic"
@@ -15,10 +20,6 @@ import (
 	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"github.com/softplan/tenkai-api/pkg/service/core"
 	dockerapi "github.com/softplan/tenkai-api/pkg/service/docker"
-	"log"
-	"net/http"
-	"strings"
-	"sync"
 )
 
 //Repositories  Repositories
@@ -36,6 +37,7 @@ type Repositories struct {
 	CompareEnvsQueryDAO    repository.CompareEnvsQueryDAOInterface
 	SecurityOperationDAO   repository.SecurityOperationDAOInterface
 	UserEnvironmentRoleDAO repository.UserEnvironmentRoleDAOInterface
+	NotesDAO               repository.NotesDAOInterface
 }
 
 //AppContext AppContext
@@ -178,6 +180,10 @@ func defineRotes(r *mux.Router, appContext *AppContext) {
 
 	r.HandleFunc("/getUserPolicyByEnvironment", appContext.getUserPolicyByEnvironment).Methods("POST")
 	r.HandleFunc("/createOrUpdateUserEnvironmentRole", appContext.createOrUpdateUserEnvironmentRole).Methods("POST")
+
+	r.HandleFunc("/notes", appContext.newNotes).Methods("POST")
+	r.HandleFunc("/notes/edit", appContext.editNotes).Methods("EDIT")
+	r.HandleFunc("/notes", appContext.findNotesByServiceName).Methods("GET")
 
 	r.HandleFunc("/", appContext.rootHandler)
 
