@@ -30,6 +30,7 @@ type ProductVersionService struct {
 	DockerImageTag     string `json:"dockerImageTag"`
 	LatestVersion      string `gorm:"-" json:"latestVersion"`
 	ChartLatestVersion string `gorm:"-" json:"chartLatestVersion"`
+	Notes              string `json:"notes"`
 }
 
 //ProductRequestReponse struct

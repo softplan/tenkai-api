@@ -2,9 +2,9 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
-	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/global"
 
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
@@ -50,8 +50,14 @@ func (appContext *AppContext) editNotes(w http.ResponseWriter, r *http.Request) 
 
 func (appContext *AppContext) findNotesByServiceName(w http.ResponseWriter, r *http.Request) {
 
-	vars := mux.Vars(r)
-	serviceName := vars["serviceName"]
+	serviceNames, ok := r.URL.Query()["serviceName"]
+
+	if !ok || len(serviceNames[0]) < 1 {
+		log.Println("Url Param 'serviceName' is missing")
+		return
+	}
+
+	serviceName := serviceNames[0]
 
 	var notes *model.Notes
 	var err error

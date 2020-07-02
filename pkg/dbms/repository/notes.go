@@ -20,6 +20,23 @@ type NotesDAOImpl struct {
 
 //CreateNotes - Create a new notes
 func (dao NotesDAOImpl) CreateNotes(notes model2.Notes) (int, error) {
+	var result model2.Notes
+	edit := true
+	if err := dao.Db.Where(&model2.Notes{ServiceName: notes.ServiceName}).First(&result).Error; err != nil {
+		edit = false
+		if !gorm.IsRecordNotFoundError(err) {
+			return -1, err
+		}
+	}
+
+	if edit {
+		result.Text = notes.Text
+		if err := dao.Db.Save(&result).Error; err != nil {
+			return -1, err
+		}
+		return int(result.ID), nil
+	}
+
 	if err := dao.Db.Create(&notes).Error; err != nil {
 		return -1, err
 	}
@@ -44,6 +61,9 @@ func (dao NotesDAOImpl) GetByID(ID int) (*model2.Notes, error) {
 func (dao NotesDAOImpl) GetByServiceName(serviceName string) (*model2.Notes, error) {
 	var result model2.Notes
 	if err := dao.Db.Where(model2.Notes{ServiceName: serviceName}).First(&result).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return &result, nil
+		}
 		return nil, err
 	}
 	return &result, nil
