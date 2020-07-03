@@ -145,12 +145,35 @@ func (dao ProductDAOImpl) ListProductsVersions(id int) ([]model2.ProductVersion,
 
 //ListProductsVersionServices - List products versions
 func (dao ProductDAOImpl) ListProductsVersionServices(id int) ([]model2.ProductVersionService, error) {
+
 	list := make([]model2.ProductVersionService, 0)
-	if err := dao.Db.Where(&model2.ProductVersionService{ProductVersionID: id}).Find(&list).Error; err != nil {
+
+	var ID uint
+	var serviceName string
+	var dockerImageTag string
+	var notes string
+
+	rows, err := dao.Db.Table("product_version_services").Select("product_version_services.id, " +
+		" product_version_services.service_name, " +
+		" product_version_services.docker_image_tag, notes.text").Joins("LEFT JOIN notes on product_version_services.service_name = notes.service_name").Where(&model2.ProductVersionService{ProductVersionID: id}).Rows()
+
+	if err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return make([]model2.ProductVersionService, 0), nil
 		}
 		return nil, err
+	}
+
+	for rows.Next() {
+		notes = ""
+		ID = 0
+		serviceName = ""
+		dockerImageTag = ""
+		notes = ""
+		rows.Scan(&ID, &serviceName, &dockerImageTag, &notes)
+		p := &model2.ProductVersionService{ServiceName: serviceName, DockerImageTag: dockerImageTag, Notes: notes}
+		p.ID = ID
+		list = append(list, *p)
 	}
 	return list, nil
 }

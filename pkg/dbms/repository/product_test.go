@@ -141,10 +141,11 @@ func TestEdit(t *testing.T) {
 	productVersionService.DockerImageTag = "latest"
 	productVersionService.LatestVersion = "latest"
 	productVersionService.ChartLatestVersion = "latest"
+	productVersionService.Notes = ""
 
 	mock.ExpectExec(`UPDATE "product_version_services" SET (.*) WHERE (.*)`).
 		WithArgs(AnyTime{}, nil, productVersionService.ProductVersionID, productVersionService.ServiceName,
-			productVersionService.DockerImageTag, productVersionService.ID).
+			productVersionService.DockerImageTag, productVersionService.Notes, productVersionService.ID).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	err = produtDAO.EditProductVersionService(productVersionService)
