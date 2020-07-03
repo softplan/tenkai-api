@@ -758,7 +758,9 @@ func TestListProductVersionServices(t *testing.T) {
 	assert.Contains(t, response, `"serviceName":"repo/my-chart - 0.1.0",`)
 	assert.Contains(t, response, `"dockerImageTag":"19.0.1-0"`)
 	assert.Contains(t, response, `"latestVersion":"19.0.1-1",`)
-	assert.Contains(t, response, `"chartLatestVersion":"1.0"}]}`)
+	assert.Contains(t, response, `"chartLatestVersion":"1.0",`)
+	assert.Contains(t, response, `"notes":""}]}`)
+
 }
 
 func TestListProductVersionServices_QueryError(t *testing.T) {
