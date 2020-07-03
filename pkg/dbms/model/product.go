@@ -15,11 +15,11 @@ type Product struct {
 //ProductVersion struct
 type ProductVersion struct {
 	gorm.Model
-	ProductID         int       `json:"productId"`
-	Date              time.Time `json:"date"`
-	Version           string    `json:"version"`
-	CopyLatestRelease bool      `gorm:"-" json:"copyLatestRelease"`
-	Locked            bool      `json:"locked"`
+	ProductID   int       `json:"productId"`
+	Date        time.Time `json:"date"`
+	Version     string    `json:"version"`
+	BaseRelease int       `gorm:"-" json:"baseRelease"`
+	Locked      bool      `json:"locked"`
 }
 
 //ProductVersionService struct
