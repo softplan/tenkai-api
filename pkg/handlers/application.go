@@ -37,6 +37,7 @@ type Repositories struct {
 	CompareEnvsQueryDAO    repository.CompareEnvsQueryDAOInterface
 	SecurityOperationDAO   repository.SecurityOperationDAOInterface
 	UserEnvironmentRoleDAO repository.UserEnvironmentRoleDAOInterface
+	NotesDAO               repository.NotesDAOInterface
 }
 
 //AppContext AppContext
@@ -180,6 +181,10 @@ func defineRotes(r *mux.Router, appContext *AppContext) {
 
 	r.HandleFunc("/getUserPolicyByEnvironment", appContext.getUserPolicyByEnvironment).Methods("POST")
 	r.HandleFunc("/createOrUpdateUserEnvironmentRole", appContext.createOrUpdateUserEnvironmentRole).Methods("POST")
+
+	r.HandleFunc("/notes", appContext.newNotes).Methods("POST")
+	r.HandleFunc("/notes/edit", appContext.editNotes).Methods("EDIT")
+	r.HandleFunc("/notes", appContext.findNotesByServiceName).Methods("GET")
 
 	r.HandleFunc("/", appContext.rootHandler)
 
