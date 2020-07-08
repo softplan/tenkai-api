@@ -522,13 +522,13 @@ func (appContext *AppContext) verifyNewVersion(serviceName string,
 		}
 
 		// Avoid to compare different major versions
-		majorVersion := appContext.getMajorVersion(productVersion)
-		if !strings.HasPrefix(e.Tag, majorVersion) {
+		majorVersionOfProduct := appContext.getMajorVersion(productVersion)
+		if !strings.HasPrefix(e.Tag, majorVersionOfProduct) {
 			continue
 		}
 
 		// Avoid to compare different minor versions
-		splited := strings.Split(e.Tag, majorVersion)
+		splited := strings.Split(e.Tag, majorVersionOfProduct)
 
 		if len(splited) == 2 {
 			minVer := strings.Split(normalize(splited[1]), ".")
@@ -541,19 +541,26 @@ func (appContext *AppContext) verifyNewVersion(serviceName string,
 		eleTagMinor := appContext.getMinorVersion(e.Tag)
 		curTagMinor := appContext.getMinorVersion(dockerImageTag)
 
-		var eMinor int
-		var err error
-		if eMinor, err = strconv.Atoi(eleTagMinor); err != nil {
-			continue
-		}
+		majorVersionOfCurrentVersion := appContext.getMajorVersion(dockerImageTag)
 
-		var cMinor int
-		if cMinor, err = strconv.Atoi(curTagMinor); err != nil {
-			continue
-		}
-
-		if eMinor > cMinor {
+		// If currentTag's majorVersion < productVersion (it occurs when productVersion is a copy of other productVersion)
+		if majorVersionToInt(majorVersionOfCurrentVersion) < majorVersionToInt(majorVersionOfProduct) {
 			finalList = append(finalList, e)
+		} else {
+			var eMinor int
+			var err error
+			if eMinor, err = strconv.Atoi(eleTagMinor); err != nil {
+				continue
+			}
+
+			var cMinor int
+			if cMinor, err = strconv.Atoi(curTagMinor); err != nil {
+				continue
+			}
+
+			if eMinor > cMinor {
+				finalList = append(finalList, e)
+			}
 		}
 	}
 
@@ -565,6 +572,19 @@ func (appContext *AppContext) verifyNewVersion(serviceName string,
 
 	return lastResult, nil
 
+}
+
+func majorVersionToInt(version string) int {
+	v := strings.ReplaceAll(version, ".", "")
+	v = strings.ReplaceAll(v, "-", "")
+	v = strings.ReplaceAll(v, "RC", "")
+
+	var err error
+	var value int
+	if value, err = strconv.Atoi(v); err != nil {
+		return 0
+	}
+	return value
 }
 
 func isReleasCandidate(version string) bool {
