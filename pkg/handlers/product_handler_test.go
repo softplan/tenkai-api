@@ -1261,6 +1261,25 @@ func TestVerifyNewVersion_4(t *testing.T) {
 	mockDockerSvc.AssertNumberOfCalls(t, "GetDockerTagsWithDate", 1)
 }
 
+func TestVerifyNewVersion_5(t *testing.T) {
+	appContext := AppContext{}
+
+	appContext.ChartImageCache.Store("repo/my-chart - 0.1.0", "myrepo.com/my-chart")
+
+	latest := "20.2.1-RC-1"
+	productVersion := "20.2.1-RC-0"
+	currentVersion := "20.2.0-RC-9"
+
+	mockDockerSvc := mockGetDockerTagsWithDate(&appContext, getTagResponse(latest))
+	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", currentVersion, productVersion)
+	assert.NoError(t, err)
+	assert.NotNil(t, version)
+
+	assert.Equal(t, latest, version)
+
+	mockDockerSvc.AssertNumberOfCalls(t, "GetDockerTagsWithDate", 1)
+}
+
 func TestGetMajorVersion(t *testing.T) {
 	appContext := AppContext{}
 
