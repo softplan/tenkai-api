@@ -23,6 +23,9 @@ func doTest(t *testing.T, mode string) {
 	mockHelmSvc := mockHelmSvcWithLotOfThings(&appContext)
 	mockHelmSvc.On("SearchCharts", mock.Anything, false).Return(getCharts())
 
+	chartValue := `{"app":{"myvar":"myvalue"}}`
+	mockHelmSvc.On("GetTemplate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]byte(chartValue), nil)
+
 	auditSvc := &mockAudit.AuditingInterface{}
 	auditSvc.On("DoAudit", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything)
 
