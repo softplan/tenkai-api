@@ -571,10 +571,13 @@ func (appContext *AppContext) getArgsWithHelmDefault(variables []model.Variable,
 		}
 		if len(item.Name) > 0 && len(item.Value) > 0 {
 			value := replace(item.Value, *environment, globalVariables)
-			args = append(args, normalizeVariableName(item.Name)+"="+value)
 			if value != "" {
 				keys = append(keys, normalizeVariableName(item.Name))
 			}
+			if value == "T_EMPTY" {
+				value = ""
+			}
+			args = append(args, normalizeVariableName(item.Name)+"="+value)
 		}
 	}
 
