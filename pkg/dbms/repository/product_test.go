@@ -22,6 +22,7 @@ func getProductVersion() *model.ProductVersion {
 	item.Version = "1.0"
 	item.BaseRelease = -1
 	item.Locked = false
+	item.HotFix = false
 	return &item
 }
 
@@ -42,7 +43,8 @@ func TestCreateProductVersionCopying(t *testing.T) {
 	rows := sqlmock.NewRows([]string{"id"}).AddRow(1)
 
 	mock.ExpectQuery(`INSERT INTO "product_versions"`).
-		WithArgs(payload.CreatedAt, payload.UpdatedAt, payload.DeletedAt, payload.ProductID, payload.Date, payload.Version, payload.Locked).
+		WithArgs(payload.CreatedAt, payload.UpdatedAt, payload.DeletedAt, payload.ProductID,
+			payload.Date, payload.Version, payload.Locked, payload.HotFix).
 		WillReturnRows(rows)
 
 	rows2 := sqlmock.NewRows([]string{"id", "product_version_id"}).AddRow(1, 1)
@@ -125,10 +127,11 @@ func TestEdit(t *testing.T) {
 	productVersion.ProductID = 99
 	productVersion.ID = 1
 	productVersion.Locked = false
+	productVersion.HotFix = false
 
 	mock.ExpectExec(`UPDATE "product_versions"`).
 		WithArgs(AnyTime{}, nil, product.ID, AnyTime{},
-			productVersion.Version, productVersion.Locked, productVersion.ID).
+			productVersion.Version, productVersion.Locked, productVersion.HotFix, productVersion.ID).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	err = produtDAO.EditProductVersion(productVersion)
