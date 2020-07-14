@@ -375,12 +375,14 @@ func (appContext *AppContext) listProductVersionServices(w http.ResponseWriter, 
 			}
 
 			wg.Add(1)
-			go func(wg *sync.WaitGroup, serviceName string, tag string, index int, searchResult []model.SearchResult, productVersion string) {
+			go func(wg *sync.WaitGroup, serviceName string, tag string, index int,
+				searchResult []model.SearchResult, productVersion string, hotFix bool) {
+
 				defer wg.Done()
-				version, _ := appContext.verifyNewVersion(splitSrvNameIfNeeded(serviceName), tag, productVersion)
+				version, _ := appContext.verifyNewVersion(splitSrvNameIfNeeded(serviceName), tag, productVersion, hotFix)
 				result.List[index].LatestVersion = version
 				result.List[index].ChartLatestVersion = appContext.getChartLatestVersion(serviceName, searchResult)
-			}(wg, serviceName, tag, index, helmCharts[helmRepo], pv.Version)
+			}(wg, serviceName, tag, index, helmCharts[helmRepo], pv.Version, pv.HotFix)
 		}
 	}
 
@@ -480,7 +482,7 @@ func (appContext *AppContext) isDifferent(v1 bool, v2 bool, v3 bool) bool {
 }
 
 func (appContext *AppContext) verifyNewVersion(serviceName string,
-	dockerImageTag string, productVersion string) (string, error) {
+	dockerImageTag string, productVersion string, hotFix bool) (string, error) {
 
 	var payload model.ListDockerTagsRequest
 	var err error
@@ -491,7 +493,8 @@ func (appContext *AppContext) verifyNewVersion(serviceName string,
 	}
 
 	//Get version tags
-	result, err := appContext.DockerServiceAPI.GetDockerTagsWithDate(payload, appContext.Repositories.DockerDAO, &appContext.DockerTagsCache)
+	result, err := appContext.DockerServiceAPI.GetDockerTagsWithDate(payload,
+		appContext.Repositories.DockerDAO, &appContext.DockerTagsCache)
 	if err != nil {
 		return "", err
 	}
@@ -511,56 +514,72 @@ func (appContext *AppContext) verifyNewVersion(serviceName string,
 	finalList := make([]model.TagResponse, 0)
 
 	//Filter based on version tag
-	for _, e := range majorList {
-		// Avoid to compare a release candidate with a version
-		v1 := isReleasCandidate(dockerImageTag)
-		v2 := isReleasCandidate(e.Tag)
-		v3 := isReleasCandidate(productVersion)
+	for _, latest := range majorList {
+		if hotFix {
+			// If product is a hotFix, so ignore product version and consider only the service version
+			currentMajor := appContext.getMajorVersionOfHotfix(dockerImageTag)
+			latestMajor := appContext.getMajorVersionOfHotfix(latest.Tag)
 
-		if appContext.isDifferent(v1, v2, v3) {
-			continue
-		}
+			if currentMajor == latestMajor {
+				currentMinor := appContext.getMinorVersionOfHotfix(dockerImageTag)
+				latestMinor := appContext.getMinorVersionOfHotfix(latest.Tag)
 
-		// Avoid to compare different major versions
-		majorVersionOfProduct := appContext.getMajorVersion(productVersion)
-		if !strings.HasPrefix(e.Tag, majorVersionOfProduct) {
-			continue
-		}
-
-		// Avoid to compare different minor versions
-		splited := strings.Split(e.Tag, majorVersionOfProduct)
-
-		if len(splited) == 2 {
-			minVer := strings.Split(normalize(splited[1]), ".")
-			if len(minVer) > 2 {
-				fmt.Println("Ignoring: " + serviceName + " - " + e.Tag)
+				if latestMinor > currentMinor {
+					finalList = append(finalList, latest)
+				}
+			} else {
 				continue
 			}
-		}
-
-		eleTagMinor := appContext.getMinorVersion(e.Tag)
-		curTagMinor := appContext.getMinorVersion(dockerImageTag)
-
-		majorVersionOfCurrentVersion := appContext.getMajorVersion(dockerImageTag)
-
-		// If currentTag's majorVersion < productVersion (it occurs when productVersion is a copy of other productVersion)
-		if majorVersionToInt(majorVersionOfCurrentVersion) < majorVersionToInt(majorVersionOfProduct) {
-			finalList = append(finalList, e)
 		} else {
-			var eMinor int
-			var err error
-			if eMinor, err = strconv.Atoi(eleTagMinor); err != nil {
+
+			// Avoid to compare different major versions
+			productMajor := appContext.getMajorVersion(productVersion)
+			latestMajor := appContext.getMajorVersion(latest.Tag)
+			if productMajor != latestMajor {
 				continue
 			}
 
-			var cMinor int
-			if cMinor, err = strconv.Atoi(curTagMinor); err != nil {
-				continue
+			// Avoid to compare different minor versions
+			splited := strings.Split(latest.Tag, productMajor)
+			if len(splited) == 2 {
+				minVer := strings.Split(normalize(splited[1]), ".")
+				if len(minVer) > 2 {
+					fmt.Println("Ignoring: " + serviceName + " - " + latest.Tag)
+					continue
+				}
 			}
 
-			if eMinor > cMinor {
-				finalList = append(finalList, e)
+			latestMinor := appContext.getMinorVersion(latest.Tag)
+			productMinor := appContext.getMinorVersion(productVersion)
+
+			currentIsRC := isReleasCandidate(dockerImageTag)
+			latestIsRC := isReleasCandidate(latest.Tag)
+			productIsRC := isReleasCandidate(productVersion)
+
+			// If product and latest are RC and current version isn't RC
+			if latestIsRC && productIsRC && !currentIsRC {
+				if latestMinor > productMinor {
+					finalList = append(finalList, latest)
+				}
+			} else {
+				// Avoid to compare a release candidate with a version
+				if latestIsRC != productIsRC {
+					continue
+				}
+
+				curMinor := appContext.getMinorVersion(dockerImageTag)
+				curMajor := appContext.getMajorVersion(dockerImageTag)
+
+				// If currentTag's majorVersion < productVersion (it occurs when productVersion is a copy of other productVersion)
+				if majorVersionToInt(curMajor) < majorVersionToInt(productMajor) {
+					finalList = append(finalList, latest)
+				} else {
+					if latestMinor > curMinor {
+						finalList = append(finalList, latest)
+					}
+				}
 			}
+
 		}
 	}
 
@@ -569,9 +588,7 @@ func (appContext *AppContext) verifyNewVersion(serviceName string,
 		e := finalList[len(finalList)-1]
 		lastResult = e.Tag
 	}
-
 	return lastResult, nil
-
 }
 
 func majorVersionToInt(version string) int {
@@ -610,23 +627,70 @@ func (appContext *AppContext) getMajorVersion(version string) string {
 	return major
 }
 
-func (appContext *AppContext) getMinorVersion(version string) string {
+func (appContext *AppContext) getMajorVersionOfHotfix(version string) string {
+
+	dotCount := strings.Split(version, ".")
+
+	if len(dotCount)-1 == 2 {
+		return version
+	}
+
+	major := ""
+	foundMajor := false
+	for i := len(version) - 1; i >= 0; i-- {
+		v := string(version[i])
+
+		if foundMajor {
+			major = v + major
+		} else {
+			if v == "." {
+				foundMajor = true
+			}
+		}
+	}
+	return major
+}
+
+func (appContext *AppContext) getMinorVersion(version string) int {
 	minor := ""
-	foundMinor := false
+	minorInt := -1
 
 	for i := len(version) - 1; i >= 0; i-- {
 		v := string(version[i])
 
-		if !foundMinor {
-			if v != "." && v != "-" {
-				minor = v + minor
-			} else {
-				return minor
-			}
+		if v != "." && v != "-" {
+			minor = v + minor
+		} else {
+			minorInt, _ = strconv.Atoi(minor)
+			return minorInt
 		}
 	}
 
-	return minor
+	return -1
+}
+
+func (appContext *AppContext) getMinorVersionOfHotfix(version string) int {
+
+	dotCount := strings.Split(version, ".")
+	if len(dotCount)-1 == 2 {
+		return -1
+	}
+
+	minor := ""
+	minorInt := -1
+
+	for i := len(version) - 1; i >= 0; i-- {
+		v := string(version[i])
+
+		if v != "." && v != "-" {
+			minor = v + minor
+		} else {
+			minorInt, _ = strconv.Atoi(minor)
+			return minorInt
+		}
+	}
+
+	return -1
 }
 
 func (appContext *AppContext) validateVersion(productVersion string, currentVersion string) bool {
