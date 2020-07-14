@@ -444,7 +444,7 @@ func TestListProductVersions(t *testing.T) {
 	assert.Contains(t, response, `{"list":[{"ID":777,`)
 	assert.Contains(t, response, `"version":"19.0.1-0",`)
 	assert.Contains(t, response, `"baseRelease":0,`)
-	assert.Contains(t, response, `"locked":false}]}`)
+	assert.Contains(t, response, `"locked":false,"hotFix":false}]}`)
 }
 
 func TestListProductVersions_QueryError(t *testing.T) {
@@ -1204,7 +1204,7 @@ func TestVerifyNewVersion_1(t *testing.T) {
 
 	mockDockerSvc := mockGetDockerTagsWithDate(&appContext, getTagResponse("19.0.2-0"))
 
-	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "19.0.1-0", "19.0.1-0")
+	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "19.0.1-0", "19.0.1-0", false)
 	assert.NoError(t, err)
 	assert.NotNil(t, version)
 
@@ -1220,7 +1220,7 @@ func TestVerifyNewVersion_2(t *testing.T) {
 
 	mockDockerSvc := mockGetDockerTagsWithDate(&appContext, getTagResponse("19.0.1-1"))
 
-	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "19.0.1-0", "19.0.1-0")
+	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "19.0.1-0", "19.0.1-0", false)
 	assert.NoError(t, err)
 	assert.NotNil(t, version)
 
@@ -1236,7 +1236,7 @@ func TestVerifyNewVersion_3(t *testing.T) {
 
 	mockDockerSvc := mockGetDockerTagsWithDate(&appContext, getTagResponse("20.1.0-RC-2"))
 
-	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "20.1.0-RC-1", "20.1.0-RC-1")
+	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "20.1.0-RC-1", "20.1.0-RC-1", false)
 	assert.NoError(t, err)
 	assert.NotNil(t, version)
 
@@ -1252,7 +1252,7 @@ func TestVerifyNewVersion_4(t *testing.T) {
 
 	mockDockerSvc := mockGetDockerTagsWithDate(&appContext, getTagResponse("20.1.0-0.1"))
 
-	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "20.1.0-0", "20.1.0-0")
+	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "20.1.0-0", "20.1.0-0", false)
 	assert.NoError(t, err)
 	assert.NotNil(t, version)
 
@@ -1268,10 +1268,110 @@ func TestVerifyNewVersion_5(t *testing.T) {
 
 	latest := "20.2.1-RC-1"
 	productVersion := "20.2.1-RC-0"
-	currentVersion := "20.2.0-RC-9"
+	svcCurrentVersion := "20.2.0-RC-9"
 
 	mockDockerSvc := mockGetDockerTagsWithDate(&appContext, getTagResponse(latest))
-	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", currentVersion, productVersion)
+	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", svcCurrentVersion, productVersion, false)
+	assert.NoError(t, err)
+	assert.NotNil(t, version)
+
+	assert.Equal(t, latest, version)
+
+	mockDockerSvc.AssertNumberOfCalls(t, "GetDockerTagsWithDate", 1)
+}
+
+func TestVerifyNewVersionHotfix_6(t *testing.T) {
+	appContext := AppContext{}
+
+	appContext.ChartImageCache.Store("repo/my-chart - 0.1.0", "myrepo.com/my-chart")
+
+	latest := "20.1.1-15.6"
+	productVersion := "20.1.1-1.1"
+	svcCurrentVersion := "20.1.1-15.5"
+	hotFix := true
+
+	mockDockerSvc := mockGetDockerTagsWithDate(&appContext, getTagResponse(latest))
+	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", svcCurrentVersion, productVersion, hotFix)
+	assert.NoError(t, err)
+	assert.NotNil(t, version)
+
+	assert.Equal(t, latest, version)
+
+	mockDockerSvc.AssertNumberOfCalls(t, "GetDockerTagsWithDate", 1)
+}
+
+func TestVerifyNewVersionHotfix_7(t *testing.T) {
+	appContext := AppContext{}
+
+	appContext.ChartImageCache.Store("repo/my-chart - 0.1.0", "myrepo.com/my-chart")
+
+	latest := "20.1.1-1.2"
+	productVersion := "20.1.1-1.1"
+	svcCurrentVersion := "20.1.1-15.5"
+	hotFix := true
+
+	mockDockerSvc := mockGetDockerTagsWithDate(&appContext, getTagResponse(latest))
+	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", svcCurrentVersion, productVersion, hotFix)
+	assert.NoError(t, err)
+	assert.NotNil(t, version)
+
+	assert.Equal(t, "", version)
+
+	mockDockerSvc.AssertNumberOfCalls(t, "GetDockerTagsWithDate", 1)
+}
+
+func TestVerifyNewVersion_8(t *testing.T) {
+	appContext := AppContext{}
+
+	appContext.ChartImageCache.Store("repo/my-chart - 0.1.0", "myrepo.com/my-chart")
+
+	latest := "20.2.1-RC-1"
+	productVersion := "20.2.1-RC-0"
+	svcCurrentVersion := "20.1.0-0"
+	hotFix := false
+
+	mockDockerSvc := mockGetDockerTagsWithDate(&appContext, getTagResponse(latest))
+	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", svcCurrentVersion, productVersion, hotFix)
+	assert.NoError(t, err)
+	assert.NotNil(t, version)
+
+	assert.Equal(t, latest, version)
+
+	mockDockerSvc.AssertNumberOfCalls(t, "GetDockerTagsWithDate", 1)
+}
+
+func TestVerifyNewVersionHotfix_9(t *testing.T) {
+	appContext := AppContext{}
+
+	appContext.ChartImageCache.Store("repo/my-chart - 0.1.0", "myrepo.com/my-chart")
+
+	latest := "20.1.1-10"
+	productVersion := "20.1.1-1.1"
+	svcCurrentVersion := "20.1.1-6"
+	hotFix := true
+
+	mockDockerSvc := mockGetDockerTagsWithDate(&appContext, getTagResponse(latest))
+	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", svcCurrentVersion, productVersion, hotFix)
+	assert.NoError(t, err)
+	assert.NotNil(t, version)
+
+	assert.Equal(t, "", version)
+
+	mockDockerSvc.AssertNumberOfCalls(t, "GetDockerTagsWithDate", 1)
+}
+
+func TestVerifyNewVersionHotfix_10(t *testing.T) {
+	appContext := AppContext{}
+
+	appContext.ChartImageCache.Store("repo/my-chart - 0.1.0", "myrepo.com/my-chart")
+
+	latest := "20.1.1-6.1"
+	productVersion := "20.1.1-1.1"
+	svcCurrentVersion := "20.1.1-6"
+	hotFix := true
+
+	mockDockerSvc := mockGetDockerTagsWithDate(&appContext, getTagResponse(latest))
+	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", svcCurrentVersion, productVersion, hotFix)
 	assert.NoError(t, err)
 	assert.NotNil(t, version)
 
@@ -1293,17 +1393,53 @@ func TestGetMajorVersion(t *testing.T) {
 	assert.Equal(t, "20.1.1-RC", v3)
 }
 
+func TestGetMajorVersionOfHotfix1(t *testing.T) {
+	appContext := AppContext{}
+	v1 := appContext.getMajorVersionOfHotfix("20.1.1-0")
+	assert.Equal(t, "20.1.1-0", v1)
+}
+
+func TestGetMajorVersionOfHotfix2(t *testing.T) {
+	appContext := AppContext{}
+	v2 := appContext.getMajorVersionOfHotfix("20.1.1-0.1")
+	assert.Equal(t, "20.1.1-0", v2)
+}
+
+func TestGetMajorVersionOfHotfix3(t *testing.T) {
+	appContext := AppContext{}
+	v2 := appContext.getMajorVersionOfHotfix("20.1.1")
+	assert.Equal(t, "20.1.1", v2)
+}
+
 func TestGetMinorVersion(t *testing.T) {
 	appContext := AppContext{}
 
 	v1 := appContext.getMinorVersion("20.1.1-0")
-	assert.Equal(t, "0", v1)
+	assert.Equal(t, 0, v1)
 
 	v2 := appContext.getMinorVersion("20.1.1-0.10")
-	assert.Equal(t, "10", v2)
+	assert.Equal(t, 10, v2)
 
 	v3 := appContext.getMinorVersion("20.1.1-RC-01")
-	assert.Equal(t, "01", v3)
+	assert.Equal(t, 01, v3)
+}
+
+func TestGetMinorVersionOfHotfix1(t *testing.T) {
+	appContext := AppContext{}
+	v1 := appContext.getMinorVersionOfHotfix("20.1.1-0")
+	assert.Equal(t, -1, v1)
+}
+
+func TestGetMinorVersionOfHotfix2(t *testing.T) {
+	appContext := AppContext{}
+	v2 := appContext.getMinorVersionOfHotfix("20.1.1-0.10")
+	assert.Equal(t, 10, v2)
+}
+
+func TestGetMinorVersionOfHotfix3(t *testing.T) {
+	appContext := AppContext{}
+	v2 := appContext.getMinorVersionOfHotfix("20.1.1")
+	assert.Equal(t, -1, v2)
 }
 
 func TestDiff(t *testing.T) {
@@ -1335,7 +1471,7 @@ func TestVerifyNewVersion_NotOk_1(t *testing.T) {
 
 	mockDockerSvc := mockGetDockerTagsWithDate(&appContext, getTagResponse("20.1.1-0"))
 
-	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "20.1.0-0", "20.1.0-0")
+	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "20.1.0-0", "20.1.0-0", false)
 	assert.NoError(t, err)
 	assert.NotNil(t, version)
 
@@ -1356,7 +1492,7 @@ func TestVerifyNewVersion_NotOk_2(t *testing.T) {
 	bytes := []byte("{\"image\":{\"repository\":\"myrepo.com/my-chart\"}}")
 	mockHelmSvc.On("GetValues", "repo/my-chart - 0.1.0", "0").Return(bytes, nil)
 
-	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "19.0.1-0", "19.0.1-0")
+	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "19.0.1-0", "19.0.1-0", false)
 	assert.NoError(t, err)
 	assert.NotNil(t, version)
 
@@ -1375,7 +1511,7 @@ func TestVerifyNewVersion_NotOk_Error(t *testing.T) {
 
 	mockHelmSvc.On("GetValues", mock.Anything, mock.Anything).Return(nil, errors.New("some error"))
 
-	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "19.0.1-0", "19.0.1-0")
+	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "19.0.1-0", "19.0.1-0", false)
 	assert.Error(t, err)
 	assert.NotNil(t, version)
 
@@ -1393,7 +1529,7 @@ func TestVerifyNewVersion_NotOk_UnmarshalError(t *testing.T) {
 	bytes := []byte(`["foo":"baz"]`)
 	mockHelmSvc.On("GetValues", "repo/my-chart - 0.1.0", "0").Return(bytes, nil)
 
-	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "19.0.1-0", "19.0.1-0")
+	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "19.0.1-0", "19.0.1-0", false)
 	assert.Error(t, err)
 	assert.NotNil(t, version)
 	assert.Equal(t, "", version)
@@ -1409,7 +1545,7 @@ func TestVerifyNewVersion_GetDockerTagsWithDateError(t *testing.T) {
 		Return(nil, errors.New("some error"))
 	appContext.DockerServiceAPI = mockDockerSvc
 
-	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "19.0.1-0", "19.0.1-0")
+	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "19.0.1-0", "19.0.1-0", false)
 	assert.Error(t, err)
 	assert.NotNil(t, version)
 	assert.Equal(t, "", version)
@@ -1424,7 +1560,7 @@ func TestVerifyNewVersion_NoNewVersion(t *testing.T) {
 
 	mockDockerSvc := mockGetDockerTagsWithDate(&appContext, getTagResponse("19.0.1-0"))
 
-	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "19.0.1-0", "19.0.1-0")
+	version, err := appContext.verifyNewVersion("repo/my-chart - 0.1.0", "19.0.1-0", "19.0.1-0", false)
 	assert.NoError(t, err)
 	assert.NotNil(t, version)
 
