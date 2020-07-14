@@ -20,6 +20,7 @@ type ProductVersion struct {
 	Version     string    `json:"version"`
 	BaseRelease int       `gorm:"-" json:"baseRelease"`
 	Locked      bool      `json:"locked"`
+	HotFix      bool      `json:"hotFix"`
 }
 
 //ProductVersionService struct
