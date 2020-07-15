@@ -557,9 +557,10 @@ func (appContext *AppContext) helmDryRun(w http.ResponseWriter, r *http.Request)
 
 }
 
-func (appContext *AppContext) getArgs(variables []model.Variable, globalVariables []model.Variable, environment *model.Environment) []string {
+func (appContext *AppContext) getArgsWithHelmDefault(variables []model.Variable, helmVars map[string]interface{}, globalVariables []model.Variable, environment *model.Environment) []string {
 
 	var args []string
+	var keys []string
 	for i, item := range variables {
 		if item.Secret {
 			byteValues, _ := hex.DecodeString(item.Value)
@@ -569,9 +570,30 @@ func (appContext *AppContext) getArgs(variables []model.Variable, globalVariable
 			}
 		}
 		if len(item.Name) > 0 && len(item.Value) > 0 {
-			args = append(args, normalizeVariableName(item.Name)+"="+replace(item.Value, *environment, globalVariables))
+			value := replace(item.Value, *environment, globalVariables)
+			if value != "" {
+				keys = append(keys, normalizeVariableName(item.Name))
+			}
+			if value == "T_EMPTY" {
+				value = ""
+			}
+			args = append(args, normalizeVariableName(item.Name)+"="+value)
 		}
 	}
+
+	dt := time.Now()
+	args = append(args, "app.dateHour="+dt.String())
+	keys = append(keys, "app.dateHour")
+
+	for key, value := range helmVars {
+		if !util.Contains(keys, normalizeVariableName(key)) {
+			svalue, ok := value.(string)
+			if ok {
+				args = append(args, normalizeVariableName(key)+"="+replace(svalue, *environment, globalVariables))
+			}
+		}
+	}
+
 	return args
 }
 
@@ -586,15 +608,16 @@ func (appContext *AppContext) simpleInstall(environment *model.Environment, inst
 	variables, err := appContext.Repositories.VariableDAO.GetAllVariablesByEnvironmentAndScope(int(environment.ID), searchTerm)
 	globalVariables := appContext.getGlobalVariables(int(environment.ID))
 
-	args := appContext.getArgs(variables, globalVariables, environment)
+	helmVars, err := appContext.getHelmChartAppVars(installPayload.Chart, installPayload.ChartVersion)
+	if err != nil {
+		return "", err
+	}
+	args := appContext.getArgsWithHelmDefault(variables, helmVars, globalVariables, environment)
 
 	//Add Default Gateway
 	if len(environment.Gateway) > 0 {
 		args = append(args, "istio.virtualservices.gateways[0]="+environment.Gateway)
 	}
-
-	dt := time.Now()
-	args = append(args, "app.dateHour="+dt.String())
 
 	if err == nil {
 		name := installPayload.Name + "-" + environment.Namespace
