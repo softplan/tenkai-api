@@ -13,6 +13,7 @@ import (
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
 	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
+	"github.com/softplan/tenkai-api/pkg/service/_helm/mocks"
 	mockSvc "github.com/softplan/tenkai-api/pkg/service/_helm/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -581,6 +582,11 @@ func TestGetHelmCommand(t *testing.T) {
 	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
 	mockConvention := mockConventionInterface(&appContext)
 
+	chartValue := `{"app":{"myvar":"myvalue"}}`
+	mockHelmSvc := &mocks.HelmServiceInterface{}
+	mockHelmSvc.On("GetTemplate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]byte(chartValue), nil)
+	appContext.HelmServiceAPI = mockHelmSvc
+
 	mockPrincipal(req)
 
 	rr := httptest.NewRecorder()
@@ -649,9 +655,8 @@ func TestMultipleInstall(t *testing.T) {
 	mockHelmSvc := mockUpgrade(&appContext)
 	mockHelmSvc.On("SearchCharts", mock.Anything, false).Return(charts)
 
-	result := []byte("it doesn't have a config map")
-	mockHelmSvc.On("GetTemplate", mock.Anything, mock.Anything, mock.Anything,
-		mock.Anything).Return(result, nil)
+	chartValue := `{"app":{"myvar":"myvalue"}}`
+	mockHelmSvc.On("GetTemplate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]byte(chartValue), nil)
 
 	user := mockUser()
 	mockUserDAO := &mockRepo.UserDAOInterface{}
@@ -738,6 +743,9 @@ func TestInstall(t *testing.T) {
 	mockUserEnvRoleDAO.On("GetRoleByUserAndEnvironment", user, mock.Anything).
 		Return(&secOper, nil)
 
+	chartValue := `{"app":{"myvar":"myvalue"}}`
+	mockHelmSvc.On("GetTemplate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]byte(chartValue), nil)
+
 	appContext.Repositories.UserDAO = mockUserDAO
 	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
 
@@ -764,6 +772,9 @@ func TestDryRun(t *testing.T) {
 	mockConvention := mockConventionInterface(&appContext)
 	mockHelmSvc := mockUpgrade(&appContext)
 	mockHelmSvc.On("SearchCharts", mock.Anything, false).Return(getCharts())
+
+	chartValue := `{"app":{"myvar":"myvalue"}}`
+	mockHelmSvc.On("GetTemplate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]byte(chartValue), nil)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.helmDryRun)
