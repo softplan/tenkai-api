@@ -1,6 +1,10 @@
 package main
 
 import (
+	"log"
+	"os"
+	"sync"
+
 	audit2 "github.com/softplan/tenkai-api/pkg/audit"
 	"github.com/softplan/tenkai-api/pkg/configs"
 	"github.com/softplan/tenkai-api/pkg/dbms"
@@ -10,9 +14,6 @@ import (
 	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"github.com/softplan/tenkai-api/pkg/service/core"
 	dockerapi "github.com/softplan/tenkai-api/pkg/service/docker"
-	"log"
-	"os"
-	"sync"
 )
 
 const (
@@ -87,6 +88,7 @@ func initRepository(database *dbms.Database) handlers.Repositories {
 	repositories.SecurityOperationDAO = &repository.SecurityOperationDAOImpl{Db: database.Db}
 	repositories.UserEnvironmentRoleDAO = &repository.UserEnvironmentRoleDAOImpl{Db: database.Db}
 	repositories.NotesDAO = &repository.NotesDAOImpl{Db: database.Db}
+	repositories.WebHookDAO = &repository.WebHookDAOImpl{Db: database.Db}
 
 	return repositories
 }
