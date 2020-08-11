@@ -38,6 +38,7 @@ type Repositories struct {
 	SecurityOperationDAO   repository.SecurityOperationDAOInterface
 	UserEnvironmentRoleDAO repository.UserEnvironmentRoleDAOInterface
 	NotesDAO               repository.NotesDAOInterface
+	WebHookDAO             repository.WebHookDAOInterface
 }
 
 //AppContext AppContext
@@ -185,6 +186,11 @@ func defineRotes(r *mux.Router, appContext *AppContext) {
 	r.HandleFunc("/notes", appContext.newNotes).Methods("POST")
 	r.HandleFunc("/notes/edit", appContext.editNotes).Methods("EDIT")
 	r.HandleFunc("/notes", appContext.findNotesByServiceName).Methods("GET")
+
+	r.HandleFunc("/webhooks", appContext.listWebHooks).Methods("GET")
+	r.HandleFunc("/webhooks", appContext.newWebHook).Methods("POST")
+	r.HandleFunc("/webhooks/edit", appContext.editWebHook).Methods("POST")
+	r.HandleFunc("/webhooks/{id}", appContext.deleteWebHook).Methods("DELETE")
 
 	r.HandleFunc("/", appContext.rootHandler)
 
