@@ -17,6 +17,7 @@ type ProductDAOInterface interface {
 	DeleteProductVersion(id int) error
 	DeleteProductVersionService(id int) error
 	ListProducts() ([]model2.Product, error)
+	FindProductByID(id int) (model2.Product, error)
 	ListProductsVersions(id int) ([]model2.ProductVersion, error)
 	ListProductVersionsServiceByID(id int) (*model2.ProductVersionService, error)
 	ListProductsVersionServices(id int) ([]model2.ProductVersionService, error)
@@ -120,6 +121,15 @@ func (dao ProductDAOImpl) ListProducts() ([]model2.Product, error) {
 		return nil, err
 	}
 	return list, nil
+}
+
+//FindProductByID - FindProductByID
+func (dao ProductDAOImpl) FindProductByID(id int) (model2.Product, error) {
+	var result model2.Product
+	if err := dao.Db.First(&result, id).Error; err != nil {
+		return result, err
+	}
+	return result, nil
 }
 
 //ListProductVersionsServiceByID - ListProductVersionsServiceByID
