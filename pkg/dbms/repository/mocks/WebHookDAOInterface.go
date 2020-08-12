@@ -83,3 +83,26 @@ func (_m *WebHookDAOInterface) ListWebHooks() ([]model.WebHook, error) {
 
 	return r0, r1
 }
+
+// ListWebHooksByEnvAndType provides a mock function with given fields: environmentID, hookType
+func (_m *WebHookDAOInterface) ListWebHooksByEnvAndType(environmentID int, hookType string) ([]model.WebHook, error) {
+	ret := _m.Called(environmentID, hookType)
+
+	var r0 []model.WebHook
+	if rf, ok := ret.Get(0).(func(int, string) []model.WebHook); ok {
+		r0 = rf(environmentID, hookType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]model.WebHook)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(int, string) error); ok {
+		r1 = rf(environmentID, hookType)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}

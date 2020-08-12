@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -452,10 +453,45 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 			http.Error(w, err.Error(), 501)
 			return
 		}
+
+		appContext.triggerProductDeploymentWebhook(payload.EnvironmentID,
+			pv.ProductID, environment.Name, pv.Version)
 	}
 
 	w.WriteHeader(http.StatusOK)
 
+}
+
+func (appContext *AppContext) triggerProductDeploymentWebhook(
+	environmentID int, productID int, envName string, releaseVersion string) {
+
+	var err error
+	var webHooks []model.WebHook
+	webHooks, err = appContext.Repositories.WebHookDAO.
+		ListWebHooksByEnvAndType(environmentID, "HOOK_DEPLOY_PRODUCT")
+	if err != nil {
+		log.Println("Error trying to find webhooks", err)
+		return
+	}
+
+	var product model.Product
+	if product, err = appContext.Repositories.ProductDAO.FindProductByID(productID); err != nil {
+		log.Println("Error trying to find product", err)
+		return
+	}
+
+	for _, hook := range webHooks {
+		var p model.WebHookPostPayload
+		p.Environment = envName
+		p.ProductName = product.Name
+		p.Release = releaseVersion
+
+		payloadStr, _ := json.Marshal(p)
+		if _, err := http.Post(hook.URL, "application/json", bytes.NewBuffer(payloadStr)); err != nil {
+			log.Println("Error trying to post to webhook: ", hook.URL, err)
+			return
+		}
+	}
 }
 
 func (appContext *AppContext) updateImageTagBeforeInstallProduct(productVersionID int, envID int, chart string) error {

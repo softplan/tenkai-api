@@ -11,6 +11,7 @@ type WebHookDAOInterface interface {
 	EditWebHook(e model.WebHook) error
 	DeleteWebHook(id int) error
 	ListWebHooks() ([]model.WebHook, error)
+	ListWebHooksByEnvAndType(environmentID int, hookType string) ([]model.WebHook, error)
 }
 
 //WebHookDAOImpl WebHookDAOImpl
@@ -40,6 +41,22 @@ func (dao WebHookDAOImpl) DeleteWebHook(id int) error {
 func (dao WebHookDAOImpl) ListWebHooks() ([]model.WebHook, error) {
 	list := make([]model.WebHook, 0)
 	if err := dao.Db.Find(&list).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return make([]model.WebHook, 0), nil
+		}
+		return nil, err
+	}
+	return list, nil
+}
+
+//ListWebHooksByEnvAndType - List webhooks by environment and webHook type
+func (dao WebHookDAOImpl) ListWebHooksByEnvAndType(
+	environmentID int, hookType string) ([]model.WebHook, error) {
+
+	list := make([]model.WebHook, 0)
+	condition := &model.WebHook{EnvironmentID: environmentID, Type: hookType}
+
+	if err := dao.Db.Where(condition).Find(&list).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return make([]model.WebHook, 0), nil
 		}

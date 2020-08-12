@@ -142,3 +142,48 @@ func TestListWebHooks_Error(t *testing.T) {
 
 	mock.ExpectationsWereMet()
 }
+
+func TestListWebHooksByEnvAndType(t *testing.T) {
+	gormDB, mock, dao, item := beforeWebHookTest(t)
+	defer gormDB.Close()
+
+	rows := sqlmock.NewRows([]string{"id", "name"}).
+		AddRow(999, item.Name)
+
+	mock.ExpectQuery(`SELECT (.+) FROM "web_hooks" WHERE (.+)`).
+		WillReturnRows(rows)
+
+	result, err := dao.ListWebHooksByEnvAndType(999, "HOOK_DEPLOY_PRODUCT")
+	assert.Nil(t, err)
+	assert.NotNil(t, result)
+
+	mock.ExpectationsWereMet()
+}
+
+func TestListWebHooksByEnvAndType_NotFound(t *testing.T) {
+	gormDB, mock, dao, _ := beforeWebHookTest(t)
+	defer gormDB.Close()
+
+	mock.ExpectQuery(`SELECT (.+) FROM "web_hooks" WHERE (.+)`).
+		WillReturnError(gorm.ErrRecordNotFound)
+
+	result, err := dao.ListWebHooksByEnvAndType(999, "HOOK_DEPLOY_PRODUCT")
+	assert.Nil(t, err)
+	assert.Empty(t, result)
+
+	mock.ExpectationsWereMet()
+}
+
+func TestListWebHooksByEnvAndType_Error(t *testing.T) {
+	gormDB, mock, dao, _ := beforeWebHookTest(t)
+	defer gormDB.Close()
+
+	mock.ExpectQuery(`SELECT (.+) FROM "web_hooks" WHERE (.+)`).
+		WillReturnError(errors.New("mock error"))
+
+	result, err := dao.ListWebHooksByEnvAndType(999, "HOOK_DEPLOY_PRODUCT")
+	assert.Nil(t, result)
+	assert.Error(t, err)
+
+	mock.ExpectationsWereMet()
+}

@@ -435,3 +435,12 @@ func mockUserEnvRole() model.UserEnvironmentRole {
 	u.SecurityOperationID = 777
 	return u
 }
+
+func mockWebHook() model.WebHook {
+	var item model.WebHook
+	item.Name = "Product Deploy"
+	item.Type = "HOOK_DEPLOY_PRODUCT"
+	item.URL = "http://localhost/incoming-hook"
+	item.EnvironmentID = 999
+	return item
+}
