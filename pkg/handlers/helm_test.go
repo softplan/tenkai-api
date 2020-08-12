@@ -670,6 +670,7 @@ func TestMultipleInstall(t *testing.T) {
 	var p model.ProductVersion
 	p.ID = uint(777)
 	p.Version = "19.0.1-0"
+	p.ProductID = 999
 	mockProductDAO := &mockRepo.ProductDAOInterface{}
 	mockProductDAO.On("ListProductVersionsByID", mock.Anything).Return(&p, nil)
 
@@ -688,7 +689,6 @@ func TestMultipleInstall(t *testing.T) {
 
 	mockVariableDAO.On("EditVariable", mock.Anything).Return(nil)
 
-	appContext.Repositories.ProductDAO = mockProductDAO
 	appContext.Repositories.UserDAO = mockUserDAO
 	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
 	appContext.Repositories.ConfigDAO = mockConfigDAO
@@ -702,6 +702,19 @@ func TestMultipleInstall(t *testing.T) {
 
 	mockEnvDao.On("EditEnvironment", mock.Anything).Return(nil)
 
+	webHooks := make([]model.WebHook, 0)
+	webHooks = append(webHooks, mockWebHook())
+	mockWebHookDAO := &mockRepo.WebHookDAOInterface{}
+	mockWebHookDAO.On("ListWebHooksByEnvAndType", 999, "HOOK_DEPLOY_PRODUCT").
+		Return(webHooks, nil)
+	appContext.Repositories.WebHookDAO = mockWebHookDAO
+
+	var product model.Product
+	product.ID = 999
+	product.Name = "My Product"
+	mockProductDAO.On("FindProductByID", 999).Return(product, nil)
+	appContext.Repositories.ProductDAO = mockProductDAO
+
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.multipleInstall)
 	handler.ServeHTTP(rr, req)
@@ -714,6 +727,8 @@ func TestMultipleInstall(t *testing.T) {
 
 	mockProductDAO.AssertNumberOfCalls(t, "ListProductsVersionServices", 1)
 	mockVariableDAO.AssertNumberOfCalls(t, "GetVarImageTagByEnvAndScope", 1)
+	mockWebHookDAO.AssertNumberOfCalls(t, "ListWebHooksByEnvAndType", 1)
+	mockProductDAO.AssertNumberOfCalls(t, "FindProductByID", 1)
 
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 }

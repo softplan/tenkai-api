@@ -12,15 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func mockWebHook() model.WebHook {
-	var item model.WebHook
-	item.Name = "Product Deploy"
-	item.Type = "HOOK_DEPLOY_PRODUCT"
-	item.URL = "http://example.com"
-	item.EnvironmentID = 999
-	return item
-}
-
 func mockWebHookWithID() model.WebHook {
 	var item model.WebHook
 	item.ID = 999
