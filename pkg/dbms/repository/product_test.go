@@ -180,6 +180,49 @@ func TestListProducts(t *testing.T) {
 	mock.ExpectationsWereMet()
 }
 
+func TestFindProductByID(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	mock.MatchExpectationsInOrder(false)
+	assert.Nil(t, err)
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	produtDAO := ProductDAOImpl{}
+	produtDAO.Db = gormDB
+
+	rows1 := sqlmock.NewRows([]string{"id", "name"}).AddRow(999, "my-product")
+
+	mock.ExpectQuery(`SELECT (.*) FROM "products"`).
+		WillReturnRows(rows1)
+
+	result, err := produtDAO.FindProductByID(999)
+	assert.Nil(t, err)
+	assert.NotNil(t, result)
+
+	mock.ExpectationsWereMet()
+}
+
+func TestFindProductByID_Error(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	mock.MatchExpectationsInOrder(false)
+	assert.Nil(t, err)
+
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	produtDAO := ProductDAOImpl{}
+	produtDAO.Db = gormDB
+
+	mock.ExpectQuery(`SELECT (.*) FROM "products"`).
+		WillReturnError(errors.New("mock error"))
+
+	_, err = produtDAO.FindProductByID(999)
+	assert.Error(t, err)
+
+	mock.ExpectationsWereMet()
+}
+
 func TestListProducts_ErrorNotFound(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	mock.MatchExpectationsInOrder(false)
