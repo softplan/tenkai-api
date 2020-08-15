@@ -5,9 +5,7 @@
 /config
 /config/*
 .idea
-.vscode
 .idea/*
-.vscode/*
 cmd/tenkai/config
 
 # Ignore dependency httpgetter
