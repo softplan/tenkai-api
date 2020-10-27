@@ -48,6 +48,12 @@ func main() {
 	//Elk setup
 	appContext.Elk, _ = appContext.Auditing.ElkClient(config.App.Elastic.URL, config.App.Elastic.Username, config.App.Elastic.Password)
 
+	//RabbitMQ Connection
+	appContext.Rabbit.Connect(config.App.Rabbit.URI)
+	defer appContext.Rabbit.Channel.Close()
+	defer appContext.Rabbit.Connection.Close()
+	
+
 	global.Logger.Info(logFields, "http server started")
 	handlers.StartHTTPServer(appContext)
 }
