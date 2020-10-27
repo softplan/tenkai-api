@@ -20,6 +20,9 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
+	
+	"github.com/softplan/tenkai-api/pkg/rabbit"
+	"github.com/streadway/amqp"
 )
 
 func (appContext *AppContext) listCharts(w http.ResponseWriter, r *http.Request) {
@@ -346,7 +349,7 @@ func (appContext *AppContext) hasConfigMapCached(chart string, version string) (
 	return hasConfigMap, nil
 }
 
-func (appContext *AppContext) loadConfigMap(deployables []model.InstallPayload) ([]model.InstallPayload, error) {
+func (appContext *AppContext) loadConfigMap(deployables []model.InstallPayload, environmentID int) ([]model.InstallPayload, error) {
 	configMaps := make([]model.InstallPayload, 0)
 
 	var config model.ConfigMap
@@ -366,7 +369,7 @@ func (appContext *AppContext) loadConfigMap(deployables []model.InstallPayload) 
 			var ip model.InstallPayload
 			ip.Name = d.Name + "-gcm"
 			ip.Chart = config.Value
-			ip.EnvironmentID = d.EnvironmentID
+			ip.EnvironmentID = environmentID
 
 			configMaps = append(configMaps, ip)
 		}
@@ -390,76 +393,101 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	configMaps, err := appContext.loadConfigMap(payload.Deployables)
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
-	payload.Deployables = configMaps
+	var environments []*model.Environment
 
-	out := &bytes.Buffer{}
-
-	//Locate Environment
-	environment, err := appContext.Repositories.EnvironmentDAO.GetByID(payload.EnvironmentID)
-	if err != nil {
-		msg := err.Error()
-		if err.Error() == "record not found" {
-			msg = "Environment " + strconv.Itoa(payload.EnvironmentID) + " not found"
-		}
-		http.Error(w, msg, http.StatusInternalServerError)
-		return
-	}
-
-	//If not admin, verify authorization of user for specific environment
-	if !isAdmin {
-		auth, _ := appContext.hasEnvironmentRole(principal, environment.ID, "ACTION_DEPLOY")
-		if !auth {
-			http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
+	for _, environmentID := range payload.EnvironmentIDs {
+		//Locate Environment
+		environment, err := appContext.Repositories.EnvironmentDAO.GetByID(environmentID)
+		if err != nil {
+			msg := err.Error()
+			if err.Error() == "record not found" {
+				msg = "Environment " + strconv.Itoa(environmentID) + " not found"
+			}
+			//Aqui eu disparo um erro ->
+			//A única forma de chegar um env que não existe é o cara fazer a request por fora do tenkai
+			http.Error(w, msg, http.StatusInternalServerError)
 			return
 		}
+
+		//If not admin, verify authorization of user for specific environment
+		if !isAdmin {
+			auth, _ := appContext.hasEnvironmentRole(principal, environment.ID, "ACTION_DEPLOY")
+			if !auth {
+				//Se não tem permissão já grava na tabela
+				fmt.Println("Gravar na tabela de erros")
+				//http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
+				//return
+			}
+		}
+
+		environments = append(environments, environment)
 	}
 
-	for _, element := range payload.Deployables {
-		if err = appContext.updateImageTagBeforeInstallProduct(payload.ProductVersionID,
-			int(environment.ID), element.Chart); err != nil {
-
+	for _, environment := range environments {
+		configMaps, err := appContext.loadConfigMap(payload.Deployables, int(environment.ID))
+		if err != nil {
 			http.Error(w, err.Error(), 500)
 			return
 		}
+		payload.Deployables = configMaps
 
-		_, err = appContext.simpleInstall(environment, element, out, false, false)
-		if err != nil {
-			http.Error(w, err.Error(), 501)
-			return
+		for _, element := range payload.Deployables {
+			if err = appContext.updateImageTagBeforeInstallProduct(payload.ProductVersionID,
+				int(environment.ID), element.Chart); err != nil {
+	
+				http.Error(w, err.Error(), 500)
+				return
+			}
+
+			var rabbitPayload model.RabbitInstallPayload = model.RabbitInstallPayload{
+				ProductVersionID: payload.ProductVersionID,
+				Environment: *environment,
+				Deployable: element,
+			}
+
+			queuePayloadJSON, _ := json.Marshal(rabbitPayload)
+
+			err := appContext.Rabbit.Channel.Publish(
+				"", 
+				rabbit.InstallQueue,
+				false,
+				false,
+				amqp.Publishing{
+					ContentType: "application/json",
+					Body: queuePayloadJSON,
+				},
+			)
+			
+			if err != nil {
+				http.Error(w, err.Error(), 501)
+				return
+			}
+	
+			auditValues := make(map[string]string)
+			auditValues["environment"] = environment.Name
+			auditValues["chartName"] = element.Chart
+			auditValues["name"] = element.Name
+	
+			appContext.Auditing.DoAudit(r.Context(), appContext.Elk, principal.Email, "deploy", auditValues)
+	
 		}
-
-		auditValues := make(map[string]string)
-		auditValues["environment"] = environment.Name
-		auditValues["chartName"] = element.Chart
-		auditValues["name"] = element.Name
-
-		appContext.Auditing.DoAudit(r.Context(), appContext.Elk, principal.Email, "deploy", auditValues)
-
+		if payload.ProductVersionID > 0 {
+			pv, err := appContext.Repositories.ProductDAO.ListProductVersionsByID(payload.ProductVersionID)
+			if err != nil {
+				http.Error(w, err.Error(), 501)
+				return
+			}
+			environment.ProductVersion = pv.Version
+			if err := appContext.Repositories.EnvironmentDAO.EditEnvironment(*environment); err != nil {
+				http.Error(w, err.Error(), 501)
+				return
+			}
+	
+			appContext.triggerProductDeploymentWebhook(int(environment.ID),
+				pv.ProductID, environment.Name, pv.Version)
+		}
 	}
-
-	if payload.ProductVersionID > 0 {
-		pv, err := appContext.Repositories.ProductDAO.ListProductVersionsByID(payload.ProductVersionID)
-		if err != nil {
-			http.Error(w, err.Error(), 501)
-			return
-		}
-		environment.ProductVersion = pv.Version
-		if err := appContext.Repositories.EnvironmentDAO.EditEnvironment(*environment); err != nil {
-			http.Error(w, err.Error(), 501)
-			return
-		}
-
-		appContext.triggerProductDeploymentWebhook(payload.EnvironmentID,
-			pv.ProductID, environment.Name, pv.Version)
-	}
-
-	w.WriteHeader(http.StatusOK)
-
+		w.WriteHeader(http.StatusOK)
 }
 
 func (appContext *AppContext) triggerProductDeploymentWebhook(
