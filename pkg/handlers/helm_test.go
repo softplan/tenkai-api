@@ -12,9 +12,11 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
+	mockRabbit "github.com/softplan/tenkai-api/pkg/rabbitmq/mocks"
 	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"github.com/softplan/tenkai-api/pkg/service/_helm/mocks"
 	mockSvc "github.com/softplan/tenkai-api/pkg/service/_helm/mocks"
+	"github.com/streadway/amqp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -631,7 +633,8 @@ func TestGetHelmCommand_GetByIDError(t *testing.T) {
 }
 
 func TestMultipleInstall(t *testing.T) {
-	req, err := http.NewRequest("POST", "/multipleInstall", getMultipleInstallPayload())
+	multipleInstallPayload := getMultipleInstallPayload()
+	req, err := http.NewRequest("POST", "/multipleInstall", multipleInstallPayload)
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
 
@@ -717,12 +720,38 @@ func TestMultipleInstall(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.multipleInstall)
+
+	environment, _ := appContext.Repositories.EnvironmentDAO.GetByID(999)
+	configMaps, _ := appContext.loadConfigMap(getDeployable(), int(environment.ID))
+
+	mockRabbitMQ := mockRabbit.RabbitInterface{}
+
+	var rabbitPayload model.RabbitInstallPayload = model.RabbitInstallPayload{
+		ProductVersionID: 777,
+		Environment: *environment,
+		Deployable: configMaps[0],
+	}
+
+	rabbitPayloadJSON, _ := json.Marshal(rabbitPayload)
+	mockRabbitMQ.Mock.On("Publish",
+		"",
+		"InstallQueue",
+		false,
+		false,
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body: rabbitPayloadJSON,
+		},
+	 ).Return(nil)
+
+	appContext.RabbitImpl = &mockRabbitMQ
+
 	handler.ServeHTTP(rr, req)
 
-	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
-	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 1)
-	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironmentAndScope", 2)
-	mockHelmSvc.AssertNumberOfCalls(t, "Upgrade", 1)
+	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 2)
+	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 0)
+	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironmentAndScope", 0)
+	mockHelmSvc.AssertNumberOfCalls(t, "Upgrade", 0)
 	mockAudit.AssertNumberOfCalls(t, "DoAudit", 1)
 
 	mockProductDAO.AssertNumberOfCalls(t, "ListProductsVersionServices", 1)
@@ -878,6 +907,15 @@ func mockHelmSvcWithLotOfThings(appContext *AppContext) *mockSvc.HelmServiceInte
 	return mockHelmSvc
 }
 
+func getDeployable() []model.InstallPayload {
+	var ip model.InstallPayload
+	ip.EnvironmentID = 999
+	ip.Chart = "repo/my-chart - 0.1.0"
+	ip.ChartVersion = "0.1.0"
+	ip.Name = "my-chart"
+	return []model.InstallPayload{ip}
+}
+
 func getMultipleInstallPayload() *bytes.Buffer {
 	var ip model.InstallPayload
 	ip.EnvironmentID = 999
@@ -886,7 +924,7 @@ func getMultipleInstallPayload() *bytes.Buffer {
 	ip.Name = "my-chart"
 
 	var payload model.MultipleInstallPayload
-	payload.EnvironmentID = 999
+	payload.EnvironmentIDs = []int{999}
 	payload.ProductVersionID = 777
 	payload.Deployables = append(payload.Deployables, ip)
 	pStr, _ := json.Marshal(payload)

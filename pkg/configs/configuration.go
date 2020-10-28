@@ -28,6 +28,13 @@ type App struct {
 	Passkey string
 	Dbms    Dbms
 	Elastic Elastic
+	Rabbit  Rabbit
+}
+
+
+//Rabbit struct
+type Rabbit struct {
+	URI      string
 }
 
 //Elastic Config Structure
