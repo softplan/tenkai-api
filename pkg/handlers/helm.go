@@ -426,6 +426,7 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 			return
 		}
 		payload.Deployables = configMaps
+		out := &bytes.Buffer{}
 
 		for _, element := range payload.Deployables {
 			if err = appContext.updateImageTagBeforeInstallProduct(payload.ProductVersionID,
@@ -433,26 +434,8 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 				http.Error(w, err.Error(), 500)
 				return
 			}
-
-			var rabbitPayload model.RabbitInstallPayload = model.RabbitInstallPayload{
-				ProductVersionID: payload.ProductVersionID,
-				Environment: *environment,
-				Deployable: element,
-			}
-
-			queuePayloadJSON, _ := json.Marshal(rabbitPayload)
-
-			err := appContext.RabbitImpl.Publish(
-				"", 
-				rabbitmq.InstallQueue,
-				false,
-				false,
-				amqp.Publishing{
-					ContentType: "application/json",
-					Body: queuePayloadJSON,
-				},
-			)
 			
+			_, err = appContext.simpleInstall(environment, element, out, false, false)
 			if err != nil {
 				http.Error(w, err.Error(), 501)
 				return
@@ -693,14 +676,22 @@ func (appContext *AppContext) simpleInstall(environment *model.Environment, inst
 			upgradeRequest.Dryrun = dryRun
 			upgradeRequest.Release = name
 
-			return appContext.doUpgrade(upgradeRequest, out)
+			queuePayloadJSON, _ := json.Marshal(upgradeRequest)
 
+			err := appContext.RabbitImpl.Publish(
+				"", 
+				rabbitmq.InstallQueue,
+				false,
+				false,
+				amqp.Publishing{
+					ContentType: "application/json",
+					Body: queuePayloadJSON,
+				},
+			)
+			return "", err
 		}
-
 		return getHelmMessage(name, args, environment, installPayload.Chart), nil
-
 	}
-
 	return "", nil
 }
 

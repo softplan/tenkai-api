@@ -34,6 +34,7 @@ func doTest(t *testing.T, mode string) {
 	appContext.Repositories.VariableDAO = mockVariableDAO
 	appContext.HelmServiceAPI = mockHelmSvc
 	appContext.Auditing = auditSvc
+	appContext.RabbitImpl = getMockRabbitMQ()
 
 	url := "/promote?mode=" + mode + "&srcEnvID=91&targetEnvID=92"
 	req, err := http.NewRequest("GET", url, nil)
