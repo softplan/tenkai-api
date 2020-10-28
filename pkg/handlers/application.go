@@ -11,13 +11,13 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 	"github.com/olivere/elastic"
-	"github.com/softplan/tenkai-api/pkg/rabbit"
 	"github.com/softplan/tenkai-api/pkg/audit"
 	"github.com/softplan/tenkai-api/pkg/configs"
 	"github.com/softplan/tenkai-api/pkg/dbms"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/dbms/repository"
 	"github.com/softplan/tenkai-api/pkg/global"
+	"github.com/softplan/tenkai-api/pkg/rabbitmq"
 	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"github.com/softplan/tenkai-api/pkg/service/core"
 	dockerapi "github.com/softplan/tenkai-api/pkg/service/docker"
@@ -57,7 +57,7 @@ type AppContext struct {
 	ChartImageCache     sync.Map
 	DockerTagsCache     sync.Map
 	ConfigMapCache      sync.Map
-	Rabbit              rabbit.Rabbit
+	RabbitImpl          rabbitmq.RabbitInterface
 }
 
 func defineRotes(r *mux.Router, appContext *AppContext) {
