@@ -11,6 +11,7 @@ import (
 	"github.com/softplan/tenkai-api/pkg/dbms/repository"
 	"github.com/softplan/tenkai-api/pkg/global"
 	"github.com/softplan/tenkai-api/pkg/handlers"
+	"github.com/softplan/tenkai-api/pkg/rabbitmq"
 	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"github.com/softplan/tenkai-api/pkg/service/core"
 	dockerapi "github.com/softplan/tenkai-api/pkg/service/docker"
@@ -48,8 +49,22 @@ func main() {
 	//Elk setup
 	appContext.Elk, _ = appContext.Auditing.ElkClient(config.App.Elastic.URL, config.App.Elastic.Username, config.App.Elastic.Password)
 
+	//RabbitMQ Connection
+	rabbitMQ := initRabbit(config.App.Rabbit.URI)
+	appContext.RabbitImpl = rabbitMQ
+	defer rabbitMQ.Conn.Close()
+	defer rabbitMQ.Channel.Close()
+
 	global.Logger.Info(logFields, "http server started")
 	handlers.StartHTTPServer(appContext)
+}
+
+func initRabbit(uri string) rabbitmq.RabbitImpl {
+	rabbitMQ := rabbitmq.RabbitImpl{}
+	rabbitMQ.Conn = rabbitMQ.GetConnection(uri)
+	rabbitMQ.Channel = rabbitMQ.GetChannel()
+
+	return rabbitMQ
 }
 
 func initializeHelm(appContext *handlers.AppContext) {

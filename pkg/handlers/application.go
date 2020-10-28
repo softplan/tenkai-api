@@ -17,6 +17,7 @@ import (
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/dbms/repository"
 	"github.com/softplan/tenkai-api/pkg/global"
+	"github.com/softplan/tenkai-api/pkg/rabbitmq"
 	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"github.com/softplan/tenkai-api/pkg/service/core"
 	dockerapi "github.com/softplan/tenkai-api/pkg/service/docker"
@@ -56,6 +57,7 @@ type AppContext struct {
 	ChartImageCache     sync.Map
 	DockerTagsCache     sync.Map
 	ConfigMapCache      sync.Map
+	RabbitImpl          rabbitmq.RabbitInterface
 }
 
 func defineRotes(r *mux.Router, appContext *AppContext) {
