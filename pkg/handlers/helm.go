@@ -20,8 +20,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
-	
-	"github.com/softplan/tenkai-api/pkg/rabbit"
+
+	"github.com/softplan/tenkai-api/pkg/rabbitmq"
 	"github.com/streadway/amqp"
 )
 
@@ -403,8 +403,6 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 			if err.Error() == "record not found" {
 				msg = "Environment " + strconv.Itoa(environmentID) + " not found"
 			}
-			//Aqui eu disparo um erro ->
-			//A única forma de chegar um env que não existe é o cara fazer a request por fora do tenkai
 			http.Error(w, msg, http.StatusInternalServerError)
 			return
 		}
@@ -413,10 +411,8 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 		if !isAdmin {
 			auth, _ := appContext.hasEnvironmentRole(principal, environment.ID, "ACTION_DEPLOY")
 			if !auth {
-				//Se não tem permissão já grava na tabela
-				fmt.Println("Gravar na tabela de erros")
-				//http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
-				//return
+				http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
+				return
 			}
 		}
 
@@ -434,7 +430,6 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 		for _, element := range payload.Deployables {
 			if err = appContext.updateImageTagBeforeInstallProduct(payload.ProductVersionID,
 				int(environment.ID), element.Chart); err != nil {
-	
 				http.Error(w, err.Error(), 500)
 				return
 			}
@@ -447,9 +442,9 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 
 			queuePayloadJSON, _ := json.Marshal(rabbitPayload)
 
-			err := appContext.Rabbit.Channel.Publish(
+			err := appContext.RabbitImpl.Publish(
 				"", 
-				rabbit.InstallQueue,
+				rabbitmq.InstallQueue,
 				false,
 				false,
 				amqp.Publishing{
@@ -487,7 +482,7 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 				pv.ProductID, environment.Name, pv.Version)
 		}
 	}
-		w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (appContext *AppContext) triggerProductDeploymentWebhook(
