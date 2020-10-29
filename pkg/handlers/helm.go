@@ -676,7 +676,17 @@ func (appContext *AppContext) simpleInstall(environment *model.Environment, inst
 			upgradeRequest.Dryrun = dryRun
 			upgradeRequest.Release = name
 
-			queuePayloadJSON, _ := json.Marshal(upgradeRequest)
+			queuePayload := rabbitmq.PayloadRabbit{
+				UpgradeRequest: upgradeRequest,
+				Name: environment.Name,
+				Token: environment.Token,
+				Filename: appContext.K8sConfigPath + environment.Group + "_" + environment.Name,
+				CACertificate: environment.CACertificate,
+				ClusterURI: environment.ClusterURI,
+				Namespace: environment.Namespace,
+			}
+
+			queuePayloadJSON, _ := json.Marshal(queuePayload)
 
 			err := appContext.RabbitImpl.Publish(
 				"", 
