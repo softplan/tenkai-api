@@ -16,7 +16,6 @@ import (
 	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"github.com/softplan/tenkai-api/pkg/service/_helm/mocks"
 	mockSvc "github.com/softplan/tenkai-api/pkg/service/_helm/mocks"
-	"github.com/streadway/amqp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -644,6 +643,9 @@ func TestMultipleInstall(t *testing.T) {
 
 	appContext := AppContext{}
 
+	mockDeploymentDAO := &mockRepo.DeploymentDAOInterface{}
+	mockDeploymentDAO.On("CreateDeployment",mock.Anything).Return(1,nil)
+
 	mockConfigDAO := &mockRepo.ConfigDAOInterface{}
 
 	var config model.ConfigMap
@@ -695,6 +697,7 @@ func TestMultipleInstall(t *testing.T) {
 	appContext.Repositories.UserDAO = mockUserDAO
 	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
 	appContext.Repositories.ConfigDAO = mockConfigDAO
+	appContext.Repositories.DeploymentDAO = mockDeploymentDAO
 	appContext.HelmServiceAPI = mockHelmSvc
 
 	auditValues := make(map[string]string)
@@ -721,36 +724,13 @@ func TestMultipleInstall(t *testing.T) {
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.multipleInstall)
 
-	environment, _ := appContext.Repositories.EnvironmentDAO.GetByID(999)
-	configMaps, _ := appContext.loadConfigMap(getDeployable(), int(environment.ID))
-
-	mockRabbitMQ := mockRabbit.RabbitInterface{}
-
-	var rabbitPayload model.RabbitInstallPayload = model.RabbitInstallPayload{
-		ProductVersionID: 777,
-		Environment: *environment,
-		Deployable: configMaps[0],
-	}
-
-	rabbitPayloadJSON, _ := json.Marshal(rabbitPayload)
-	mockRabbitMQ.Mock.On("Publish",
-		"",
-		"InstallQueue",
-		false,
-		false,
-		amqp.Publishing{
-			ContentType: "application/json",
-			Body: rabbitPayloadJSON,
-		},
-	 ).Return(nil)
-
-	appContext.RabbitImpl = &mockRabbitMQ
+	appContext.RabbitImpl = getMockRabbitMQ()
 
 	handler.ServeHTTP(rr, req)
 
-	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 2)
-	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 0)
-	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironmentAndScope", 0)
+	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
+	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 1)
+	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironmentAndScope", 2)
 	mockHelmSvc.AssertNumberOfCalls(t, "Upgrade", 0)
 	mockAudit.AssertNumberOfCalls(t, "DoAudit", 1)
 
@@ -760,6 +740,20 @@ func TestMultipleInstall(t *testing.T) {
 	mockProductDAO.AssertNumberOfCalls(t, "FindProductByID", 1)
 
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
+}
+
+func getMockRabbitMQ() *mockRabbit.RabbitInterface {
+	mockRabbitMQ := mockRabbit.RabbitInterface{}
+
+	mockRabbitMQ.Mock.On("Publish",
+		"",
+		"InstallQueue",
+		false,
+		false,
+		mock.Anything,
+	 ).Return(nil)
+
+	return &mockRabbitMQ
 }
 
 func TestInstall(t *testing.T) {
@@ -772,6 +766,10 @@ func TestInstall(t *testing.T) {
 	charts := getCharts()
 
 	appContext := AppContext{}
+	
+	mockDeploymentDAO := &mockRepo.DeploymentDAOInterface{}
+	mockDeploymentDAO.On("CreateDeployment",mock.Anything).Return(1,nil)
+
 	mockEnvDao := mockGetByID(&appContext)
 	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
 	mockConvention := mockConventionInterface(&appContext)
@@ -792,6 +790,9 @@ func TestInstall(t *testing.T) {
 
 	appContext.Repositories.UserDAO = mockUserDAO
 	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
+	appContext.Repositories.DeploymentDAO = mockDeploymentDAO
+
+	appContext.RabbitImpl = getMockRabbitMQ()
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.install)
@@ -800,7 +801,7 @@ func TestInstall(t *testing.T) {
 	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
 	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 1)
 	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironmentAndScope", 2)
-	mockHelmSvc.AssertNumberOfCalls(t, "Upgrade", 1)
+	mockHelmSvc.AssertNumberOfCalls(t, "Upgrade", 0)
 
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 }
@@ -820,6 +821,17 @@ func TestDryRun(t *testing.T) {
 	chartValue := `{"app":{"myvar":"myvalue"}}`
 	mockHelmSvc.On("GetTemplate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]byte(chartValue), nil)
 
+	appContext.RabbitImpl = getMockRabbitMQ()
+
+	mockDeploymentDAO := &mockRepo.DeploymentDAOInterface{}
+	mockDeploymentDAO.On("CreateDeployment",mock.Anything).Return(1,nil)
+	appContext.Repositories.DeploymentDAO = mockDeploymentDAO
+
+	user := mockUser()
+	mockUserDAO := &mockRepo.UserDAOInterface{}
+	mockUserDAO.On("FindByEmail", mock.Anything).Return(user, nil)
+	appContext.Repositories.UserDAO = mockUserDAO
+
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.helmDryRun)
 	handler.ServeHTTP(rr, req)
@@ -827,7 +839,7 @@ func TestDryRun(t *testing.T) {
 	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
 	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 1)
 	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironmentAndScope", 2)
-	mockHelmSvc.AssertNumberOfCalls(t, "Upgrade", 1)
+	mockHelmSvc.AssertNumberOfCalls(t, "Upgrade", 0)
 
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 }

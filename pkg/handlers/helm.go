@@ -314,7 +314,7 @@ func (appContext *AppContext) getHelmCommand(w http.ResponseWriter, r *http.Requ
 			return
 		}
 
-		command, errX := appContext.simpleInstall(environment, element, out, false, true)
+		command, errX := appContext.simpleInstall(environment, element, out, false, true, "")
 		if errX != nil {
 			http.Error(w, err.Error(), 501)
 			return
@@ -426,6 +426,7 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 			return
 		}
 		payload.Deployables = configMaps
+		out := &bytes.Buffer{}
 
 		for _, element := range payload.Deployables {
 			if err = appContext.updateImageTagBeforeInstallProduct(payload.ProductVersionID,
@@ -433,26 +434,8 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 				http.Error(w, err.Error(), 500)
 				return
 			}
-
-			var rabbitPayload model.RabbitInstallPayload = model.RabbitInstallPayload{
-				ProductVersionID: payload.ProductVersionID,
-				Environment: *environment,
-				Deployable: element,
-			}
-
-			queuePayloadJSON, _ := json.Marshal(rabbitPayload)
-
-			err := appContext.RabbitImpl.Publish(
-				"", 
-				rabbitmq.InstallQueue,
-				false,
-				false,
-				amqp.Publishing{
-					ContentType: "application/json",
-					Body: queuePayloadJSON,
-				},
-			)
 			
+			_, err = appContext.simpleInstall(environment, element, out, false, false, principal.Email)
 			if err != nil {
 				http.Error(w, err.Error(), 501)
 				return
@@ -574,7 +557,7 @@ func (appContext *AppContext) install(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	_, err = appContext.simpleInstall(environment, payload, out, false, false)
+	_, err = appContext.simpleInstall(environment, payload, out, false, false, principal.Email)
 	if err != nil {
 		fmt.Println(out.String())
 		http.Error(w, err.Error(), 501)
@@ -604,7 +587,7 @@ func (appContext *AppContext) helmDryRun(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	_, err = appContext.simpleInstall(environment, payload, out, true, false)
+	_, err = appContext.simpleInstall(environment, payload, out, true, false, "")
 
 	if err != nil {
 		http.Error(w, err.Error(), 501)
@@ -656,7 +639,7 @@ func (appContext *AppContext) getArgsWithHelmDefault(variables []model.Variable,
 	return args
 }
 
-func (appContext *AppContext) simpleInstall(environment *model.Environment, installPayload model.InstallPayload, out *bytes.Buffer, dryRun bool, helmCommandOnly bool) (string, error) {
+func (appContext *AppContext) simpleInstall(environment *model.Environment, installPayload model.InstallPayload, out *bytes.Buffer, dryRun bool, helmCommandOnly bool, userEmail string) (string, error) {
 
 	//WARNING - VERIFY IF CONFIG FILE EXISTS !!! This is the cause of  u.client.ReleaseHistory fail sometimes.
 
@@ -693,14 +676,38 @@ func (appContext *AppContext) simpleInstall(environment *model.Environment, inst
 			upgradeRequest.Dryrun = dryRun
 			upgradeRequest.Release = name
 
-			return appContext.doUpgrade(upgradeRequest, out)
+			user, _ := appContext.Repositories.UserDAO.FindByEmail(userEmail)
+			deployment := model.Deployment{}
+			deployment.User = uint(user.ID)
+			deploymentID, _ := appContext.Repositories.DeploymentDAO.CreateDeployment(deployment)
 
+			queuePayload := rabbitmq.PayloadRabbit{
+				UpgradeRequest: upgradeRequest,
+				Name: environment.Name,
+				Token: environment.Token,
+				Filename: appContext.K8sConfigPath + environment.Group + "_" + environment.Name,
+				CACertificate: environment.CACertificate,
+				ClusterURI: environment.ClusterURI,
+				Namespace: environment.Namespace,
+				DeploymentID: uint(deploymentID),
+			}
+
+			queuePayloadJSON, _ := json.Marshal(queuePayload)
+
+			err := appContext.RabbitImpl.Publish(
+				"", 
+				rabbitmq.InstallQueue,
+				false,
+				false,
+				amqp.Publishing{
+					ContentType: "application/json",
+					Body: queuePayloadJSON,
+				},
+			)
+			return "", err
 		}
-
 		return getHelmMessage(name, args, environment, installPayload.Chart), nil
-
 	}
-
 	return "", nil
 }
 
