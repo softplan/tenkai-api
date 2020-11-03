@@ -679,8 +679,8 @@ func (appContext *AppContext) simpleInstall(environment *model.Environment, inst
 
 			user, _ := appContext.Repositories.UserDAO.FindByEmail(userEmail)
 			deployment := model.Deployment{}
-			deployment.User = user.ID
-			deployment.Environment = environment.ID
+			deployment.UserID = user.ID
+			deployment.EnvironmentID = environment.ID
 			deployment.Chart = installPayload.Chart
 			deploymentID, _ := appContext.Repositories.DeploymentDAO.CreateDeployment(deployment)
 
