@@ -47,6 +47,27 @@ func (_m *DeploymentDAOInterface) EditDeployment(deployment model.Deployment) er
 	return r0
 }
 
+// GetDeploymentByID provides a mock function with given fields: id
+func (_m *DeploymentDAOInterface) GetDeploymentByID(id int) (model.Deployment, error) {
+	ret := _m.Called(id)
+
+	var r0 model.Deployment
+	if rf, ok := ret.Get(0).(func(int) model.Deployment); ok {
+		r0 = rf(id)
+	} else {
+		r0 = ret.Get(0).(model.Deployment)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(int) error); ok {
+		r1 = rf(id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListDeploymentByUserID provides a mock function with given fields: userID
 func (_m *DeploymentDAOInterface) ListDeploymentByUserID(userID int) ([]model.Deployment, error) {
 	ret := _m.Called(userID)

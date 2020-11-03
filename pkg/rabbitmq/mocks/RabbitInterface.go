@@ -44,6 +44,29 @@ func (_m *RabbitInterface) GetConnection(uri string) *amqp.Connection {
 	return r0
 }
 
+// GetConsumer provides a mock function with given fields: queue, consumer, autoAck, exclusive, noLocal, noWait, args
+func (_m *RabbitInterface) GetConsumer(queue string, consumer string, autoAck bool, exclusive bool, noLocal bool, noWait bool, args amqp.Table) (<-chan amqp.Delivery, error) {
+	ret := _m.Called(queue, consumer, autoAck, exclusive, noLocal, noWait, args)
+
+	var r0 <-chan amqp.Delivery
+	if rf, ok := ret.Get(0).(func(string, string, bool, bool, bool, bool, amqp.Table) <-chan amqp.Delivery); ok {
+		r0 = rf(queue, consumer, autoAck, exclusive, noLocal, noWait, args)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(<-chan amqp.Delivery)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, string, bool, bool, bool, bool, amqp.Table) error); ok {
+		r1 = rf(queue, consumer, autoAck, exclusive, noLocal, noWait, args)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Publish provides a mock function with given fields: exchange, key, mandatory, immediate, msg
 func (_m *RabbitInterface) Publish(exchange string, key string, mandatory bool, immediate bool, msg amqp.Publishing) error {
 	ret := _m.Called(exchange, key, mandatory, immediate, msg)
