@@ -49,7 +49,7 @@ func (database *Database) Connect(dbmsURI string, local bool) {
 	database.Db.AutoMigrate(&model2.UserEnvironmentRole{})
 	database.Db.AutoMigrate(&model2.Notes{})
 	database.Db.AutoMigrate(&model2.WebHook{})
-
+	database.Db.AutoMigrate(&model2.Deployment{})
 	database.Db.Model(&model.ValueRule{}).
 		AddForeignKey("variable_rule_id", "variable_rules(id)", "CASCADE", "CASCADE")
 }

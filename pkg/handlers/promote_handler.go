@@ -3,14 +3,15 @@ package handlers
 import (
 	"bytes"
 	"errors"
+	"net/http"
+	"strconv"
+	"strings"
+
 	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/global"
 	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"github.com/softplan/tenkai-api/pkg/util"
-	"net/http"
-	"strconv"
-	"strings"
 )
 
 type releaseToDeploy struct {
@@ -172,7 +173,7 @@ func (appContext *AppContext) doIt(kubeConfig string, targetEnvironment *model.E
 
 		installPayload := convertPayload(e)
 
-		_, err := appContext.simpleInstall(targetEnvironment, installPayload, out, false, false)
+		_, err := appContext.simpleInstall(targetEnvironment, installPayload, out, false, false, "")
 		if err != nil {
 			global.Logger.Error(logFields, "error: "+err.Error())
 		}

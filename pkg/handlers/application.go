@@ -40,6 +40,7 @@ type Repositories struct {
 	UserEnvironmentRoleDAO repository.UserEnvironmentRoleDAOInterface
 	NotesDAO               repository.NotesDAOInterface
 	WebHookDAO             repository.WebHookDAOInterface
+	DeploymentDAO          repository.DeploymentDAOInterface
 }
 
 //AppContext AppContext

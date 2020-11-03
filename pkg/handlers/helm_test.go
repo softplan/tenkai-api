@@ -643,6 +643,9 @@ func TestMultipleInstall(t *testing.T) {
 
 	appContext := AppContext{}
 
+	mockDeploymentDAO := &mockRepo.DeploymentDAOInterface{}
+	mockDeploymentDAO.On("CreateDeployment",mock.Anything).Return(1,nil)
+
 	mockConfigDAO := &mockRepo.ConfigDAOInterface{}
 
 	var config model.ConfigMap
@@ -694,6 +697,7 @@ func TestMultipleInstall(t *testing.T) {
 	appContext.Repositories.UserDAO = mockUserDAO
 	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
 	appContext.Repositories.ConfigDAO = mockConfigDAO
+	appContext.Repositories.DeploymentDAO = mockDeploymentDAO
 	appContext.HelmServiceAPI = mockHelmSvc
 
 	auditValues := make(map[string]string)
@@ -762,6 +766,10 @@ func TestInstall(t *testing.T) {
 	charts := getCharts()
 
 	appContext := AppContext{}
+	
+	mockDeploymentDAO := &mockRepo.DeploymentDAOInterface{}
+	mockDeploymentDAO.On("CreateDeployment",mock.Anything).Return(1,nil)
+
 	mockEnvDao := mockGetByID(&appContext)
 	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
 	mockConvention := mockConventionInterface(&appContext)
@@ -782,6 +790,7 @@ func TestInstall(t *testing.T) {
 
 	appContext.Repositories.UserDAO = mockUserDAO
 	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
+	appContext.Repositories.DeploymentDAO = mockDeploymentDAO
 
 	appContext.RabbitImpl = getMockRabbitMQ()
 
@@ -813,6 +822,15 @@ func TestDryRun(t *testing.T) {
 	mockHelmSvc.On("GetTemplate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]byte(chartValue), nil)
 
 	appContext.RabbitImpl = getMockRabbitMQ()
+
+	mockDeploymentDAO := &mockRepo.DeploymentDAOInterface{}
+	mockDeploymentDAO.On("CreateDeployment",mock.Anything).Return(1,nil)
+	appContext.Repositories.DeploymentDAO = mockDeploymentDAO
+
+	user := mockUser()
+	mockUserDAO := &mockRepo.UserDAOInterface{}
+	mockUserDAO.On("FindByEmail", mock.Anything).Return(user, nil)
+	appContext.Repositories.UserDAO = mockUserDAO
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(appContext.helmDryRun)

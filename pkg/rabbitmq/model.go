@@ -13,4 +13,5 @@ type PayloadRabbit struct {
 	CACertificate  string `json:"ca_certificate"`
 	ClusterURI     string `json:"cluster_uri"`
 	Namespace      string `json:"namespace"`
+	DeploymentID   uint   `json:"deployment_id"`
 }
