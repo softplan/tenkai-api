@@ -19,8 +19,8 @@ func getDeployment() (model2.Deployment){
 	deployment.Chart = "Chart Teste"
 	deployment.Success = true
 	deployment.Message = "Message teste"
-	deployment.Environment = 1
-	deployment.User = 1
+	deployment.EnvironmentID = 1
+	deployment.UserID = 1
 	
 	return deployment
 }
@@ -46,18 +46,78 @@ func TestCreateDeployment(test *testing.T) {
 			AnyTime{}, 
 			AnyTime{}, 
 			nil,
-			deployment.Environment,
+			deployment.EnvironmentID,
 			deployment.Chart,
-			deployment.User,
+			deployment.UserID,
 			deployment.Success,
 			deployment.Message,
 		).WillReturnRows(rows)
 	
-		_, err = deploymentDAO.CreateDeployment(deployment)
+	_, err = deploymentDAO.CreateDeployment(deployment)
 		
-
 	assert.Nil(test, err)
 	mock.ExpectationsWereMet()
 }
 
+func TestGetDeploymentByID(test *testing.T){
+	db, mock, err := sqlmock.New()
+	assert.Nil(test, err)
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
 
+	mock.MatchExpectationsInOrder(false)
+
+	deploymentDAO := DeploymentDAOImpl{
+		Db: gormDB,
+	}
+
+	rows := sqlmock.NewRows(
+		[]string{
+			"id", "created_at", "updated_at", "deleted_at",
+			"environment_id", "chart", "user_id", "success",
+			"message",
+		}).AddRow(999, time.Now(), time.Now(), nil, 17, 
+			"Chart Teste", 1, true, "",
+		)
+	
+	mock.ExpectQuery(`SELECT (.*) FROM "deployments"`).WillReturnRows(rows)
+
+	result, err := deploymentDAO.GetDeploymentByID(999)
+	assert.Nil(test, err)
+	assert.NotNil(test, result)
+
+	mock.ExpectationsWereMet()
+}
+
+func TestEditDeployment(test *testing.T){
+	db, mock, err := sqlmock.New()
+	assert.Nil(test, err)
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+	deploymentDAO := DeploymentDAOImpl{Db: gormDB}
+
+	deployment := getDeployment()
+	deployment.ID = 999
+
+	mock.ExpectExec(
+		`UPDATE "deployments" SET (.*) WHERE (.*)`,
+	).WithArgs(
+		AnyTime{},
+		AnyTime{},
+		nil,
+		deployment.EnvironmentID,
+		deployment.Chart,
+		deployment.UserID,
+		deployment.Success,
+		deployment.Message,
+		deployment.ID,
+	).WillReturnResult(
+		sqlmock.NewResult(1,1),
+	)
+	
+	err = deploymentDAO.EditDeployment(deployment)
+	
+	assert.Nil(test, err)
+
+	mock.ExpectationsWereMet()
+}

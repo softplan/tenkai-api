@@ -9,7 +9,6 @@ import (
 type DeploymentDAOInterface interface {
 	CreateDeployment(deployment model.Deployment) (int, error)
 	EditDeployment(deployment model.Deployment) (error)
-	ListDeploymentByUserID(userID int) ([]model.Deployment, error)
 	GetDeploymentByID(id int) (model.Deployment, error)
 }
 
@@ -37,15 +36,7 @@ func (dao DeploymentDAOImpl) CreateDeployment(deployment model.Deployment) (int,
 
 //EditDeployment edit deployment
 func (dao DeploymentDAOImpl) EditDeployment(deployment model.Deployment) (error) {
-	return dao.Db.Save(&deployment).Error
+	gorm := dao.Db.Save(&deployment)
+	return gorm.Error
 }
 
-//ListDeploymentByUserID list all deployments
-func (dao DeploymentDAOImpl) ListDeploymentByUserID(userID int) ([]model.Deployment, error) {
-	deployments := make([]model.Deployment, 0)
-	err := dao.Db.Find(&deployments).Error
-	if err != nil {
-		return deployments, nil
-	}
-	return deployments, err
-}
