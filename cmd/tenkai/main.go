@@ -104,6 +104,7 @@ func initRepository(database *dbms.Database) handlers.Repositories {
 	repositories.UserEnvironmentRoleDAO = &repository.UserEnvironmentRoleDAOImpl{Db: database.Db}
 	repositories.NotesDAO = &repository.NotesDAOImpl{Db: database.Db}
 	repositories.WebHookDAO = &repository.WebHookDAOImpl{Db: database.Db}
+	repositories.DeploymentDAO = &repository.DeploymentDAOImpl{Db: database.Db}
 
 	return repositories
 }
