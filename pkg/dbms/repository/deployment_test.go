@@ -17,7 +17,7 @@ func getDeployment() (model2.Deployment){
 	deployment.UpdatedAt = now
 	deployment.DeletedAt = nil
 	deployment.Chart = "Chart Teste"
-	deployment.Status = true
+	deployment.Success = true
 	deployment.Message = "Message teste"
 	deployment.Environment = 1
 	deployment.User = 1
@@ -49,7 +49,7 @@ func TestCreateDeployment(test *testing.T) {
 			deployment.Environment,
 			deployment.Chart,
 			deployment.User,
-			deployment.Status,
+			deployment.Success,
 			deployment.Message,
 		).WillReturnRows(rows)
 	

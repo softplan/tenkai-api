@@ -447,23 +447,24 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 			auditValues["name"] = element.Name
 	
 			appContext.Auditing.DoAudit(r.Context(), appContext.Elk, principal.Email, "deploy", auditValues)
-	
-		}
-		if payload.ProductVersionID > 0 {
-			pv, err := appContext.Repositories.ProductDAO.ListProductVersionsByID(payload.ProductVersionID)
-			if err != nil {
-				http.Error(w, err.Error(), 501)
-				return
+			
+			if payload.ProductVersionID > 0 {
+				pv, err := appContext.Repositories.ProductDAO.ListProductVersionsByID(payload.ProductVersionID)
+				if err != nil {
+					http.Error(w, err.Error(), 501)
+					return
+				}
+				environment.ProductVersion = pv.Version
+				if err := appContext.Repositories.EnvironmentDAO.EditEnvironment(*environment); err != nil {
+					http.Error(w, err.Error(), 501)
+					return
+				}
+		
+				appContext.triggerProductDeploymentWebhook(int(environment.ID),
+					pv.ProductID, environment.Name, pv.Version)
 			}
-			environment.ProductVersion = pv.Version
-			if err := appContext.Repositories.EnvironmentDAO.EditEnvironment(*environment); err != nil {
-				http.Error(w, err.Error(), 501)
-				return
-			}
-	
-			appContext.triggerProductDeploymentWebhook(int(environment.ID),
-				pv.ProductID, environment.Name, pv.Version)
 		}
+		
 	}
 	w.WriteHeader(http.StatusOK)
 }
@@ -678,7 +679,9 @@ func (appContext *AppContext) simpleInstall(environment *model.Environment, inst
 
 			user, _ := appContext.Repositories.UserDAO.FindByEmail(userEmail)
 			deployment := model.Deployment{}
-			deployment.User = uint(user.ID)
+			deployment.User = user.ID
+			deployment.Environment = environment.ID
+			deployment.Chart = installPayload.Chart
 			deploymentID, _ := appContext.Repositories.DeploymentDAO.CreateDeployment(deployment)
 
 			queuePayload := rabbitmq.PayloadRabbit{
