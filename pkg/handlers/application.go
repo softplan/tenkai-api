@@ -213,6 +213,43 @@ func StartHTTPServer(appContext *AppContext) {
 
 }
 
+//StartConsumerQueue start to consume queue
+func StartConsumerQueue(appContext *AppContext, queue string) {
+	functionName := "StartConsumerQueue"
+	msgs, err := appContext.RabbitImpl.GetConsumer(
+		queue,
+		"",
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+	checkError(err, functionName)
+
+	forever := make(chan bool)
+
+	go func() {
+		for d := range msgs {
+			global.Logger.Info(global.AppFields{global.Function: functionName}, "Message Received")
+			var payload rabbitmq.RabbitPayloadConsumer
+			json.Unmarshal([]byte(d.Body), &payload)
+			
+			deployment, err := appContext.Repositories.DeploymentDAO.GetDeploymentByID(int(payload.DeploymentID))
+			checkError(err, functionName)
+			deployment.Success = payload.Success
+			deployment.Message = payload.Error
+
+			err = appContext.Repositories.DeploymentDAO.EditDeployment(deployment)
+			checkError(err, functionName)
+
+			global.Logger.Info(global.AppFields{global.Function: functionName}, "Update Deployment on Database")
+		}
+	}()
+	global.Logger.Info(global.AppFields{global.Function: "StartConsumerQueue"}, "[*] - waiting for messages")
+	<-forever
+}
+
 func extractToken(reqToken string) *model.Principal {
 	var principal model.Principal
 
@@ -315,4 +352,11 @@ func (appContext *AppContext) rootHandler(w http.ResponseWriter, r *http.Request
 	}
 	w.Header().Set(global.ContentType, "application/json")
 	w.Write(json)
+}
+
+func checkError(err error, function string) {
+	if err != nil {
+		global.Logger.Info(global.AppFields{global.Function: function}, err.Error())
+		panic(err)
+	}
 }

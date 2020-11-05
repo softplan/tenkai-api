@@ -54,6 +54,7 @@ func main() {
 	appContext.RabbitImpl = rabbitMQ
 	defer rabbitMQ.Conn.Close()
 	defer rabbitMQ.Channel.Close()
+	go handlers.StartConsumerQueue(appContext, rabbitmq.ResultInstallQueue)
 
 	global.Logger.Info(logFields, "http server started")
 	handlers.StartHTTPServer(appContext)
