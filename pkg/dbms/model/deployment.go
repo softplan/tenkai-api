@@ -5,9 +5,9 @@ import "github.com/jinzhu/gorm"
 //Deployment  struct
 type Deployment struct {
 	gorm.Model
-	Environment uint `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	Chart  string `json:"chart"`
-	User uint `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	Status bool `json:"status"`
-	Message string `json:"message"`
+	EnvironmentID uint   `json:"environment_id"`
+	Chart         string `json:"chart"`
+	UserID        uint   `json:"user_id"`
+	Success       bool   `json:"success"`
+	Message       string `json:"message"`
 }
