@@ -12,6 +12,27 @@ type DeploymentDAOInterface struct {
 	mock.Mock
 }
 
+// CountDeployments provides a mock function with given fields: startDate, endDate, userID, environmentID
+func (_m *DeploymentDAOInterface) CountDeployments(startDate string, endDate string, userID string, environmentID string) (int64, error) {
+	ret := _m.Called(startDate, endDate, userID, environmentID)
+
+	var r0 int64
+	if rf, ok := ret.Get(0).(func(string, string, string, string) int64); ok {
+		r0 = rf(startDate, endDate, userID, environmentID)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, string, string, string) error); ok {
+		r1 = rf(startDate, endDate, userID, environmentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // CreateDeployment provides a mock function with given fields: deployment
 func (_m *DeploymentDAOInterface) CreateDeployment(deployment model.Deployment) (int, error) {
 	ret := _m.Called(deployment)
@@ -61,6 +82,29 @@ func (_m *DeploymentDAOInterface) GetDeploymentByID(id int) (model.Deployment, e
 	var r1 error
 	if rf, ok := ret.Get(1).(func(int) error); ok {
 		r1 = rf(id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListDeployments provides a mock function with given fields: startDate, endDate, userID, environmentID, pageNumber, pageSize
+func (_m *DeploymentDAOInterface) ListDeployments(startDate string, endDate string, userID string, environmentID string, pageNumber int, pageSize int) ([]model.Deployment, error) {
+	ret := _m.Called(startDate, endDate, userID, environmentID, pageNumber, pageSize)
+
+	var r0 []model.Deployment
+	if rf, ok := ret.Get(0).(func(string, string, string, string, int, int) []model.Deployment); ok {
+		r0 = rf(startDate, endDate, userID, environmentID, pageNumber, pageSize)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]model.Deployment)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, string, string, string, int, int) error); ok {
+		r1 = rf(startDate, endDate, userID, environmentID, pageNumber, pageSize)
 	} else {
 		r1 = ret.Error(1)
 	}
