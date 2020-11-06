@@ -64,9 +64,33 @@ func initRabbit(uri string) rabbitmq.RabbitImpl {
 	rabbitMQ := rabbitmq.RabbitImpl{}
 	rabbitMQ.Conn = rabbitMQ.GetConnection(uri)
 	rabbitMQ.Channel = rabbitMQ.GetChannel()
-
+	createQueues(rabbitMQ)
 	return rabbitMQ
 }
+
+func createQueues(rabbitMQ rabbitmq.RabbitImpl) {
+	createInstallQueue(rabbitMQ)
+	createResultInstallQueue(rabbitMQ)
+}
+
+func createInstallQueue(rabbitMQ rabbitmq.RabbitImpl) {
+	_, err := rabbitMQ.Channel.QueueDeclare("InstallQueue", true, false, false, false, nil)
+	if err != nil {
+		global.Logger.Error(
+			global.AppFields{global.Function: "createInstallQueue"},
+			"Could not declare InstallQueue - " + err.Error())
+	}
+}
+
+func createResultInstallQueue(rabbitMQ rabbitmq.RabbitImpl) {
+	_, err := rabbitMQ.Channel.QueueDeclare("ResultInstallQueue", true, false, false, false, nil)
+	if err != nil {
+		global.Logger.Error(
+			global.AppFields{global.Function: "createResultInstallQueue"},
+			"Could not declare ResultInstallQueue - " + err.Error())
+	}
+}
+
 
 func initializeHelm(appContext *handlers.AppContext) {
 	if _, err := os.Stat(global.HelmDir + "/repository/repositories.yaml"); os.IsNotExist(err) {
