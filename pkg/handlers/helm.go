@@ -455,7 +455,7 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 		}
 
 		appContext.triggerProductDeploymentWebhook(payload.EnvironmentID,
-			pv.ProductID, environment.Name, pv.Version)
+			pv.ProductID, environment.Namespace, pv.Version)
 	}
 
 	w.WriteHeader(http.StatusOK)
