@@ -11,3 +11,10 @@ type Deployment struct {
 	Success       bool   `json:"success"`
 	Message       string `json:"message"`
 }
+
+//DeploymentResponse struct response /deployments GET
+type DeploymentResponse struct {
+	Count      int64        `json:"count"`
+	TotalPages int          `json:"total_pages"`
+	Data       []Deployment `json:"data"`
+}
