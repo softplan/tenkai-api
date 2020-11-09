@@ -25,7 +25,7 @@ func (appContext *AppContext) listDeployments(w http.ResponseWriter, r *http.Req
 		return
 	}
 	page, success := validatePageParam(pageString)
-	
+
 	if !success {
 		http.Error(w, "Page must be a number", http.StatusBadRequest)
 		return
@@ -41,8 +41,8 @@ func (appContext *AppContext) listDeployments(w http.ResponseWriter, r *http.Req
 	}
 
 	responseStruct := model.DeploymentResponse{
-		Data: deployments,
-		Count: count,
+		Data:       deployments,
+		Count:      count,
 		TotalPages: getTotalPages(pageSize, int(count)),
 	}
 
@@ -60,12 +60,12 @@ func validatePageParam(page string) (int, bool) {
 	if err != nil {
 		logListDeployments("page must be a positive integer")
 		return -1, false
-	} 
+	}
 	return int(pageNumber), true
 }
 
 func validateRequiredParams(startDate, endDate string) (string, bool) {
-	if startDate == ""{
+	if startDate == "" {
 		logListDeployments("Parameter start_date is required")
 		return "Parameter start_date is required", false
 	} else if _, err := time.Parse("2006-01-02", startDate); err != nil {
@@ -74,16 +74,16 @@ func validateRequiredParams(startDate, endDate string) (string, bool) {
 	} else if endDate == "" {
 		logListDeployments("Parameter end_date is required")
 		return "Parameter end_date is required", false
-	} else if _, err := time.Parse("2006-01-02",endDate); err != nil {
+	} else if _, err := time.Parse("2006-01-02", endDate); err != nil {
 		logListDeployments("Parameter end_date is required with format YYYY-MM-DD - " + err.Error())
 		return "Parameter end_date is required with format YYYY-MM-DD", false
 	}
 	return "", true
 }
 
-func getTotalPages(pageSize int, count int) (int) {
+func getTotalPages(pageSize int, count int) int {
 	totalPages := int(count / pageSize)
-	if count % pageSize > 0 {
+	if count%pageSize > 0 {
 		totalPages++
 	}
 	return totalPages
@@ -93,7 +93,7 @@ func logListDeployments(errorMessage string) {
 	global.Logger.Error(
 		global.AppFields{
 			global.Function: "ListDeployments",
-		}, 
+		},
 		errorMessage,
 	)
 }

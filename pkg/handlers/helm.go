@@ -434,20 +434,20 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 				http.Error(w, err.Error(), 500)
 				return
 			}
-			
+
 			_, err = appContext.simpleInstall(environment, element, out, false, false, principal.Email)
 			if err != nil {
 				http.Error(w, err.Error(), 501)
 				return
 			}
-	
+
 			auditValues := make(map[string]string)
 			auditValues["environment"] = environment.Name
 			auditValues["chartName"] = element.Chart
 			auditValues["name"] = element.Name
-	
+
 			appContext.Auditing.DoAudit(r.Context(), appContext.Elk, principal.Email, "deploy", auditValues)
-			
+
 			if payload.ProductVersionID > 0 {
 				pv, err := appContext.Repositories.ProductDAO.ListProductVersionsByID(payload.ProductVersionID)
 				if err != nil {
@@ -459,12 +459,12 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 					http.Error(w, err.Error(), 501)
 					return
 				}
-		
+
 				appContext.triggerProductDeploymentWebhook(int(environment.ID),
 					pv.ProductID, environment.Name, pv.Version)
 			}
 		}
-		
+
 	}
 	w.WriteHeader(http.StatusOK)
 }
@@ -686,25 +686,25 @@ func (appContext *AppContext) simpleInstall(environment *model.Environment, inst
 
 			queuePayload := rabbitmq.PayloadRabbit{
 				UpgradeRequest: upgradeRequest,
-				Name: environment.Name,
-				Token: environment.Token,
-				Filename: appContext.K8sConfigPath + environment.Group + "_" + environment.Name,
-				CACertificate: environment.CACertificate,
-				ClusterURI: environment.ClusterURI,
-				Namespace: environment.Namespace,
-				DeploymentID: uint(deploymentID),
+				Name:           environment.Name,
+				Token:          environment.Token,
+				Filename:       appContext.K8sConfigPath + environment.Group + "_" + environment.Name,
+				CACertificate:  environment.CACertificate,
+				ClusterURI:     environment.ClusterURI,
+				Namespace:      environment.Namespace,
+				DeploymentID:   uint(deploymentID),
 			}
 
 			queuePayloadJSON, _ := json.Marshal(queuePayload)
 
 			err := appContext.RabbitImpl.Publish(
-				"", 
+				"",
 				rabbitmq.InstallQueue,
 				false,
 				false,
 				amqp.Publishing{
 					ContentType: "application/json",
-					Body: queuePayloadJSON,
+					Body:        queuePayloadJSON,
 				},
 			)
 			return "", err

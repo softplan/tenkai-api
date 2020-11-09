@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"time"
+
 	"github.com/jinzhu/gorm"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 )
@@ -8,9 +10,9 @@ import (
 //DeploymentDAOInterface DeploymentDAOInterface
 type DeploymentDAOInterface interface {
 	CreateDeployment(deployment model.Deployment) (int, error)
-	EditDeployment(deployment model.Deployment) (error)
+	EditDeployment(deployment model.Deployment) error
 	GetDeploymentByID(id int) (model.Deployment, error)
-	ListDeployments(startDate, endDate, userID, environmentID string, pageNumber, pageSize int) ([]model.Deployment, error)
+	ListDeployments(startDate, endDate, userID, environmentID string, pageNumber, pageSize int) ([]model.Deployments, error)
 	CountDeployments(startDate, endDate, userID, environmentID string) (int64, error)
 }
 
@@ -37,27 +39,57 @@ func (dao DeploymentDAOImpl) CreateDeployment(deployment model.Deployment) (int,
 }
 
 //EditDeployment edit deployment
-func (dao DeploymentDAOImpl) EditDeployment(deployment model.Deployment) (error) {
+func (dao DeploymentDAOImpl) EditDeployment(deployment model.Deployment) error {
 	gorm := dao.Db.Save(&deployment)
 	return gorm.Error
 }
 
 func prepareSQL(userID, environmentID string) string {
-	sql := "created_at >= ? AND created_at <= ?"
+	sql := "deployments.created_at >= ? AND deployments.created_at <= ?"
 	if userID != "" {
-		sql += " AND user_id = " + userID
+		sql += " AND deployments.user_id = " + userID
 	}
 	if environmentID != "" {
-		sql += " AND environment_id = " + environmentID
+		sql += " AND deployments.environment_id = " + environmentID
 	}
 	return sql
 }
 
 //ListDeployments list all deployments filtered by date, environment and user
-func (dao DeploymentDAOImpl) ListDeployments(startDate, endDate, userID, environmentID string, pageNumber, pageSize int) ([]model.Deployment, error) {
-	var deployments []model.Deployment
+func (dao DeploymentDAOImpl) ListDeployments(startDate, endDate, userID, environmentID string, pageNumber, pageSize int) ([]model.Deployments, error) {
+	var deployments []model.Deployments
 	sql := prepareSQL(userID, environmentID)
-	err := dao.Db.Where(sql, startDate, endDate).Offset((pageNumber - 1) * pageSize).Limit(pageSize).Find(&deployments).Error
+	rows, err := dao.Db.Table("deployments").Select(
+		"deployments.id AS id, deployments.created_at AS created_at, deployments.updated_at AS updated_at,chart, users.id AS user_id, users.email AS user_email, environments.id AS environments_id, environments.name AS environments_name, success, message ",
+	).Joins(
+		"JOIN users ON deployments.user_id = users.id",
+	).Joins(
+		"JOIN environments ON deployments.environment_id = environments.id",
+	).Where(sql, startDate, endDate).Offset((pageNumber - 1) * pageSize).Limit(pageSize).Rows()
+
+	for rows.Next() {
+		userID, envID, id := 0, 0, 0
+		createdAt := time.Time{}
+		updatedAt := time.Time{}
+		chart, userEmail, envName, message := "", "", "", ""
+		success := false
+		rows.Scan(&id, &createdAt, &updatedAt, &chart, &userID, &userEmail, &envID, &envName, &success, &message)
+
+		deployment := model.Deployments{}
+		deployment.ID = uint(id)
+		deployment.CreatedAt = createdAt
+		deployment.UpdatedAt = updatedAt
+		deployment.Chart = chart
+		deployment.Environment.ID = uint(envID)
+		deployment.Environment.Name = envName
+		deployment.User.ID = uint(userID)
+		deployment.User.Email = userEmail
+		deployment.Success = success
+		deployment.Message = message
+
+		deployments = append(deployments, deployment)
+	}
+
 	return deployments, err
 }
 
