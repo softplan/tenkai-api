@@ -21,12 +21,24 @@ type DeploymentResponse struct {
 	Data       []Deployments `json:"data"`
 }
 
+//UserEmail is a struct to be used with deployments payload response
+type UserEmail struct {
+	ID    uint   `json:"id"`
+	Email string `json:"email"`
+}
+
+//EnvironmentName is a struct to be used with deployments payload response
+type EnvironmentName struct {
+	ID   uint   `json:"id"`
+	Name string `json:"Name"`
+}
+
 //Deployments struct to fill with query result to response /deployments GET
 type Deployments struct {
 	Deployment
-	Environment Environment `json:"environment"`
-	Chart       string      `json:"chart"`
-	User        User        `json:"user"`
-	Success     bool        `json:"success"`
-	Message     string      `json:"message"`
+	Environment EnvironmentName `json:"environment"`
+	Chart       string          `json:"chart"`
+	User        UserEmail       `json:"user"`
+	Success     bool            `json:"success"`
+	Message     string          `json:"message"`
 }
