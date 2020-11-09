@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func getDeployment() (model2.Deployment){
+func getDeployment() model2.Deployment {
 	now := time.Now()
 	deployment := model2.Deployment{}
 	deployment.CreatedAt = now
@@ -21,7 +21,7 @@ func getDeployment() (model2.Deployment){
 	deployment.Message = "Message teste"
 	deployment.EnvironmentID = 1
 	deployment.UserID = 1
-	
+
 	return deployment
 }
 
@@ -42,24 +42,24 @@ func TestCreateDeployment(test *testing.T) {
 
 	mock.ExpectQuery(
 		`INSERT INTO "deployments"`,
-		).WithArgs(
-			AnyTime{}, 
-			AnyTime{}, 
-			nil,
-			deployment.EnvironmentID,
-			deployment.Chart,
-			deployment.UserID,
-			deployment.Success,
-			deployment.Message,
-		).WillReturnRows(rows)
-	
+	).WithArgs(
+		AnyTime{},
+		AnyTime{},
+		nil,
+		deployment.EnvironmentID,
+		deployment.Chart,
+		deployment.UserID,
+		deployment.Success,
+		deployment.Message,
+	).WillReturnRows(rows)
+
 	_, err = deploymentDAO.CreateDeployment(deployment)
-		
+
 	assert.Nil(test, err)
 	mock.ExpectationsWereMet()
 }
 
-func TestGetDeploymentByID(test *testing.T){
+func TestGetDeploymentByID(test *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.Nil(test, err)
 	gormDB, err := gorm.Open("postgres", db)
@@ -76,10 +76,10 @@ func TestGetDeploymentByID(test *testing.T){
 			"id", "created_at", "updated_at", "deleted_at",
 			"environment_id", "chart", "user_id", "success",
 			"message",
-		}).AddRow(999, time.Now(), time.Now(), nil, 17, 
-			"Chart Teste", 1, true, "",
-		)
-	
+		}).AddRow(999, time.Now(), time.Now(), nil, 17,
+		"Chart Teste", 1, true, "",
+	)
+
 	mock.ExpectQuery(`SELECT (.*) FROM "deployments"`).WillReturnRows(rows)
 
 	result, err := deploymentDAO.GetDeploymentByID(999)
@@ -89,7 +89,7 @@ func TestGetDeploymentByID(test *testing.T){
 	mock.ExpectationsWereMet()
 }
 
-func TestEditDeployment(test *testing.T){
+func TestEditDeployment(test *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.Nil(test, err)
 	gormDB, err := gorm.Open("postgres", db)
@@ -112,11 +112,11 @@ func TestEditDeployment(test *testing.T){
 		deployment.Message,
 		deployment.ID,
 	).WillReturnResult(
-		sqlmock.NewResult(1,1),
+		sqlmock.NewResult(1, 1),
 	)
-	
+
 	err = deploymentDAO.EditDeployment(deployment)
-	
+
 	assert.Nil(test, err)
 
 	mock.ExpectationsWereMet()
