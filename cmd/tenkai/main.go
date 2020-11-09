@@ -78,7 +78,7 @@ func createInstallQueue(rabbitMQ rabbitmq.RabbitImpl) {
 	if err != nil {
 		global.Logger.Error(
 			global.AppFields{global.Function: "createInstallQueue"},
-			"Could not declare InstallQueue - " + err.Error())
+			"Could not declare InstallQueue - "+err.Error())
 	}
 }
 
@@ -87,10 +87,9 @@ func createResultInstallQueue(rabbitMQ rabbitmq.RabbitImpl) {
 	if err != nil {
 		global.Logger.Error(
 			global.AppFields{global.Function: "createResultInstallQueue"},
-			"Could not declare ResultInstallQueue - " + err.Error())
+			"Could not declare ResultInstallQueue - "+err.Error())
 	}
 }
-
 
 func initializeHelm(appContext *handlers.AppContext) {
 	if _, err := os.Stat(global.HelmDir + "/repository/repositories.yaml"); os.IsNotExist(err) {

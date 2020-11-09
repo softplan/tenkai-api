@@ -122,9 +122,9 @@ type MultipleInstallPayload struct {
 
 //RabbitInstallPayload -> Struct of data to post on queue to install
 type RabbitInstallPayload struct {
-	ProductVersionID int              `json:"productVersionId"`
-	Environment      Environment      `json:"environment"`
-	Deployable       InstallPayload   `json:"deployable"`
+	ProductVersionID int            `json:"productVersionId"`
+	Environment      Environment    `json:"environment"`
+	Deployable       InstallPayload `json:"deployable"`
 }
 
 //GetChartRequest struct

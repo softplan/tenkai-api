@@ -644,7 +644,7 @@ func TestMultipleInstall(t *testing.T) {
 	appContext := AppContext{}
 
 	mockDeploymentDAO := &mockRepo.DeploymentDAOInterface{}
-	mockDeploymentDAO.On("CreateDeployment",mock.Anything).Return(1,nil)
+	mockDeploymentDAO.On("CreateDeployment", mock.Anything).Return(1, nil)
 
 	mockConfigDAO := &mockRepo.ConfigDAOInterface{}
 
@@ -751,7 +751,7 @@ func getMockRabbitMQ() *mockRabbit.RabbitInterface {
 		false,
 		false,
 		mock.Anything,
-	 ).Return(nil)
+	).Return(nil)
 
 	return &mockRabbitMQ
 }
@@ -766,9 +766,9 @@ func TestInstall(t *testing.T) {
 	charts := getCharts()
 
 	appContext := AppContext{}
-	
+
 	mockDeploymentDAO := &mockRepo.DeploymentDAOInterface{}
-	mockDeploymentDAO.On("CreateDeployment",mock.Anything).Return(1,nil)
+	mockDeploymentDAO.On("CreateDeployment", mock.Anything).Return(1, nil)
 
 	mockEnvDao := mockGetByID(&appContext)
 	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
@@ -824,7 +824,7 @@ func TestDryRun(t *testing.T) {
 	appContext.RabbitImpl = getMockRabbitMQ()
 
 	mockDeploymentDAO := &mockRepo.DeploymentDAOInterface{}
-	mockDeploymentDAO.On("CreateDeployment",mock.Anything).Return(1,nil)
+	mockDeploymentDAO.On("CreateDeployment", mock.Anything).Return(1, nil)
 	appContext.Repositories.DeploymentDAO = mockDeploymentDAO
 
 	user := mockUser()

@@ -8,7 +8,7 @@ import (
 //DeploymentDAOInterface DeploymentDAOInterface
 type DeploymentDAOInterface interface {
 	CreateDeployment(deployment model.Deployment) (int, error)
-	EditDeployment(deployment model.Deployment) (error)
+	EditDeployment(deployment model.Deployment) error
 	GetDeploymentByID(id int) (model.Deployment, error)
 	ListDeployments(startDate, endDate, userID, environmentID string, pageNumber, pageSize int) ([]model.Deployment, error)
 	CountDeployments(startDate, endDate, userID, environmentID string) (int64, error)
@@ -37,7 +37,7 @@ func (dao DeploymentDAOImpl) CreateDeployment(deployment model.Deployment) (int,
 }
 
 //EditDeployment edit deployment
-func (dao DeploymentDAOImpl) EditDeployment(deployment model.Deployment) (error) {
+func (dao DeploymentDAOImpl) EditDeployment(deployment model.Deployment) error {
 	gorm := dao.Db.Save(&deployment)
 	return gorm.Error
 }

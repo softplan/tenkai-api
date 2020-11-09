@@ -11,27 +11,27 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func getAppContext() (*AppContext){
+func getAppContext() *AppContext {
 	appContext := AppContext{}
 	deploymentMock := mocks.DeploymentDAOInterface{}
 
 	deployments := []model.Deployment{}
 
 	deploymentMock.On(
-		"ListDeployments", 
-		mock.Anything, 
-		mock.Anything, 
-		mock.Anything, 
-		mock.Anything, 
-		mock.Anything, 
+		"ListDeployments",
+		mock.Anything,
+		mock.Anything,
+		mock.Anything,
+		mock.Anything,
+		mock.Anything,
 		mock.Anything,
 	).Return(deployments, nil)
 
 	deploymentMock.On(
-		"CountDeployments", 
-		mock.Anything, 
-		mock.Anything, 
-		mock.Anything, 
+		"CountDeployments",
+		mock.Anything,
+		mock.Anything,
+		mock.Anything,
 		mock.Anything,
 	).Return(int64(1), nil)
 
@@ -40,17 +40,17 @@ func getAppContext() (*AppContext){
 	return &appContext
 }
 
-func TestListDeploymentsWithRightParams(test *testing.T){
+func TestListDeploymentsWithRightParams(test *testing.T) {
 
 	req, err := http.NewRequest(
-		"GET", 
+		"GET",
 		"/deployments?start_date=2020-01-01&end_date=2020-01-01&user_id=1&environment_id=1",
 		nil,
 	)
 	if err != nil {
 		test.Fatal(err)
 	}
-	
+
 	appContext := getAppContext()
 
 	rr := httptest.NewRecorder()
@@ -62,14 +62,14 @@ func TestListDeploymentsWithRightParams(test *testing.T){
 
 func TestListDeploymentsWithoutParams(test *testing.T) {
 	req, err := http.NewRequest(
-		"GET", 
+		"GET",
 		"/deployments",
 		nil,
 	)
 	if err != nil {
 		test.Fatal(err)
 	}
-	
+
 	appContext := getAppContext()
 
 	rr := httptest.NewRecorder()
@@ -81,14 +81,14 @@ func TestListDeploymentsWithoutParams(test *testing.T) {
 
 func TestListDeploymentsOnlyWithEnvironmentAndUser(test *testing.T) {
 	req, err := http.NewRequest(
-		"GET", 
+		"GET",
 		"/deployments?user_id=1&environment_id=1",
 		nil,
 	)
 	if err != nil {
 		test.Fatal(err)
 	}
-	
+
 	appContext := getAppContext()
 
 	rr := httptest.NewRecorder()
@@ -97,4 +97,3 @@ func TestListDeploymentsOnlyWithEnvironmentAndUser(test *testing.T) {
 
 	assert.Equal(test, http.StatusBadRequest, rr.Result().StatusCode)
 }
-
