@@ -90,15 +90,15 @@ func (_m *DeploymentDAOInterface) GetDeploymentByID(id int) (model.Deployment, e
 }
 
 // ListDeployments provides a mock function with given fields: startDate, endDate, userID, environmentID, pageNumber, pageSize
-func (_m *DeploymentDAOInterface) ListDeployments(startDate string, endDate string, userID string, environmentID string, pageNumber int, pageSize int) ([]model.Deployment, error) {
+func (_m *DeploymentDAOInterface) ListDeployments(startDate string, endDate string, userID string, environmentID string, pageNumber int, pageSize int) ([]model.Deployments, error) {
 	ret := _m.Called(startDate, endDate, userID, environmentID, pageNumber, pageSize)
 
-	var r0 []model.Deployment
-	if rf, ok := ret.Get(0).(func(string, string, string, string, int, int) []model.Deployment); ok {
+	var r0 []model.Deployments
+	if rf, ok := ret.Get(0).(func(string, string, string, string, int, int) []model.Deployments); ok {
 		r0 = rf(startDate, endDate, userID, environmentID, pageNumber, pageSize)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]model.Deployment)
+			r0 = ret.Get(0).([]model.Deployments)
 		}
 	}
 

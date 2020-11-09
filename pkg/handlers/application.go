@@ -236,7 +236,7 @@ func StartConsumerQueue(appContext *AppContext, queue string) {
 			global.Logger.Info(global.AppFields{global.Function: functionName}, "Message Received")
 			var payload rabbitmq.RabbitPayloadConsumer
 			json.Unmarshal([]byte(d.Body), &payload)
-			
+
 			deployment, err := appContext.Repositories.DeploymentDAO.GetDeploymentByID(int(payload.DeploymentID))
 			checkError(err, functionName)
 			deployment.Success = payload.Success

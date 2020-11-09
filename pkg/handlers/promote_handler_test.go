@@ -43,7 +43,7 @@ func doTest(t *testing.T, mode string) {
 	appContext.Repositories.UserDAO = mockUserDAO
 
 	mockDeploymentDAO := &mockRepo.DeploymentDAOInterface{}
-	mockDeploymentDAO.On("CreateDeployment",mock.Anything).Return(1,nil)
+	mockDeploymentDAO.On("CreateDeployment", mock.Anything).Return(1, nil)
 	appContext.Repositories.DeploymentDAO = mockDeploymentDAO
 
 	url := "/promote?mode=" + mode + "&srcEnvID=91&targetEnvID=92"
