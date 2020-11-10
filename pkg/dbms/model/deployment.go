@@ -1,6 +1,8 @@
 package model
 
 import (
+	"time"
+
 	"github.com/jinzhu/gorm"
 )
 
@@ -35,10 +37,13 @@ type EnvironmentName struct {
 
 //Deployments struct to fill with query result to response /deployments GET
 type Deployments struct {
-	Deployment
-	Environment       EnvironmentName `json:"environment"`
-	ChartName         string          `json:"chartName"`
-	User              UserEmail       `json:"user"`
-	SuccessDeployment bool            `json:"successDeployment"`
-	ErrorMessage      string          `json:"errorMessage"`
+	ID          uint
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	DeletedAt   *time.Time
+	Environment EnvironmentName `json:"environment"`
+	Chart       string          `json:"chart"`
+	User        UserEmail       `json:"user"`
+	Success     bool            `json:"success"`
+	Message     string          `json:"message"`
 }
