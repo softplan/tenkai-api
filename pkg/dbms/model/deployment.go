@@ -36,9 +36,9 @@ type EnvironmentName struct {
 //Deployments struct to fill with query result to response /deployments GET
 type Deployments struct {
 	Deployment
-	Environment     EnvironmentName `json:"environment"`
-	ChartResponse   string          `json:"chart"`
-	User            UserEmail       `json:"user"`
-	SuccessResponse bool            `json:"success"`
-	MessageResponse string          `json:"message"`
+	Environment       EnvironmentName `json:"environment"`
+	ChartName         string          `json:"chartName"`
+	User              UserEmail       `json:"user"`
+	SuccessDeployment bool            `json:"successDeployment"`
+	ErrorMessage      string          `json:"errorMessage"`
 }
