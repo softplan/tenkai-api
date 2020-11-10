@@ -79,13 +79,13 @@ func (dao DeploymentDAOImpl) ListDeployments(startDate, endDate, userID, environ
 		deployment.ID = uint(id)
 		deployment.CreatedAt = createdAt
 		deployment.UpdatedAt = updatedAt
-		deployment.Chart = chart
+		deployment.ChartResponse = chart
 		deployment.Environment.ID = uint(envID)
 		deployment.Environment.Name = envName
 		deployment.User.ID = uint(userID)
 		deployment.User.Email = userEmail
-		deployment.Success = success
-		deployment.Message = message
+		deployment.SuccessResponse = success
+		deployment.MessageResponse = message
 
 		deployments = append(deployments, deployment)
 	}
