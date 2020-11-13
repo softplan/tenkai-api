@@ -2,9 +2,8 @@ package model
 
 import (
 	"github.com/jinzhu/gorm"
+	"github.com/jinzhu/gorm/dialects/postgres"
 )
-
-import "github.com/jinzhu/gorm/dialects/postgres"
 
 //Environment - Environment Model
 type Environment struct {
@@ -122,9 +121,9 @@ type MultipleInstallPayload struct {
 
 //RabbitInstallPayload -> Struct of data to post on queue to install
 type RabbitInstallPayload struct {
-	ProductVersionID int              `json:"productVersionId"`
-	Environment      Environment      `json:"environment"`
-	Deployable       InstallPayload   `json:"deployable"`
+	ProductVersionID int            `json:"productVersionId"`
+	Environment      Environment    `json:"environment"`
+	Deployable       InstallPayload `json:"deployable"`
 }
 
 //GetChartRequest struct

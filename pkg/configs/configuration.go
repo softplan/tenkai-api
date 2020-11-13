@@ -31,10 +31,9 @@ type App struct {
 	Rabbit  Rabbit
 }
 
-
 //Rabbit struct
 type Rabbit struct {
-	URI      string
+	URI string
 }
 
 //Elastic Config Structure

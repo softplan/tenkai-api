@@ -622,6 +622,12 @@
   version = "v1.3.2"
 
 [[projects]]
+  name = "github.com/streadway/amqp"
+  packages = ["."]
+  revision = "1c71cc93ed716f9a6f4c2ae8955c25f9176d9f19"
+  version = "v1.0.0"
+
+[[projects]]
   name = "github.com/stretchr/objx"
   packages = ["."]
   revision = "477a77ecc69700c7cdeb1fa9e129548e1c1c393c"
