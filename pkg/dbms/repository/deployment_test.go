@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func getDeployment() (model2.Deployment){
+func getDeployment() model2.Deployment {
 	now := time.Now()
 	deployment := model2.Deployment{}
 	deployment.CreatedAt = now
@@ -21,7 +21,7 @@ func getDeployment() (model2.Deployment){
 	deployment.Message = "Message teste"
 	deployment.EnvironmentID = 1
 	deployment.UserID = 1
-	
+
 	return deployment
 }
 
@@ -42,24 +42,24 @@ func TestCreateDeployment(test *testing.T) {
 
 	mock.ExpectQuery(
 		`INSERT INTO "deployments"`,
-		).WithArgs(
-			AnyTime{}, 
-			AnyTime{}, 
-			nil,
-			deployment.EnvironmentID,
-			deployment.Chart,
-			deployment.UserID,
-			deployment.Success,
-			deployment.Message,
-		).WillReturnRows(rows)
-	
+	).WithArgs(
+		AnyTime{},
+		AnyTime{},
+		nil,
+		deployment.EnvironmentID,
+		deployment.Chart,
+		deployment.UserID,
+		deployment.Success,
+		deployment.Message,
+	).WillReturnRows(rows)
+
 	_, err = deploymentDAO.CreateDeployment(deployment)
-		
+
 	assert.Nil(test, err)
 	mock.ExpectationsWereMet()
 }
 
-func TestGetDeploymentByID(test *testing.T){
+func TestGetDeploymentByID(test *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.Nil(test, err)
 	gormDB, err := gorm.Open("postgres", db)
@@ -76,10 +76,10 @@ func TestGetDeploymentByID(test *testing.T){
 			"id", "created_at", "updated_at", "deleted_at",
 			"environment_id", "chart", "user_id", "success",
 			"message",
-		}).AddRow(999, time.Now(), time.Now(), nil, 17, 
-			"Chart Teste", 1, true, "",
-		)
-	
+		}).AddRow(999, time.Now(), time.Now(), nil, 17,
+		"Chart Teste", 1, true, "",
+	)
+
 	mock.ExpectQuery(`SELECT (.*) FROM "deployments"`).WillReturnRows(rows)
 
 	result, err := deploymentDAO.GetDeploymentByID(999)
@@ -89,7 +89,7 @@ func TestGetDeploymentByID(test *testing.T){
 	mock.ExpectationsWereMet()
 }
 
-func TestEditDeployment(test *testing.T){
+func TestEditDeployment(test *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.Nil(test, err)
 	gormDB, err := gorm.Open("postgres", db)
@@ -112,12 +112,56 @@ func TestEditDeployment(test *testing.T){
 		deployment.Message,
 		deployment.ID,
 	).WillReturnResult(
-		sqlmock.NewResult(1,1),
+		sqlmock.NewResult(1, 1),
 	)
-	
+
 	err = deploymentDAO.EditDeployment(deployment)
-	
+
 	assert.Nil(test, err)
 
 	mock.ExpectationsWereMet()
+}
+
+func TestGetCountDeployments(test *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.Nil(test, err)
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+	mock.MatchExpectationsInOrder(false)
+	deploymentDAO := DeploymentDAOImpl{
+		Db: gormDB,
+	}
+	rows := sqlmock.NewRows([]string{"1,1"}).AddRow(1)
+	mock.ExpectQuery(`SELECT count\(\*\) FROM "deployments" WHERE .*`).WithArgs("2020-01-01", "2020-01-01").WillReturnRows(rows)
+	result, err := deploymentDAO.CountDeployments("2020-01-01", "2020-01-01", "1", "1")
+	assert.Nil(test, err, "Error on get count of deployments")
+	assert.NotNil(test, result, "Result of count is nil")
+}
+
+func TestListDeployments(test *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.Nil(test, err)
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+	mock.MatchExpectationsInOrder(false)
+	deploymentDAO := DeploymentDAOImpl{
+		Db: gormDB,
+	}
+	rows := sqlmock.NewRows([]string{
+		"id",
+		"created_at",
+		"updated_at",
+		"chart",
+		"user_id",
+		"user_email",
+		"environments_id",
+		"environments_name",
+		"success",
+		"message",
+	}).AddRow(1, time.Time{}, time.Time{}, "", 1, "", 1, "", true, "")
+
+	mock.ExpectQuery(`SELECT .* FROM .*"`).WithArgs("2020-01-01", "2020-01-01").WillReturnRows(rows)
+	_, err = deploymentDAO.ListDeployments("2020-01-01", "2020-01-01", "1", "1", 1, 100)
+
+	assert.Nil(test, err, "Error on get count of deployments")
 }
