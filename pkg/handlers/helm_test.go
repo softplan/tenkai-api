@@ -747,7 +747,7 @@ func getMockRabbitMQ() *mockRabbit.RabbitInterface {
 
 	mockRabbitMQ.Mock.On("Publish",
 		"",
-		"InstallQueue",
+		mock.Anything,
 		false,
 		false,
 		mock.Anything,
