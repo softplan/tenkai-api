@@ -19,6 +19,17 @@ func (appContext *AppContext) listDeployments(w http.ResponseWriter, r *http.Req
 	userID := keys.Get("user_id")
 	environmentID := keys.Get("environment_id")
 	pageString := keys.Get("page")
+	pageSizeString := keys.Get("pageSize")
+
+	if pageSizeString != "" {
+		pageSizeAux, err := strconv.ParseUint(pageSizeString, 10, 32)
+		if err == nil {
+			pageSize = int(pageSizeAux)
+		} else {
+			http.Error(w, "pageSize must be a number", http.StatusBadRequest)
+			return
+		}
+	}
 
 	if errorMessage, success := validateRequiredParams(startDate, endDate); !success {
 		http.Error(w, errorMessage, http.StatusBadRequest)

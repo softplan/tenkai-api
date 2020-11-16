@@ -75,6 +75,7 @@ func createQueues(rabbitMQ rabbitmq.RabbitImpl) {
 	createQueue(rabbitmq.InstallQueue, rabbitMQ)
 	createQueue(rabbitmq.ResultInstallQueue, rabbitMQ)
 	createQueue(rabbitmq.RepositoriesQueue, rabbitMQ)
+	createQueue(rabbitmq.DeleteRepoQueue, rabbitMQ)
 }
 
 func publishRepoToQueue(rabbitMQ rabbitmq.RabbitImpl, appContext *handlers.AppContext) {
