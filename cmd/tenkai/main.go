@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"os"
 	"sync"
@@ -15,6 +16,7 @@ import (
 	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"github.com/softplan/tenkai-api/pkg/service/core"
 	dockerapi "github.com/softplan/tenkai-api/pkg/service/docker"
+	"github.com/streadway/amqp"
 )
 
 const (
@@ -54,6 +56,7 @@ func main() {
 	appContext.RabbitImpl = rabbitMQ
 	defer rabbitMQ.Conn.Close()
 	defer rabbitMQ.Channel.Close()
+	publishRepoToQueue(rabbitMQ, appContext)
 	go handlers.StartConsumerQueue(appContext, rabbitmq.ResultInstallQueue)
 
 	global.Logger.Info(logFields, "http server started")
@@ -69,25 +72,39 @@ func initRabbit(uri string) rabbitmq.RabbitImpl {
 }
 
 func createQueues(rabbitMQ rabbitmq.RabbitImpl) {
-	createInstallQueue(rabbitMQ)
-	createResultInstallQueue(rabbitMQ)
+	createQueue(rabbitmq.InstallQueue, rabbitMQ)
+	createQueue(rabbitmq.ResultInstallQueue, rabbitMQ)
+	createQueue(rabbitmq.RepositoriesQueue, rabbitMQ)
 }
 
-func createInstallQueue(rabbitMQ rabbitmq.RabbitImpl) {
-	_, err := rabbitMQ.Channel.QueueDeclare("InstallQueue", true, false, false, false, nil)
+func publishRepoToQueue(rabbitMQ rabbitmq.RabbitImpl, appContext *handlers.AppContext) {
+	repositories, err := appContext.HelmServiceAPI.GetRepositories()
 	if err != nil {
-		global.Logger.Error(
-			global.AppFields{global.Function: "createInstallQueue"},
-			"Could not declare InstallQueue - "+err.Error())
+		panic("Can not retrieve repositories from helm service API")
+	}
+	for _, repo := range repositories {
+		if repo.Name != "local" && repo.Name != "stable" {
+			queuePayloadJSON, _ := json.Marshal(repo)
+			rabbitMQ.Publish(
+				"",
+				rabbitmq.RepositoriesQueue,
+				false,
+				false,
+				amqp.Publishing{
+					ContentType: "application/json",
+					Body:        queuePayloadJSON,
+				},
+			)
+		}
 	}
 }
 
-func createResultInstallQueue(rabbitMQ rabbitmq.RabbitImpl) {
-	_, err := rabbitMQ.Channel.QueueDeclare("ResultInstallQueue", true, false, false, false, nil)
+func createQueue(queueName string, rabbitMQ rabbitmq.RabbitImpl) {
+	_, err := rabbitMQ.Channel.QueueDeclare(queueName, true, false, false, false, nil)
 	if err != nil {
 		global.Logger.Error(
-			global.AppFields{global.Function: "createResultInstallQueue"},
-			"Could not declare ResultInstallQueue - "+err.Error())
+			global.AppFields{global.Function: "createQueue"},
+			"Could not declare "+queueName+" - "+err.Error())
 	}
 }
 
