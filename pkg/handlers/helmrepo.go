@@ -57,7 +57,7 @@ func (appContext *AppContext) newRepository(w http.ResponseWriter, r *http.Reque
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	
+
 	queuePayloadJSON, _ := json.Marshal(payload)
 	err := appContext.RabbitImpl.Publish(
 		"",
@@ -130,5 +130,22 @@ func (appContext *AppContext) deleteRepository(w http.ResponseWriter, r *http.Re
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	err := appContext.RabbitImpl.Publish(
+		"",
+		rabbitmq.DeleteRepoQueue,
+		false,
+		false,
+		amqp.Publishing{
+			ContentType: "text/plain",
+			Body:        []byte(name),
+		},
+	)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 }

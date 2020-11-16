@@ -184,7 +184,7 @@ func TestDeleteRepository(t *testing.T) {
 	mockHelmSvc := &mockSvc.HelmServiceInterface{}
 	mockHelmSvc.On("RemoveRepository", "xyz").Return(nil)
 	appContext.HelmServiceAPI = mockHelmSvc
-
+	appContext.RabbitImpl = getMockRabbitMQ()
 	req, err := http.NewRequest("DELETE", "/repositories/xyz", nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
