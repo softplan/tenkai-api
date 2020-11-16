@@ -51,6 +51,7 @@ func TestNewRepository(t *testing.T) {
 
 	mockHelmSvc := mockHelmSvcWithLotOfThings(&appContext)
 	appContext.HelmServiceAPI = mockHelmSvc
+	appContext.RabbitImpl = getMockRabbitMQ()
 
 	req, err := http.NewRequest("POST", "/repositories", bytes.NewBuffer(payloadStr))
 	assert.NoError(t, err)

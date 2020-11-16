@@ -53,11 +53,11 @@ func (appContext *AppContext) newRepository(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if payload.Username != "" && payload.Password == "" {
-		http.Error(w, "password must be te for user "+payload.Username, http.StatusBadRequest)
+	if err := appContext.HelmServiceAPI.AddRepository(payload); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
+	
 	queuePayloadJSON, _ := json.Marshal(payload)
 	err := appContext.RabbitImpl.Publish(
 		"",
