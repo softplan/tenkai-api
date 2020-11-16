@@ -3,12 +3,15 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"net/http"
+
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/global"
+	"github.com/softplan/tenkai-api/pkg/rabbitmq"
 	"github.com/softplan/tenkai-api/pkg/util"
-	"net/http"
+	"github.com/streadway/amqp"
 )
 
 func (appContext *AppContext) repoUpdate(w http.ResponseWriter, r *http.Request) {
@@ -50,7 +53,23 @@ func (appContext *AppContext) newRepository(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if err := appContext.HelmServiceAPI.AddRepository(payload); err != nil {
+	if payload.Username != "" && payload.Password == "" {
+		http.Error(w, "password must be te for user "+payload.Username, http.StatusBadRequest)
+		return
+	}
+
+	queuePayloadJSON, _ := json.Marshal(payload)
+	err := appContext.RabbitImpl.Publish(
+		"",
+		rabbitmq.RepositoriesQueue,
+		false,
+		false,
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        queuePayloadJSON,
+		},
+	)
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
