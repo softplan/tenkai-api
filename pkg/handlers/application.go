@@ -21,6 +21,7 @@ import (
 	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"github.com/softplan/tenkai-api/pkg/service/core"
 	dockerapi "github.com/softplan/tenkai-api/pkg/service/docker"
+	"github.com/streadway/amqp"
 )
 
 //Repositories  Repositories
@@ -58,6 +59,8 @@ type AppContext struct {
 	ChartImageCache     sync.Map
 	DockerTagsCache     sync.Map
 	ConfigMapCache      sync.Map
+	RabbitMQConn        *amqp.Connection
+	RabbitMQChannel     *amqp.Channel
 	RabbitImpl          rabbitmq.RabbitInterface
 }
 
@@ -219,6 +222,7 @@ func StartHTTPServer(appContext *AppContext) {
 func StartConsumerQueue(appContext *AppContext, queue string) {
 	functionName := "StartConsumerQueue"
 	msgs, err := appContext.RabbitImpl.GetConsumer(
+		appContext.RabbitMQChannel,
 		queue,
 		"",
 		true,
