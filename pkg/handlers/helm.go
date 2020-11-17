@@ -698,6 +698,7 @@ func (appContext *AppContext) simpleInstall(environment *model.Environment, inst
 			queuePayloadJSON, _ := json.Marshal(queuePayload)
 
 			err := appContext.RabbitImpl.Publish(
+				appContext.RabbitMQChannel,
 				"",
 				rabbitmq.InstallQueue,
 				false,

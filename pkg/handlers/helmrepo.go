@@ -60,6 +60,7 @@ func (appContext *AppContext) newRepository(w http.ResponseWriter, r *http.Reque
 
 	queuePayloadJSON, _ := json.Marshal(payload)
 	err := appContext.RabbitImpl.Publish(
+		appContext.RabbitMQChannel,
 		"",
 		rabbitmq.RepositoriesQueue,
 		false,
@@ -132,6 +133,7 @@ func (appContext *AppContext) deleteRepository(w http.ResponseWriter, r *http.Re
 	}
 
 	err := appContext.RabbitImpl.Publish(
+		appContext.RabbitMQChannel,
 		"",
 		rabbitmq.DeleteRepoQueue,
 		false,

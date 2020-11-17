@@ -52,33 +52,28 @@ func main() {
 	appContext.Elk, _ = appContext.Auditing.ElkClient(config.App.Elastic.URL, config.App.Elastic.Username, config.App.Elastic.Password)
 
 	//RabbitMQ Connection
-	rabbitMQ := initRabbit(config.App.Rabbit.URI)
-	appContext.RabbitImpl = rabbitMQ
-	defer rabbitMQ.Conn.Close()
-	defer rabbitMQ.Channel.Close()
-	publishRepoToQueue(rabbitMQ, appContext)
+	appContext.RabbitImpl = rabbitmq.RabbitImpl{}
+	appContext.RabbitMQConn = appContext.RabbitImpl.GetConnection(config.App.Rabbit.URI)
+	appContext.RabbitMQChannel = appContext.RabbitImpl.GetChannel(appContext.RabbitMQConn)
+	defer appContext.RabbitMQConn.Close()
+	defer appContext.RabbitMQChannel.Close()
+	createQueues(appContext)
+
+	publishRepoToQueue(appContext)
 	go handlers.StartConsumerQueue(appContext, rabbitmq.ResultInstallQueue)
 
 	global.Logger.Info(logFields, "http server started")
 	handlers.StartHTTPServer(appContext)
 }
 
-func initRabbit(uri string) rabbitmq.RabbitImpl {
-	rabbitMQ := rabbitmq.RabbitImpl{}
-	rabbitMQ.Conn = rabbitMQ.GetConnection(uri)
-	rabbitMQ.Channel = rabbitMQ.GetChannel()
-	createQueues(rabbitMQ)
-	return rabbitMQ
+func createQueues(appContext *handlers.AppContext) {
+	createQueue(rabbitmq.InstallQueue, appContext)
+	createQueue(rabbitmq.ResultInstallQueue, appContext)
+	createQueue(rabbitmq.RepositoriesQueue, appContext)
+	createQueue(rabbitmq.DeleteRepoQueue, appContext)
 }
 
-func createQueues(rabbitMQ rabbitmq.RabbitImpl) {
-	createQueue(rabbitmq.InstallQueue, rabbitMQ)
-	createQueue(rabbitmq.ResultInstallQueue, rabbitMQ)
-	createQueue(rabbitmq.RepositoriesQueue, rabbitMQ)
-	createQueue(rabbitmq.DeleteRepoQueue, rabbitMQ)
-}
-
-func publishRepoToQueue(rabbitMQ rabbitmq.RabbitImpl, appContext *handlers.AppContext) {
+func publishRepoToQueue(appContext *handlers.AppContext) {
 	repositories, err := appContext.HelmServiceAPI.GetRepositories()
 	if err != nil {
 		panic("Can not retrieve repositories from helm service API")
@@ -86,7 +81,8 @@ func publishRepoToQueue(rabbitMQ rabbitmq.RabbitImpl, appContext *handlers.AppCo
 	for _, repo := range repositories {
 		if repo.Name != "local" && repo.Name != "stable" {
 			queuePayloadJSON, _ := json.Marshal(repo)
-			rabbitMQ.Publish(
+			appContext.RabbitImpl.Publish(
+				appContext.RabbitMQChannel,
 				"",
 				rabbitmq.RepositoriesQueue,
 				false,
@@ -100,8 +96,8 @@ func publishRepoToQueue(rabbitMQ rabbitmq.RabbitImpl, appContext *handlers.AppCo
 	}
 }
 
-func createQueue(queueName string, rabbitMQ rabbitmq.RabbitImpl) {
-	_, err := rabbitMQ.Channel.QueueDeclare(queueName, true, false, false, false, nil)
+func createQueue(queueName string, appContext *handlers.AppContext) {
+	_, err := appContext.RabbitImpl.QueueDeclare(appContext.RabbitMQChannel, queueName, true, false, false, false, nil)
 	if err != nil {
 		global.Logger.Error(
 			global.AppFields{global.Function: "createQueue"},
