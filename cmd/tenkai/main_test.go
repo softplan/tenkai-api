@@ -45,14 +45,14 @@ func TestCheckError(t *testing.T) {
 
 func TestCreateQueue(t *testing.T) {
 	appContext := handlers.AppContext{}
-	
+
 	mockRabbitMQ := mocks.RabbitInterface{}
 	conn := &amqp.Connection{}
 	channel := &amqp.Channel{}
 	mockRabbitMQ.Mock.On("GetConnection", mock.Anything).Return(conn)
 	mockRabbitMQ.Mock.On("GetChannel", mock.Anything).Return(channel)
 	queue := amqp.Queue{}
-	
+
 	mockRabbitMQ.Mock.On(
 		"QueueDeclare", mock.Anything, mock.Anything, true, false, false, false, mock.Anything).Return(queue, nil)
 	appContext.RabbitImpl = &mockRabbitMQ
@@ -61,7 +61,7 @@ func TestCreateQueue(t *testing.T) {
 
 func TestCreateQueueWithError(t *testing.T) {
 	appContext := handlers.AppContext{}
-	
+
 	mockRabbitMQ := mocks.RabbitInterface{}
 	conn := &amqp.Connection{}
 	channel := &amqp.Channel{}
@@ -69,7 +69,7 @@ func TestCreateQueueWithError(t *testing.T) {
 	mockRabbitMQ.Mock.On("GetChannel", mock.Anything).Return(channel)
 	queue := amqp.Queue{}
 	err := errors.New("Error")
-	
+
 	mockRabbitMQ.Mock.On(
 		"QueueDeclare", mock.Anything, mock.Anything, true, false, false, false, mock.Anything).Return(queue, err)
 	appContext.RabbitImpl = &mockRabbitMQ
@@ -102,7 +102,7 @@ func TestPublishRepoToQueueWithRepos(test *testing.T) {
 	appContext.HelmServiceAPI = &helmMock
 
 	publishRepoToQueue(appContext)
-} 
+}
 
 func TestPublishRepoToQueueWithoutRepos(test *testing.T) {
 	helmMock := mockHelm.HelmServiceInterface{}
@@ -111,5 +111,5 @@ func TestPublishRepoToQueueWithoutRepos(test *testing.T) {
 	helmMock.Mock.On("GetRepositories").Return(repos, err)
 	appContext := &handlers.AppContext{}
 	appContext.HelmServiceAPI = &helmMock
-	assert.Panics(test,func() { publishRepoToQueue(appContext) },appContext)
+	assert.Panics(test, func() { publishRepoToQueue(appContext) }, appContext)
 }
