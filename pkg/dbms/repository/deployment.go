@@ -45,7 +45,7 @@ func (dao DeploymentDAOImpl) EditDeployment(deployment model.Deployment) error {
 }
 
 func prepareSQL(userID, environmentID string) string {
-	sql := "deployments.created_at >= ? AND deployments.created_at <= ?"
+	sql := "date(deployments.created_at) >= ? AND date(deployments.created_at) <= ?"
 	if userID != "" {
 		sql += " AND deployments.user_id = " + userID
 	}
@@ -60,20 +60,18 @@ func (dao DeploymentDAOImpl) ListDeployments(startDate, endDate, userID, environ
 	var deployments []model.Deployments
 	sql := prepareSQL(userID, environmentID)
 	rows, err := dao.Db.Table("deployments").Select(
-		"deployments.id AS id, deployments.created_at AS created_at, deployments.updated_at AS updated_at,chart, users.id AS user_id, users.email AS user_email, environments.id AS environments_id, environments.name AS environments_name, success, message ",
-	).Joins(
-		"JOIN users ON deployments.user_id = users.id",
+		"deployments.id AS id, deployments.created_at AS created_at, deployments.updated_at AS updated_at,chart, request_deployment_id, environments.id AS environments_id, environments.name AS environments_name, processed ,success, message ",
 	).Joins(
 		"JOIN environments ON deployments.environment_id = environments.id",
 	).Where(sql, startDate, endDate).Offset((pageNumber - 1) * pageSize).Limit(pageSize).Rows()
 
 	for rows.Next() {
-		userID, envID, id := 0, 0, 0
+		reqID, envID, id := 0, 0, 0
 		createdAt := time.Time{}
 		updatedAt := time.Time{}
-		chart, userEmail, envName, message := "", "", "", ""
-		success := false
-		rows.Scan(&id, &createdAt, &updatedAt, &chart, &userID, &userEmail, &envID, &envName, &success, &message)
+		chart, envName, message :=  "", "", ""
+		success, processed := false, false
+		rows.Scan(&id, &createdAt, &updatedAt, &chart, &reqID, &envID, &envName, &processed, &success, &message)
 
 		deployment := model.Deployments{}
 		deployment.ID = uint(id)
@@ -82,8 +80,8 @@ func (dao DeploymentDAOImpl) ListDeployments(startDate, endDate, userID, environ
 		deployment.Chart = chart
 		deployment.Environment.ID = uint(envID)
 		deployment.Environment.Name = envName
-		deployment.User.ID = uint(userID)
-		deployment.User.Email = userEmail
+		deployment.Processed = processed
+		deployment.RequestDeploymentID = uint(reqID)
 		deployment.Success = success
 		deployment.Message = message
 

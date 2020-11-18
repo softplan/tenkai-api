@@ -314,7 +314,7 @@ func (appContext *AppContext) getHelmCommand(w http.ResponseWriter, r *http.Requ
 			return
 		}
 
-		command, errX := appContext.simpleInstall(environment, element, out, false, true, "")
+		command, errX := appContext.simpleInstall(environment, element, out, false, true, "", -1)
 		if errX != nil {
 			http.Error(w, err.Error(), 501)
 			return
@@ -419,6 +419,11 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 		environments = append(environments, environment)
 	}
 
+	requestDeployment := model.RequestDeployment{}
+	requestDeployment.Success = false
+	requestDeployment.Processed = false
+	requestDeploymentID, _ := appContext.Repositories.RequestDeploymentDAO.CreateRequestDeployment(requestDeployment)
+
 	for _, environment := range environments {
 		configMaps, err := appContext.loadConfigMap(payload.Deployables, int(environment.ID))
 		if err != nil {
@@ -435,7 +440,7 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 				return
 			}
 
-			_, err = appContext.simpleInstall(environment, element, out, false, false, principal.Email)
+			_, err = appContext.simpleInstall(environment, element, out, false, false, principal.Email, requestDeploymentID)
 			if err != nil {
 				http.Error(w, err.Error(), 501)
 				return
@@ -558,7 +563,7 @@ func (appContext *AppContext) install(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	_, err = appContext.simpleInstall(environment, payload, out, false, false, principal.Email)
+	_, err = appContext.simpleInstall(environment, payload, out, false, false, principal.Email, -1)
 	if err != nil {
 		fmt.Println(out.String())
 		http.Error(w, err.Error(), 501)
@@ -588,7 +593,7 @@ func (appContext *AppContext) helmDryRun(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	_, err = appContext.simpleInstall(environment, payload, out, true, false, "")
+	_, err = appContext.simpleInstall(environment, payload, out, true, false, "", -1)
 
 	if err != nil {
 		http.Error(w, err.Error(), 501)
@@ -640,7 +645,7 @@ func (appContext *AppContext) getArgsWithHelmDefault(variables []model.Variable,
 	return args
 }
 
-func (appContext *AppContext) simpleInstall(environment *model.Environment, installPayload model.InstallPayload, out *bytes.Buffer, dryRun bool, helmCommandOnly bool, userEmail string) (string, error) {
+func (appContext *AppContext) simpleInstall(environment *model.Environment, installPayload model.InstallPayload, out *bytes.Buffer, dryRun bool, helmCommandOnly bool, userEmail string, requestDeploymentID int) (string, error) {
 
 	//WARNING - VERIFY IF CONFIG FILE EXISTS !!! This is the cause of  u.client.ReleaseHistory fail sometimes.
 
@@ -677,11 +682,11 @@ func (appContext *AppContext) simpleInstall(environment *model.Environment, inst
 			upgradeRequest.Dryrun = dryRun
 			upgradeRequest.Release = name
 
-			user, _ := appContext.Repositories.UserDAO.FindByEmail(userEmail)
 			deployment := model.Deployment{}
-			deployment.UserID = user.ID
 			deployment.EnvironmentID = environment.ID
+			deployment.RequestDeploymentID = uint(requestDeploymentID)
 			deployment.Chart = installPayload.Chart
+			deployment.Processed = false
 			deploymentID, _ := appContext.Repositories.DeploymentDAO.CreateDeployment(deployment)
 
 			queuePayload := rabbitmq.PayloadRabbit{
