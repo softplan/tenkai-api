@@ -16,6 +16,7 @@ import (
 	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"github.com/softplan/tenkai-api/pkg/service/core"
 	dockerapi "github.com/softplan/tenkai-api/pkg/service/docker"
+	"github.com/softplan/tenkai-api/pkg/tenkaihelm"
 	"github.com/streadway/amqp"
 )
 
@@ -58,9 +59,10 @@ func main() {
 	defer appContext.RabbitMQConn.Close()
 	defer appContext.RabbitMQChannel.Close()
 	createQueues(appContext)
-
 	publishRepoToQueue(appContext)
 	go handlers.StartConsumerQueue(appContext, rabbitmq.ResultInstallQueue)
+
+	appContext.HelmService = tenkaihelm.HelmAPIImpl{}
 
 	global.Logger.Info(logFields, "http server started")
 	handlers.StartHTTPServer(appContext)

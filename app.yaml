@@ -9,4 +9,7 @@ app:
     url: ""
     username: ""
     password: ""
-
+  dockerApiUrl: 
+    rabbit: ""
+      uri: ""
+  helmApiUrl: ""

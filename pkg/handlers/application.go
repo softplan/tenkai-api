@@ -21,6 +21,7 @@ import (
 	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"github.com/softplan/tenkai-api/pkg/service/core"
 	dockerapi "github.com/softplan/tenkai-api/pkg/service/docker"
+	"github.com/softplan/tenkai-api/pkg/tenkaihelm"
 	"github.com/streadway/amqp"
 )
 
@@ -62,6 +63,7 @@ type AppContext struct {
 	RabbitMQConn        *amqp.Connection
 	RabbitMQChannel     *amqp.Channel
 	RabbitImpl          rabbitmq.RabbitInterface
+	HelmService         tenkaihelm.HelmAPIInteface
 }
 
 func defineRotes(r *mux.Router, appContext *AppContext) {
