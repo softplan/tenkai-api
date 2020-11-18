@@ -16,6 +16,7 @@ import (
 	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"github.com/softplan/tenkai-api/pkg/service/_helm/mocks"
 	mockSvc "github.com/softplan/tenkai-api/pkg/service/_helm/mocks"
+	mockHelm "github.com/softplan/tenkai-api/pkg/tenkaihelm/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -31,10 +32,11 @@ func getCharts() *[]model.SearchResult {
 }
 
 func TestListCharts(t *testing.T) {
+	mockHelm := mockHelm.HelmAPIInteface{}
+	mockHelm.Mock.On("DoGetRequest", mock.Anything).Return([]byte{},nil)
+	
 	appContext := AppContext{}
-	appContext.K8sConfigPath = "/tmp/"
-
-	mockHelmSvc := mockHelmSearchCharts(&appContext)
+	appContext.HelmService = &mockHelm
 
 	req, err := http.NewRequest("GET", "/listCharts", bytes.NewBuffer(nil))
 	assert.NoError(t, err)
@@ -43,10 +45,7 @@ func TestListCharts(t *testing.T) {
 	handler := http.HandlerFunc(appContext.listCharts)
 	handler.ServeHTTP(rr, req)
 
-	mockHelmSvc.AssertNumberOfCalls(t, "SearchCharts", 1)
-
-	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
-	assert.Equal(t, getExpect(getHelmSearchResult()), string(rr.Body.Bytes()), "Response is not correct.")
+	assert.Equal(t, http.StatusOK, rr.Code, "Response is Ok.")
 }
 
 func TestDeleteHelmRelease(t *testing.T) {

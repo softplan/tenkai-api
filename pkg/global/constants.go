@@ -23,4 +23,7 @@ const (
 
 	//JSONContentType JSONContentType
 	JSONContentType = "application/json; charset=UTF-8"
+
+	//HelmURL url do helm-api
+	HelmURL = "http://localhost:8082/"
 )
