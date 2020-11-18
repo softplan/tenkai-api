@@ -41,6 +41,7 @@ type Repositories struct {
 	NotesDAO               repository.NotesDAOInterface
 	WebHookDAO             repository.WebHookDAOInterface
 	DeploymentDAO          repository.DeploymentDAOInterface
+	RequestDeploymentDAO   repository.RequestDeploymentDAOInterface
 }
 
 //AppContext AppContext
@@ -196,6 +197,7 @@ func defineRotes(r *mux.Router, appContext *AppContext) {
 	r.HandleFunc("/webhooks/{id}", appContext.deleteWebHook).Methods("DELETE")
 
 	r.HandleFunc("/deployments", appContext.listDeployments).Methods("GET")
+	r.HandleFunc("/requestDeployments", appContext.listRequestDeployments).Methods("GET")
 
 	r.HandleFunc("/", appContext.rootHandler)
 
@@ -241,9 +243,28 @@ func StartConsumerQueue(appContext *AppContext, queue string) {
 			checkError(err, functionName)
 			deployment.Success = payload.Success
 			deployment.Message = payload.Error
-
+			deployment.Processed = true
 			err = appContext.Repositories.DeploymentDAO.EditDeployment(deployment)
 			checkError(err, functionName)
+			
+			requestDeploymentID := deployment.RequestDeploymentID
+
+			finish, err := appContext.Repositories.RequestDeploymentDAO.CheckIfRequestHasEnded(int(requestDeploymentID))
+			if finish {
+				requestError, err := appContext.Repositories.RequestDeploymentDAO.HasErrorInRequest(int(requestDeploymentID))
+				fmt.Println(err)
+				if !requestError {
+					rd, _ := appContext.Repositories.RequestDeploymentDAO.GetRequestDeploymentByID(int(requestDeploymentID))
+					rd.Success = true
+					rd.Processed = true
+					appContext.Repositories.RequestDeploymentDAO.EditRequestDeployment(rd)
+				} else {
+					rd, _ := appContext.Repositories.RequestDeploymentDAO.GetRequestDeploymentByID(int(requestDeploymentID))
+					rd.Success = false
+					rd.Processed = true
+					appContext.Repositories.RequestDeploymentDAO.EditRequestDeployment(rd)
+				}
+			}
 
 			global.Logger.Info(global.AppFields{global.Function: functionName}, "Update Deployment on Database")
 		}

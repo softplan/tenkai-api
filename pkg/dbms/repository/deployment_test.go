@@ -18,9 +18,11 @@ func getDeployment() model2.Deployment {
 	deployment.DeletedAt = nil
 	deployment.Chart = "Chart Teste"
 	deployment.Success = true
+	deployment.Processed = true
 	deployment.Message = "Message teste"
 	deployment.EnvironmentID = 1
-	deployment.UserID = 1
+	deployment.RequestDeploymentID = 1
+
 
 	return deployment
 }
@@ -41,14 +43,15 @@ func TestCreateDeployment(test *testing.T) {
 	rows := sqlmock.NewRows([]string{"id"}).AddRow(1)
 
 	mock.ExpectQuery(
-		`INSERT INTO "deployments"`,
+		`INSERT INTO "deployments" .*`,
 	).WithArgs(
 		AnyTime{},
 		AnyTime{},
 		nil,
+		deployment.RequestDeploymentID,
 		deployment.EnvironmentID,
 		deployment.Chart,
-		deployment.UserID,
+		deployment.Processed,
 		deployment.Success,
 		deployment.Message,
 	).WillReturnRows(rows)
@@ -74,10 +77,10 @@ func TestGetDeploymentByID(test *testing.T) {
 	rows := sqlmock.NewRows(
 		[]string{
 			"id", "created_at", "updated_at", "deleted_at",
-			"environment_id", "chart", "user_id", "success",
-			"message",
-		}).AddRow(999, time.Now(), time.Now(), nil, 17,
-		"Chart Teste", 1, true, "",
+			"request_deployment_id", "environment_id", "chart", 
+			"processed", "success", "message",
+		}).AddRow(999, time.Now(), time.Now(), nil, 17, 17,
+		"Chart Teste",true, true, "",
 	)
 
 	mock.ExpectQuery(`SELECT (.*) FROM "deployments"`).WillReturnRows(rows)
@@ -105,9 +108,10 @@ func TestEditDeployment(test *testing.T) {
 		AnyTime{},
 		AnyTime{},
 		nil,
+		deployment.RequestDeploymentID,
 		deployment.EnvironmentID,
 		deployment.Chart,
-		deployment.UserID,
+		deployment.Processed,
 		deployment.Success,
 		deployment.Message,
 		deployment.ID,
@@ -152,13 +156,13 @@ func TestListDeployments(test *testing.T) {
 		"created_at",
 		"updated_at",
 		"chart",
-		"user_id",
-		"user_email",
+		"request_deployment_id",
 		"environments_id",
 		"environments_name",
+		"processed",
 		"success",
 		"message",
-	}).AddRow(1, time.Time{}, time.Time{}, "", 1, "", 1, "", true, "")
+	}).AddRow(1, time.Time{}, time.Time{}, "", 1, 1, "", true, true, "")
 
 	mock.ExpectQuery(`SELECT .* FROM .*"`).WithArgs("2020-01-01", "2020-01-01").WillReturnRows(rows)
 	_, err = deploymentDAO.ListDeployments("2020-01-01", "2020-01-01", "1", "1", 1, 100)

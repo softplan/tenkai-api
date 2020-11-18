@@ -643,6 +643,9 @@ func TestMultipleInstall(t *testing.T) {
 
 	appContext := AppContext{}
 
+	mockRequestDeploymentDAO := &mockRepo.RequestDeploymentDAOInterface{}
+	mockRequestDeploymentDAO.On("CreateRequestDeployment", mock.Anything).Return(1, nil)
+
 	mockDeploymentDAO := &mockRepo.DeploymentDAOInterface{}
 	mockDeploymentDAO.On("CreateDeployment", mock.Anything).Return(1, nil)
 
@@ -698,6 +701,7 @@ func TestMultipleInstall(t *testing.T) {
 	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
 	appContext.Repositories.ConfigDAO = mockConfigDAO
 	appContext.Repositories.DeploymentDAO = mockDeploymentDAO
+	appContext.Repositories.RequestDeploymentDAO = mockRequestDeploymentDAO
 	appContext.HelmServiceAPI = mockHelmSvc
 
 	auditValues := make(map[string]string)
