@@ -145,6 +145,7 @@ func initRepository(database *dbms.Database) handlers.Repositories {
 	repositories.NotesDAO = &repository.NotesDAOImpl{Db: database.Db}
 	repositories.WebHookDAO = &repository.WebHookDAOImpl{Db: database.Db}
 	repositories.DeploymentDAO = &repository.DeploymentDAOImpl{Db: database.Db}
+	repositories.RequestDeploymentDAO = &repository.RequestDeploymentDAOImpl{Db: database.Db}
 
 	return repositories
 }
