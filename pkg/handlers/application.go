@@ -201,8 +201,8 @@ func defineRotes(r *mux.Router, appContext *AppContext) {
 	r.HandleFunc("/webhooks/edit", appContext.editWebHook).Methods("POST")
 	r.HandleFunc("/webhooks/{id}", appContext.deleteWebHook).Methods("DELETE")
 
-	r.HandleFunc("/deployments", appContext.listDeployments).Methods("GET")
 	r.HandleFunc("/requestDeployments", appContext.listRequestDeployments).Methods("GET")
+	r.HandleFunc("/requestDeployments/{id}", appContext.listDeployments).Methods("GET")
 
 	r.HandleFunc("/", appContext.rootHandler)
 

@@ -23,8 +23,6 @@ func getAppContext() *AppContext {
 		mock.Anything,
 		mock.Anything,
 		mock.Anything,
-		mock.Anything,
-		mock.Anything,
 	).Return(deployments, nil)
 
 	deploymentMock.On(
@@ -44,7 +42,7 @@ func TestListDeploymentsWithRightParams(test *testing.T) {
 
 	req, err := http.NewRequest(
 		"GET",
-		"/deployments?start_date=2020-01-01&end_date=2020-01-01&user_id=1&environment_id=1&pageSize=10&page=1",
+		"/deployments?user_id=1&environment_id=1&pageSize=10&page=1",
 		nil,
 	)
 	if err != nil {
@@ -100,90 +98,10 @@ func TestListDeploymentsWithPageSizeNotNumber(test *testing.T) {
 	assert.Equal(test, http.StatusBadRequest, rr.Result().StatusCode)
 }
 
-func TestListDeploymentsWithoutEndDate(test *testing.T) {
-
-	req, err := http.NewRequest(
-		"GET",
-		"/deployments?start_date=2020-01-01",
-		nil,
-	)
-	if err != nil {
-		test.Fatal(err)
-	}
-
-	appContext := getAppContext()
-
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(appContext.listDeployments)
-	handler.ServeHTTP(rr, req)
-
-	assert.Equal(test, http.StatusBadRequest, rr.Result().StatusCode)
-}
-
-func TestListDeploymentsWithWrongStartDateFormat(test *testing.T) {
-
-	req, err := http.NewRequest(
-		"GET",
-		"/deployments?start_date=2020-01&end_date=2020-01-01",
-		nil,
-	)
-	if err != nil {
-		test.Fatal(err)
-	}
-
-	appContext := getAppContext()
-
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(appContext.listDeployments)
-	handler.ServeHTTP(rr, req)
-
-	assert.Equal(test, http.StatusBadRequest, rr.Result().StatusCode)
-}
-
-func TestListDeploymentsWithWrongEndDateFormat(test *testing.T) {
-
-	req, err := http.NewRequest(
-		"GET",
-		"/deployments?start_date=2020-01-01&end_date=2020-01",
-		nil,
-	)
-	if err != nil {
-		test.Fatal(err)
-	}
-
-	appContext := getAppContext()
-
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(appContext.listDeployments)
-	handler.ServeHTTP(rr, req)
-
-	assert.Equal(test, http.StatusBadRequest, rr.Result().StatusCode)
-}
-
-func TestListDeploymentsWithoutStartDate(test *testing.T) {
-
-	req, err := http.NewRequest(
-		"GET",
-		"/deployments?end_date=2020-01-01",
-		nil,
-	)
-	if err != nil {
-		test.Fatal(err)
-	}
-
-	appContext := getAppContext()
-
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(appContext.listDeployments)
-	handler.ServeHTTP(rr, req)
-
-	assert.Equal(test, http.StatusBadRequest, rr.Result().StatusCode)
-}
-
 func TestListDeploymentsWithoutParams(test *testing.T) {
 	req, err := http.NewRequest(
 		"GET",
-		"/deployments",
+		"/deployments/1",
 		nil,
 	)
 	if err != nil {
@@ -196,13 +114,13 @@ func TestListDeploymentsWithoutParams(test *testing.T) {
 	handler := http.HandlerFunc(appContext.listDeployments)
 	handler.ServeHTTP(rr, req)
 
-	assert.Equal(test, http.StatusBadRequest, rr.Result().StatusCode)
+	assert.Equal(test, http.StatusOK, rr.Result().StatusCode)
 }
 
 func TestListDeploymentsOnlyWithEnvironmentAndUser(test *testing.T) {
 	req, err := http.NewRequest(
 		"GET",
-		"/deployments?user_id=1&environment_id=1",
+		"/deployments?environment_id=1",
 		nil,
 	)
 	if err != nil {
@@ -215,5 +133,5 @@ func TestListDeploymentsOnlyWithEnvironmentAndUser(test *testing.T) {
 	handler := http.HandlerFunc(appContext.listDeployments)
 	handler.ServeHTTP(rr, req)
 
-	assert.Equal(test, http.StatusBadRequest, rr.Result().StatusCode)
+	assert.Equal(test, http.StatusOK, rr.Result().StatusCode)
 }

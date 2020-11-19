@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -12,8 +13,8 @@ type RequestDeploymentDAOInterface interface {
 	CreateRequestDeployment(deployment model.RequestDeployment) (int, error)
 	EditRequestDeployment(rd model.RequestDeployment) error
 	GetRequestDeploymentByID(id int) (model.RequestDeployment, error)
-	ListRequestDeployments(startDate, endDate string, id, pageNumber, pageSize int) ([]model.RequestDeployment, error)
-	CountRequestDeployments(startDate, endDate string, id int) (int64, error)
+	ListRequestDeployments(startDate, endDate, environmentID string, id, pageNumber, pageSize int) ([]model.RequestDeployment, error)
+	CountRequestDeployments(startDate, endDate, environmentID string) (int64, error)
 	CheckIfRequestHasEnded(id int) (bool,error)
 	HasErrorInRequest(id int) (bool,error)
 }
@@ -53,7 +54,7 @@ func (dao RequestDeploymentDAOImpl) CheckIfRequestHasEnded(id int) (bool,error) 
 	var count = -1
 	err := dao.Db.Where(
 		"request_deployment_id = ? AND processed = ?",
-		id,
+		fmt.Sprint(id),
 		false,
 		).Model(
 			&deployment,
@@ -88,13 +89,15 @@ func (dao RequestDeploymentDAOImpl) HasErrorInRequest(id int) (bool,error) {
 }
 
 //ListRequestDeployments list
-func (dao RequestDeploymentDAOImpl) ListRequestDeployments(startDate, endDate string, id, pageNumber, pageSize int) ([]model.RequestDeployment, error) {
+func (dao RequestDeploymentDAOImpl) ListRequestDeployments(startDate, endDate, environmentID string, id, pageNumber, pageSize int) ([]model.RequestDeployment, error) {
 	var rdList []model.RequestDeployment
-	sql := prepareWhere(id)
+	sql := prepareWhere(id, environmentID)
 	rows, err := dao.Db.Table("request_deployments").Select(
-		"id, created_at, updated_at, processed ,success",
+		"DISTINCT request_deployments.id, request_deployments.created_at, request_deployments.updated_at, request_deployments.processed, request_deployments.success",
+	).Joins(
+		"JOIN deployments ON deployments.request_deployment_id = request_deployments.id",
 	).Where(sql, startDate, endDate).Offset((pageNumber - 1) * pageSize).Limit(pageSize).Rows()
-
+	
 	for rows.Next() {
 		id := 0
 		createdAt := time.Time{}
@@ -116,18 +119,27 @@ func (dao RequestDeploymentDAOImpl) ListRequestDeployments(startDate, endDate st
 }
 
 //CountRequestDeployments count
-func (dao RequestDeploymentDAOImpl) CountRequestDeployments(startDate, endDate string, id int) (int64, error) {
+func (dao RequestDeploymentDAOImpl) CountRequestDeployments(startDate, endDate, environmentID string) (int64, error) {
 	var deployment model.RequestDeployment
 	var count int64
-	sql := prepareWhere(id)
-	err := dao.Db.Where(sql, startDate, endDate).Model(&deployment).Count(&count).Error
+	sql := prepareWhere(-1, environmentID)
+	rows, err := dao.Db.Model(&deployment).Select("COUNT(DISTINCT request_deployments.id) AS total").Joins(
+		"JOIN deployments ON deployments.request_deployment_id = request_deployments.id",
+	).Where(sql, startDate, endDate).Rows()
+	
+	for rows.Next() {
+		rows.Scan(&count)
+	}
 	return count, err
 }
 
-func prepareWhere(id int) string {
-	where := "date(created_at) >= ? AND date(created_at) <= ?"
+func prepareWhere(id int, environmentID string) string {
+	where := "date(request_deployments.created_at) >= ? AND date(request_deployments.created_at) <= ?"
 	if id != -1 {
-		where = where + "AND id = " + string(id)
+		where = where + " AND request_deployments.id = " + fmt.Sprint(id)
+	}
+	if environmentID != "" {
+		where += " AND deployments.environment_id = " + environmentID
 	}
 	return where
 }

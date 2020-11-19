@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/global"
@@ -18,6 +19,7 @@ func (appContext *AppContext) listRequestDeployments(w http.ResponseWriter, r *h
 	endDate := keys.Get("end_date")
 	pageString := keys.Get("page")
 	pageSizeString := keys.Get("pageSize")
+	environmentID := keys.Get("environment_id")
 
 	if pageSizeString != "" {
 		pageSizeAux, err := strconv.ParseUint(pageSizeString, 10, 32)
@@ -39,11 +41,11 @@ func (appContext *AppContext) listRequestDeployments(w http.ResponseWriter, r *h
 		return
 	}
 
-	deployments, err := appContext.Repositories.RequestDeploymentDAO.ListRequestDeployments(startDate, endDate, -1, page, pageSize)
+	deployments, err := appContext.Repositories.RequestDeploymentDAO.ListRequestDeployments(startDate, endDate, environmentID, -1, page, pageSize)
 	if err != nil {
 		logListRequestDeployments("error on db query - " + err.Error())
 	}
-	count, err := appContext.Repositories.RequestDeploymentDAO.CountRequestDeployments(startDate, endDate, -1)
+	count, err := appContext.Repositories.RequestDeploymentDAO.CountRequestDeployments(startDate, endDate, environmentID)
 	if err != nil {
 		logListRequestDeployments("error on db query - " + err.Error())
 	}
@@ -67,4 +69,21 @@ func logListRequestDeployments(errorMessage string) {
 		},
 		errorMessage,
 	)
+}
+
+func validateRequiredParams(startDate, endDate string) (string, bool) {
+	if startDate == "" {
+		logListDeployments("Parameter start_date is required")
+		return "Parameter start_date is required", false
+	} else if _, err := time.Parse("2006-01-02", startDate); err != nil {
+		logListDeployments("Parameter start_date is required with format YYYY-MM-DD - " + err.Error())
+		return "Parameter start_date is required with format YYYY-MM-DD", false
+	} else if endDate == "" {
+		logListDeployments("Parameter end_date is required")
+		return "Parameter end_date is required", false
+	} else if _, err := time.Parse("2006-01-02", endDate); err != nil {
+		logListDeployments("Parameter end_date is required with format YYYY-MM-DD - " + err.Error())
+		return "Parameter end_date is required with format YYYY-MM-DD", false
+	}
+	return "", true
 }

@@ -4,19 +4,20 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/global"
 )
 
 func (appContext *AppContext) listDeployments(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	resquestDeploymentID := vars["id"]
+	
 	keys := r.URL.Query()
 	pageSize := 100
 
-	startDate := keys.Get("start_date")
-	endDate := keys.Get("end_date")
-	userID := keys.Get("user_id")
 	environmentID := keys.Get("environment_id")
 	pageString := keys.Get("page")
 	pageSizeString := keys.Get("pageSize")
@@ -30,11 +31,6 @@ func (appContext *AppContext) listDeployments(w http.ResponseWriter, r *http.Req
 			return
 		}
 	}
-
-	if errorMessage, success := validateRequiredParams(startDate, endDate); !success {
-		http.Error(w, errorMessage, http.StatusBadRequest)
-		return
-	}
 	page, success := validatePageParam(pageString)
 
 	if !success {
@@ -42,11 +38,11 @@ func (appContext *AppContext) listDeployments(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	deployments, err := appContext.Repositories.DeploymentDAO.ListDeployments(startDate, endDate, userID, environmentID, page, pageSize)
+	deployments, err := appContext.Repositories.DeploymentDAO.ListDeployments(environmentID, resquestDeploymentID, page, pageSize)
 	if err != nil {
 		logListDeployments("error on db query - " + err.Error())
 	}
-	count, err := appContext.Repositories.DeploymentDAO.CountDeployments(startDate, endDate, userID, environmentID)
+	count, err := appContext.Repositories.DeploymentDAO.CountDeployments(environmentID, resquestDeploymentID)
 	if err != nil {
 		logListDeployments("error on db query - " + err.Error())
 	}
@@ -73,23 +69,6 @@ func validatePageParam(page string) (int, bool) {
 		return -1, false
 	}
 	return int(pageNumber), true
-}
-
-func validateRequiredParams(startDate, endDate string) (string, bool) {
-	if startDate == "" {
-		logListDeployments("Parameter start_date is required")
-		return "Parameter start_date is required", false
-	} else if _, err := time.Parse("2006-01-02", startDate); err != nil {
-		logListDeployments("Parameter start_date is required with format YYYY-MM-DD - " + err.Error())
-		return "Parameter start_date is required with format YYYY-MM-DD", false
-	} else if endDate == "" {
-		logListDeployments("Parameter end_date is required")
-		return "Parameter end_date is required", false
-	} else if _, err := time.Parse("2006-01-02", endDate); err != nil {
-		logListDeployments("Parameter end_date is required with format YYYY-MM-DD - " + err.Error())
-		return "Parameter end_date is required with format YYYY-MM-DD", false
-	}
-	return "", true
 }
 
 func getTotalPages(pageSize int, count int) int {
