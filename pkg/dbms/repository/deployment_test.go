@@ -136,8 +136,8 @@ func TestGetCountDeployments(test *testing.T) {
 		Db: gormDB,
 	}
 	rows := sqlmock.NewRows([]string{"1,1"}).AddRow(1)
-	mock.ExpectQuery(`SELECT count\(\*\) FROM "deployments" WHERE .*`).WithArgs("2020-01-01", "2020-01-01").WillReturnRows(rows)
-	result, err := deploymentDAO.CountDeployments("2020-01-01", "2020-01-01", "1", "1")
+	mock.ExpectQuery(`SELECT count\(\*\) FROM "deployments" WHERE .*`).WillReturnRows(rows)
+	result, err := deploymentDAO.CountDeployments("1", "1")
 	assert.Nil(test, err, "Error on get count of deployments")
 	assert.NotNil(test, result, "Result of count is nil")
 }
@@ -164,8 +164,8 @@ func TestListDeployments(test *testing.T) {
 		"message",
 	}).AddRow(1, time.Time{}, time.Time{}, "", 1, 1, "", true, true, "")
 
-	mock.ExpectQuery(`SELECT .* FROM .*"`).WithArgs("2020-01-01", "2020-01-01").WillReturnRows(rows)
-	_, err = deploymentDAO.ListDeployments("2020-01-01", "2020-01-01", "1", "1", 1, 100)
+	mock.ExpectQuery(`SELECT .* FROM .*"`).WillReturnRows(rows)
+	_, err = deploymentDAO.ListDeployments("1", "1", 1, 100)
 
 	assert.Nil(test, err, "Error on get count of deployments")
 }

@@ -33,20 +33,20 @@ func (_m *RequestDeploymentDAOInterface) CheckIfRequestHasEnded(id int) (bool, e
 	return r0, r1
 }
 
-// CountRequestDeployments provides a mock function with given fields: startDate, endDate, id
-func (_m *RequestDeploymentDAOInterface) CountRequestDeployments(startDate string, endDate string, id int) (int64, error) {
-	ret := _m.Called(startDate, endDate, id)
+// CountRequestDeployments provides a mock function with given fields: startDate, endDate, environmentID
+func (_m *RequestDeploymentDAOInterface) CountRequestDeployments(startDate string, endDate string, environmentID string) (int64, error) {
+	ret := _m.Called(startDate, endDate, environmentID)
 
 	var r0 int64
-	if rf, ok := ret.Get(0).(func(string, string, int) int64); ok {
-		r0 = rf(startDate, endDate, id)
+	if rf, ok := ret.Get(0).(func(string, string, string) int64); ok {
+		r0 = rf(startDate, endDate, environmentID)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, string, int) error); ok {
-		r1 = rf(startDate, endDate, id)
+	if rf, ok := ret.Get(1).(func(string, string, string) error); ok {
+		r1 = rf(startDate, endDate, environmentID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -131,13 +131,13 @@ func (_m *RequestDeploymentDAOInterface) HasErrorInRequest(id int) (bool, error)
 	return r0, r1
 }
 
-// ListRequestDeployments provides a mock function with given fields: startDate, endDate, id, pageNumber, pageSize
-func (_m *RequestDeploymentDAOInterface) ListRequestDeployments(startDate string, endDate string, id int, pageNumber int, pageSize int) ([]model.RequestDeployment, error) {
-	ret := _m.Called(startDate, endDate, id, pageNumber, pageSize)
+// ListRequestDeployments provides a mock function with given fields: startDate, endDate, environmentID, id, pageNumber, pageSize
+func (_m *RequestDeploymentDAOInterface) ListRequestDeployments(startDate string, endDate string, environmentID string, id int, pageNumber int, pageSize int) ([]model.RequestDeployment, error) {
+	ret := _m.Called(startDate, endDate, environmentID, id, pageNumber, pageSize)
 
 	var r0 []model.RequestDeployment
-	if rf, ok := ret.Get(0).(func(string, string, int, int, int) []model.RequestDeployment); ok {
-		r0 = rf(startDate, endDate, id, pageNumber, pageSize)
+	if rf, ok := ret.Get(0).(func(string, string, string, int, int, int) []model.RequestDeployment); ok {
+		r0 = rf(startDate, endDate, environmentID, id, pageNumber, pageSize)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]model.RequestDeployment)
@@ -145,8 +145,8 @@ func (_m *RequestDeploymentDAOInterface) ListRequestDeployments(startDate string
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, string, int, int, int) error); ok {
-		r1 = rf(startDate, endDate, id, pageNumber, pageSize)
+	if rf, ok := ret.Get(1).(func(string, string, string, int, int, int) error); ok {
+		r1 = rf(startDate, endDate, environmentID, id, pageNumber, pageSize)
 	} else {
 		r1 = ret.Error(1)
 	}

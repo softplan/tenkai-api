@@ -12,8 +12,8 @@ type DeploymentDAOInterface interface {
 	CreateDeployment(deployment model.Deployment) (int, error)
 	EditDeployment(deployment model.Deployment) error
 	GetDeploymentByID(id int) (model.Deployment, error)
-	ListDeployments(startDate, endDate, userID, environmentID string, pageNumber, pageSize int) ([]model.Deployments, error)
-	CountDeployments(startDate, endDate, userID, environmentID string) (int64, error)
+	ListDeployments(environmentID, requestDeploymentID string, pageNumber, pageSize int) ([]model.Deployments, error)
+	CountDeployments(environmentID, requestDeploymentID string) (int64, error)
 }
 
 //DeploymentDAOImpl DeploymentDAOImpl
@@ -44,11 +44,8 @@ func (dao DeploymentDAOImpl) EditDeployment(deployment model.Deployment) error {
 	return gorm.Error
 }
 
-func prepareSQL(userID, environmentID string) string {
-	sql := "date(deployments.created_at) >= ? AND date(deployments.created_at) <= ?"
-	if userID != "" {
-		sql += " AND deployments.user_id = " + userID
-	}
+func prepareSQL(environmentID string) string {
+	sql := "deployments.request_deployment_id = ?"
 	if environmentID != "" {
 		sql += " AND deployments.environment_id = " + environmentID
 	}
@@ -56,14 +53,14 @@ func prepareSQL(userID, environmentID string) string {
 }
 
 //ListDeployments list all deployments filtered by date, environment and user
-func (dao DeploymentDAOImpl) ListDeployments(startDate, endDate, userID, environmentID string, pageNumber, pageSize int) ([]model.Deployments, error) {
+func (dao DeploymentDAOImpl) ListDeployments(environmentID, requestDeploymentID string, pageNumber, pageSize int) ([]model.Deployments, error) {
 	var deployments []model.Deployments
-	sql := prepareSQL(userID, environmentID)
+	sql := prepareSQL(environmentID)
 	rows, err := dao.Db.Table("deployments").Select(
 		"deployments.id AS id, deployments.created_at AS created_at, deployments.updated_at AS updated_at,chart, request_deployment_id, environments.id AS environments_id, environments.name AS environments_name, processed ,success, message ",
 	).Joins(
 		"JOIN environments ON deployments.environment_id = environments.id",
-	).Where(sql, startDate, endDate).Offset((pageNumber - 1) * pageSize).Limit(pageSize).Rows()
+	).Where(sql, requestDeploymentID).Offset((pageNumber - 1) * pageSize).Limit(pageSize).Rows()
 
 	for rows.Next() {
 		reqID, envID, id := 0, 0, 0
@@ -92,10 +89,10 @@ func (dao DeploymentDAOImpl) ListDeployments(startDate, endDate, userID, environ
 }
 
 //CountDeployments count
-func (dao DeploymentDAOImpl) CountDeployments(startDate, endDate, userID, environmentID string) (int64, error) {
+func (dao DeploymentDAOImpl) CountDeployments(environmentID, requestDeploymentID string) (int64, error) {
 	var deployment model.Deployment
 	var count int64
-	sql := prepareSQL(userID, environmentID)
-	err := dao.Db.Where(sql, startDate, endDate).Model(&deployment).Count(&count).Error
+	sql := prepareSQL(environmentID)
+	err := dao.Db.Where(sql, requestDeploymentID).Model(&deployment).Count(&count).Error
 	return count, err
 }
