@@ -42,7 +42,6 @@ func getRequestDeploymentAppContext() *AppContext {
 	return &appContext
 }
 
-
 func TestListRequestDeploymentsWithRightParams(test *testing.T) {
 
 	req, err := http.NewRequest(
