@@ -146,7 +146,7 @@ func prepareWhere(id int, environmentID, userID string) string {
 		where = where + " AND request_deployments.id = " + fmt.Sprint(id)
 	}
 	if environmentID != "" {
-		where += " AND request_deployments.environment_id = " + environmentID
+		where += " AND deployments.environment_id = " + environmentID
 	}
 	if userID != "" {
 		where += " AND request_deployments.user_id = " + userID
