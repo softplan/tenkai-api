@@ -47,10 +47,14 @@ func (appContext *AppContext) listRequestDeployments(w http.ResponseWriter, r *h
 	deployments, err := appContext.Repositories.RequestDeploymentDAO.ListRequestDeployments(startDate, endDate, environmentID, userID, -1, page, pageSize)
 	if err != nil {
 		logListRequestDeployments("error on db query - " + err.Error())
+		http.Error(w, "", http.StatusInternalServerError)
+		return
 	}
 	count, err := appContext.Repositories.RequestDeploymentDAO.CountRequestDeployments(startDate, endDate, environmentID, userID)
 	if err != nil {
 		logListRequestDeployments("error on db query - " + err.Error())
+		http.Error(w, "", http.StatusInternalServerError)
+		return
 	}
 
 	responseStruct := model.ResponseDeploymentResponse{
