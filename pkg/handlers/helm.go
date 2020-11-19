@@ -685,6 +685,10 @@ func (appContext *AppContext) simpleInstall(environment *model.Environment, inst
 			upgradeRequest.Variables = args
 			upgradeRequest.Dryrun = dryRun
 			upgradeRequest.Release = name
+
+			if dryRun {
+				return appContext.doUpgrade(upgradeRequest, out)
+			}
 			
 			deployment := model.Deployment{}
 			deployment.EnvironmentID = environment.ID
