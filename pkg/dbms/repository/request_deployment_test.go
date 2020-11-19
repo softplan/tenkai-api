@@ -18,6 +18,7 @@ func getRequestDeployment() model2.RequestDeployment {
 	deployment.DeletedAt = nil
 	deployment.Success = true
 	deployment.Processed = true
+	deployment.UserID = 999
 	return deployment
 }
 
@@ -44,6 +45,7 @@ func TestCreateRequestDeployment(test *testing.T) {
 		nil,
 		requestDeployment.Success,
 		requestDeployment.Processed,
+		requestDeployment.UserID,
 	).WillReturnRows(rows)
 
 	_, err = requestDeploymentDAO.CreateRequestDeployment(requestDeployment)
@@ -97,6 +99,7 @@ func TestEditRequestDeployment(test *testing.T) {
 		nil,
 		deployment.Processed,
 		deployment.Success,
+		deployment.UserID,
 		deployment.ID,
 	).WillReturnResult(
 		sqlmock.NewResult(1, 1),
@@ -150,7 +153,7 @@ func TestListRequestDeployments(test *testing.T) {
 	).WithArgs(
 		"2020-01-01", "2020-01-01",
 	).WillReturnRows(rows)
-	_, err = deploymentDAO.ListRequestDeployments("2020-01-01", "2020-01-01", "", 1, 1, 100)
+	_, err = deploymentDAO.ListRequestDeployments("2020-01-01", "2020-01-01", "", "1", 1, 1, 100)
 	assert.Nil(test, err, "List has error")
 }
 
@@ -165,7 +168,7 @@ func TestGetCountRequestDeployments(test *testing.T) {
 	}
 	rows := sqlmock.NewRows([]string{"1,1"}).AddRow(1)
 	mock.ExpectQuery(`SELECT .* FROM "request_deployments" .*`).WillReturnRows(rows)
-	result, err := deploymentDAO.CountRequestDeployments("2020-01-01", "2020-01-01", "1")
+	result, err := deploymentDAO.CountRequestDeployments("2020-01-01", "2020-01-01", "1", "1")
 	assert.Nil(test, err, "Error on get count of deployments")
 	assert.NotNil(test, result, "Result of count is nil")
 }
