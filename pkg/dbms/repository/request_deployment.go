@@ -13,8 +13,8 @@ type RequestDeploymentDAOInterface interface {
 	CreateRequestDeployment(deployment model.RequestDeployment) (int, error)
 	EditRequestDeployment(rd model.RequestDeployment) error
 	GetRequestDeploymentByID(id int) (model.RequestDeployment, error)
-	ListRequestDeployments(startDate, endDate, environmentID string, id, pageNumber, pageSize int) ([]model.RequestDeployment, error)
-	CountRequestDeployments(startDate, endDate, environmentID string) (int64, error)
+	ListRequestDeployments(startDate, endDate, environmentID, userID string, id, pageNumber, pageSize int) ([]model.RequestDeployments, error)
+	CountRequestDeployments(startDate, endDate, environmentID, userID string) (int64, error)
 	CheckIfRequestHasEnded(id int) (bool, error)
 	HasErrorInRequest(id int) (bool, error)
 }
@@ -89,28 +89,33 @@ func (dao RequestDeploymentDAOImpl) HasErrorInRequest(id int) (bool, error) {
 }
 
 //ListRequestDeployments list
-func (dao RequestDeploymentDAOImpl) ListRequestDeployments(startDate, endDate, environmentID string, id, pageNumber, pageSize int) ([]model.RequestDeployment, error) {
-	var rdList []model.RequestDeployment
-	sql := prepareWhere(id, environmentID)
+func (dao RequestDeploymentDAOImpl) ListRequestDeployments(startDate, endDate, environmentID, userID string, id, pageNumber, pageSize int) ([]model.RequestDeployments, error) {
+	var rdList []model.RequestDeployments
+	sql := prepareWhere(id, environmentID, userID)
 	rows, err := dao.Db.Table("request_deployments").Select(
-		"DISTINCT request_deployments.id, request_deployments.created_at, request_deployments.updated_at, request_deployments.processed, request_deployments.success",
+		"DISTINCT request_deployments.id, request_deployments.created_at, request_deployments.updated_at, request_deployments.processed, request_deployments.success, users.id as user_id, users.email as email",
 	).Joins(
 		"JOIN deployments ON deployments.request_deployment_id = request_deployments.id",
+	).Joins(
+		"JOIN users ON users.id = request_deployments.user_id",
 	).Where(sql, startDate, endDate).Offset((pageNumber - 1) * pageSize).Limit(pageSize).Rows()
 
 	for rows.Next() {
-		id := 0
+		id, userID := 0, 0
 		createdAt := time.Time{}
 		updatedAt := time.Time{}
 		success, processed := false, false
-		rows.Scan(&id, &createdAt, &updatedAt, &processed, &success)
+		email := ""
+		rows.Scan(&id, &createdAt, &updatedAt, &processed, &success, &userID, &email)
 
-		request := model.RequestDeployment{}
+		request := model.RequestDeployments{}
 		request.ID = uint(id)
 		request.CreatedAt = createdAt
 		request.UpdatedAt = updatedAt
 		request.Processed = processed
 		request.Success = success
+		request.User.ID = uint(userID)
+		request.User.Email = email
 
 		rdList = append(rdList, request)
 	}
@@ -119,12 +124,14 @@ func (dao RequestDeploymentDAOImpl) ListRequestDeployments(startDate, endDate, e
 }
 
 //CountRequestDeployments count
-func (dao RequestDeploymentDAOImpl) CountRequestDeployments(startDate, endDate, environmentID string) (int64, error) {
+func (dao RequestDeploymentDAOImpl) CountRequestDeployments(startDate, endDate, environmentID, userID string) (int64, error) {
 	var deployment model.RequestDeployment
 	var count int64
-	sql := prepareWhere(-1, environmentID)
+	sql := prepareWhere(-1, environmentID, userID)
 	rows, err := dao.Db.Model(&deployment).Select("COUNT(DISTINCT request_deployments.id) AS total").Joins(
 		"JOIN deployments ON deployments.request_deployment_id = request_deployments.id",
+	).Joins(
+		"JOIN users ON users.id = request_deployments.user_id",
 	).Where(sql, startDate, endDate).Rows()
 
 	for rows.Next() {
@@ -133,13 +140,16 @@ func (dao RequestDeploymentDAOImpl) CountRequestDeployments(startDate, endDate, 
 	return count, err
 }
 
-func prepareWhere(id int, environmentID string) string {
+func prepareWhere(id int, environmentID, userID string) string {
 	where := "date(request_deployments.created_at) >= ? AND date(request_deployments.created_at) <= ?"
 	if id != -1 {
 		where = where + " AND request_deployments.id = " + fmt.Sprint(id)
 	}
 	if environmentID != "" {
-		where += " AND deployments.environment_id = " + environmentID
+		where += " AND request_deployments.environment_id = " + environmentID
+	}
+	if userID != "" {
+		where += " AND request_deployments.user_id = " + userID
 	}
 	return where
 }

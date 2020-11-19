@@ -423,9 +423,16 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 		environments = append(environments, environment)
 	}
 
+	user, err := appContext.Repositories.UserDAO.FindByEmail(principal.Email)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
 	requestDeployment := model.RequestDeployment{}
 	requestDeployment.Success = false
 	requestDeployment.Processed = false
+	requestDeployment.UserID = user.ID
 	requestDeploymentID, _ := appContext.Repositories.RequestDeploymentDAO.CreateRequestDeployment(requestDeployment)
 
 	for _, environment := range environments {
@@ -649,7 +656,7 @@ func (appContext *AppContext) getArgsWithHelmDefault(variables []model.Variable,
 	return args
 }
 
-func (appContext *AppContext) simpleInstall(environment *model.Environment, installPayload model.InstallPayload, out *bytes.Buffer, dryRun bool, helmCommandOnly bool, userEmail string, requestDeploymentID int) (string, error) {
+func (appContext *AppContext) simpleInstall(environment *model.Environment, installPayload model.InstallPayload, out *bytes.Buffer, dryRun bool, helmCommandOnly bool, userID string, requestDeploymentID int) (string, error) {
 
 	//WARNING - VERIFY IF CONFIG FILE EXISTS !!! This is the cause of  u.client.ReleaseHistory fail sometimes.
 

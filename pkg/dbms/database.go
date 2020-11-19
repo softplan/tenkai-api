@@ -57,4 +57,6 @@ func (database *Database) Connect(dbmsURI string, local bool) {
 		AddForeignKey("environment_id", "environments(id)", "CASCADE", "CASCADE")
 	database.Db.Model(&model.Deployment{}).
 		AddForeignKey("request_deployment_id", "request_deployments(id)", "CASCADE", "CASCADE")
+	database.Db.Model(&model.RequestDeployment{}).
+		AddForeignKey("user_id", "users(id)", "CASCADE", "CASCADE")
 }

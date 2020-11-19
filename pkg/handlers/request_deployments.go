@@ -19,16 +19,20 @@ func (appContext *AppContext) listRequestDeployments(w http.ResponseWriter, r *h
 	pageString := keys.Get("page")
 	pageSizeString := keys.Get("pageSize")
 	environmentID := keys.Get("environment_id")
+	userID := keys.Get("user_id")
 
-	if pageSizeString != "" {
-		pageSizeAux, err := strconv.ParseUint(pageSizeString, 10, 32)
-		if err == nil {
-			pageSize = int(pageSizeAux)
-		} else {
-			http.Error(w, "pageSize must be a number", http.StatusBadRequest)
-			return
-		}
+	if number, check := isNumber(pageSizeString); check {
+		pageSize = number
+	} else {
+		http.Error(w, "pageSize must be a number", http.StatusBadRequest)
+		return
 	}
+
+	if _, check := isNumber(userID); !check {
+		http.Error(w, "user_id must be a number", http.StatusBadRequest)
+		return
+	}
+
 	if errorMessage, success := validateRequiredParams(startDate, endDate); !success {
 		http.Error(w, errorMessage, http.StatusBadRequest)
 		return
@@ -40,11 +44,11 @@ func (appContext *AppContext) listRequestDeployments(w http.ResponseWriter, r *h
 		return
 	}
 
-	deployments, err := appContext.Repositories.RequestDeploymentDAO.ListRequestDeployments(startDate, endDate, environmentID, -1, page, pageSize)
+	deployments, err := appContext.Repositories.RequestDeploymentDAO.ListRequestDeployments(startDate, endDate, environmentID, userID, -1, page, pageSize)
 	if err != nil {
 		logListRequestDeployments("error on db query - " + err.Error())
 	}
-	count, err := appContext.Repositories.RequestDeploymentDAO.CountRequestDeployments(startDate, endDate, environmentID)
+	count, err := appContext.Repositories.RequestDeploymentDAO.CountRequestDeployments(startDate, endDate, environmentID, userID)
 	if err != nil {
 		logListRequestDeployments("error on db query - " + err.Error())
 	}
@@ -59,6 +63,17 @@ func (appContext *AppContext) listRequestDeployments(w http.ResponseWriter, r *h
 
 	w.Header().Set(global.ContentType, "application/json; charset=UTF-8")
 	w.Write(responseJSON)
+}
+
+func isNumber(number string) (int, bool) {
+	if number != "" {
+		pageSizeAux, err := strconv.ParseUint(number, 10, 32)
+		if err == nil {
+			return int(pageSizeAux), true
+		}
+		return -1, false
+	}
+	return 100, true
 }
 
 func logListRequestDeployments(errorMessage string) {

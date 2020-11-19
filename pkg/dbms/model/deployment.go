@@ -11,6 +11,7 @@ type RequestDeployment struct {
 	gorm.Model
 	Success   bool `json:"success"`
 	Processed bool `json:"processed"`
+	UserID    uint `json:"user_id"`
 }
 
 //Deployment  struct
@@ -33,9 +34,9 @@ type DeploymentResponse struct {
 
 //ResponseDeploymentResponse struct response /deployments GET
 type ResponseDeploymentResponse struct {
-	Count      int64               `json:"count"`
-	TotalPages int                 `json:"total_pages"`
-	Data       []RequestDeployment `json:"data"`
+	Count      int64                `json:"count"`
+	TotalPages int                  `json:"total_pages"`
+	Data       []RequestDeployments `json:"data"`
 }
 
 //EnvironmentName is a struct to be used with deployments payload response
@@ -44,7 +45,13 @@ type EnvironmentName struct {
 	Name string `json:"Name"`
 }
 
-//Deployments struct to fill with query result to response /deployments GET
+//UserEmail is a struct to be used with deployments payload response
+type UserEmail struct {
+	ID    uint   `json:"id"`
+	Email string `json:"email"`
+}
+
+//Deployments struct to fill with query result to response /requestDeployments GET
 type Deployments struct {
 	ID                  uint
 	CreatedAt           time.Time
@@ -56,4 +63,14 @@ type Deployments struct {
 	Success             bool            `json:"success"`
 	Message             string          `json:"message"`
 	Processed           bool            `json:"processed"`
+}
+
+//RequestDeployments struct to fill with query result to response /requestDeployments{id} GET
+type RequestDeployments struct {
+	ID        uint
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	User      UserEmail `json:"user"`
+	Success   bool      `json:"success"`
+	Processed bool      `json:"processed"`
 }
