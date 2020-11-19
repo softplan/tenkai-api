@@ -566,7 +566,6 @@ func (appContext *AppContext) install(w http.ResponseWriter, r *http.Request) {
 
 	//If not admin, verify authorization of user for specific environment
 	if !isAdmin {
-
 		auth, _ := appContext.hasEnvironmentRole(principal, environment.ID, "ACTION_DEPLOY")
 		if !auth {
 			http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
@@ -574,7 +573,19 @@ func (appContext *AppContext) install(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	_, err = appContext.simpleInstall(environment, payload, out, false, false, principal.Email, -1)
+	user, err := appContext.Repositories.UserDAO.FindByEmail(principal.Email)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	requestDeployment := model.RequestDeployment{}
+	requestDeployment.Success = false
+	requestDeployment.Processed = false
+	requestDeployment.UserID = user.ID
+	requestDeploymentID, _ := appContext.Repositories.RequestDeploymentDAO.CreateRequestDeployment(requestDeployment)
+
+	_, err = appContext.simpleInstall(environment, payload, out, false, false, principal.Email, requestDeploymentID)
 	if err != nil {
 		fmt.Println(out.String())
 		http.Error(w, err.Error(), 501)

@@ -774,6 +774,10 @@ func TestInstall(t *testing.T) {
 	mockDeploymentDAO := &mockRepo.DeploymentDAOInterface{}
 	mockDeploymentDAO.On("CreateDeployment", mock.Anything).Return(1, nil)
 
+	mockRequestDeploymentDAO := &mockRepo.RequestDeploymentDAOInterface{}
+	mockRequestDeploymentDAO.On("CreateRequestDeployment", mock.Anything).Return(1, nil)
+
+	
 	mockEnvDao := mockGetByID(&appContext)
 	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
 	mockConvention := mockConventionInterface(&appContext)
@@ -795,6 +799,7 @@ func TestInstall(t *testing.T) {
 	appContext.Repositories.UserDAO = mockUserDAO
 	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
 	appContext.Repositories.DeploymentDAO = mockDeploymentDAO
+	appContext.Repositories.RequestDeploymentDAO = mockRequestDeploymentDAO
 
 	appContext.RabbitImpl = getMockRabbitMQ()
 
@@ -843,7 +848,7 @@ func TestDryRun(t *testing.T) {
 	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
 	mockConvention.AssertNumberOfCalls(t, "GetKubeConfigFileName", 1)
 	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironmentAndScope", 2)
-	mockHelmSvc.AssertNumberOfCalls(t, "Upgrade", 0)
+	mockHelmSvc.AssertNumberOfCalls(t, "Upgrade", 1)
 
 	assert.Equal(t, http.StatusOK, rr.Code, "Response is not Ok.")
 }
