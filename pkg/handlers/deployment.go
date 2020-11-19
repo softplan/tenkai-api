@@ -14,7 +14,7 @@ func (appContext *AppContext) listDeployments(w http.ResponseWriter, r *http.Req
 
 	vars := mux.Vars(r)
 	resquestDeploymentID := vars["id"]
-	
+
 	keys := r.URL.Query()
 	pageSize := 100
 

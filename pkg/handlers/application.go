@@ -252,7 +252,7 @@ func StartConsumerQueue(appContext *AppContext, queue string) {
 			deployment.Processed = true
 			err = appContext.Repositories.DeploymentDAO.EditDeployment(deployment)
 			checkError(err, functionName)
-			
+
 			requestDeploymentID := deployment.RequestDeploymentID
 
 			finish, err := appContext.Repositories.RequestDeploymentDAO.CheckIfRequestHasEnded(int(requestDeploymentID))

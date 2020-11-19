@@ -33,8 +33,8 @@ func getCharts() *[]model.SearchResult {
 
 func TestListCharts(t *testing.T) {
 	mockHelm := mockHelm.HelmAPIInteface{}
-	mockHelm.Mock.On("DoGetRequest", mock.Anything).Return([]byte{},nil)
-	
+	mockHelm.Mock.On("DoGetRequest", mock.Anything).Return([]byte{}, nil)
+
 	appContext := AppContext{}
 	appContext.HelmService = &mockHelm
 

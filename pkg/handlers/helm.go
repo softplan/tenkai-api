@@ -41,8 +41,8 @@ func (appContext *AppContext) listCharts(w http.ResponseWriter, r *http.Request)
 	}
 
 	url := global.HelmURL + "charts/" + repo + allVersions
-	
-	data , err := appContext.HelmService.DoGetRequest(url)
+
+	data, err := appContext.HelmService.DoGetRequest(url)
 	if err != nil {
 		http.Error(w, "", http.StatusInternalServerError)
 		return
@@ -685,7 +685,7 @@ func (appContext *AppContext) simpleInstall(environment *model.Environment, inst
 			upgradeRequest.Variables = args
 			upgradeRequest.Dryrun = dryRun
 			upgradeRequest.Release = name
-			
+
 			deployment := model.Deployment{}
 			deployment.EnvironmentID = environment.ID
 			deployment.RequestDeploymentID = uint(requestDeploymentID)

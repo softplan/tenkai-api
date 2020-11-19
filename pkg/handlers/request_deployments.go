@@ -10,7 +10,6 @@ import (
 	"github.com/softplan/tenkai-api/pkg/global"
 )
 
-
 func (appContext *AppContext) listRequestDeployments(w http.ResponseWriter, r *http.Request) {
 	keys := r.URL.Query()
 	pageSize := 100

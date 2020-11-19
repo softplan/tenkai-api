@@ -19,12 +19,12 @@ type HelmAPIImpl struct {
 //DoGetRequest make a get request
 func (helm HelmAPIImpl) DoGetRequest(url string) (responseBytes []byte, err error) {
 	resp, err := http.Get(url)
-	if err != nil{
+	if err != nil {
 		return responseBytes, err
 	}
 	responseBytes, err = util.GetHTTPBodyResponse(resp)
-	if err != nil{
+	if err != nil {
 		return []byte{}, err
 	}
-	return responseBytes,nil
+	return responseBytes, nil
 }

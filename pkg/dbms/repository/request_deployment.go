@@ -15,8 +15,8 @@ type RequestDeploymentDAOInterface interface {
 	GetRequestDeploymentByID(id int) (model.RequestDeployment, error)
 	ListRequestDeployments(startDate, endDate, environmentID string, id, pageNumber, pageSize int) ([]model.RequestDeployment, error)
 	CountRequestDeployments(startDate, endDate, environmentID string) (int64, error)
-	CheckIfRequestHasEnded(id int) (bool,error)
-	HasErrorInRequest(id int) (bool,error)
+	CheckIfRequestHasEnded(id int) (bool, error)
+	HasErrorInRequest(id int) (bool, error)
 }
 
 //RequestDeploymentDAOImpl RequestDeploymentDAOImpl
@@ -49,42 +49,42 @@ func (dao RequestDeploymentDAOImpl) EditRequestDeployment(rd model.RequestDeploy
 }
 
 //CheckIfRequestHasEnded verify if all deployments has ended
-func (dao RequestDeploymentDAOImpl) CheckIfRequestHasEnded(id int) (bool,error) {
+func (dao RequestDeploymentDAOImpl) CheckIfRequestHasEnded(id int) (bool, error) {
 	var deployment model.Deployment
 	var count = -1
 	err := dao.Db.Where(
 		"request_deployment_id = ? AND processed = ?",
 		fmt.Sprint(id),
 		false,
-		).Model(
-			&deployment,
-		).Count(&count).Error
+	).Model(
+		&deployment,
+	).Count(&count).Error
 	if err != nil {
 		return false, nil
 	}
 	if count == 0 {
 		return true, nil
-	} 
+	}
 	return false, err
 }
 
 //HasErrorInRequest verify if some deployment had some error
-func (dao RequestDeploymentDAOImpl) HasErrorInRequest(id int) (bool,error) {
+func (dao RequestDeploymentDAOImpl) HasErrorInRequest(id int) (bool, error) {
 	var deployment model.Deployment
 	var count = -1
 	err := dao.Db.Where(
 		"request_deployment_id = ? AND success = ?",
 		id,
 		false,
-		).Model(
-			&deployment,
-		).Count(&count).Error
+	).Model(
+		&deployment,
+	).Count(&count).Error
 	if err != nil {
 		return false, nil
 	}
 	if count > 0 {
 		return true, nil
-	} 
+	}
 	return false, nil
 }
 
@@ -97,7 +97,7 @@ func (dao RequestDeploymentDAOImpl) ListRequestDeployments(startDate, endDate, e
 	).Joins(
 		"JOIN deployments ON deployments.request_deployment_id = request_deployments.id",
 	).Where(sql, startDate, endDate).Offset((pageNumber - 1) * pageSize).Limit(pageSize).Rows()
-	
+
 	for rows.Next() {
 		id := 0
 		createdAt := time.Time{}
@@ -111,7 +111,7 @@ func (dao RequestDeploymentDAOImpl) ListRequestDeployments(startDate, endDate, e
 		request.UpdatedAt = updatedAt
 		request.Processed = processed
 		request.Success = success
-		
+
 		rdList = append(rdList, request)
 	}
 
@@ -126,7 +126,7 @@ func (dao RequestDeploymentDAOImpl) CountRequestDeployments(startDate, endDate, 
 	rows, err := dao.Db.Model(&deployment).Select("COUNT(DISTINCT request_deployments.id) AS total").Joins(
 		"JOIN deployments ON deployments.request_deployment_id = request_deployments.id",
 	).Where(sql, startDate, endDate).Rows()
-	
+
 	for rows.Next() {
 		rows.Scan(&count)
 	}

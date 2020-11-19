@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-
 func getRequestDeploymentAppContext() *AppContext {
 	appContext := AppContext{}
 	requestDeploymentMock := mocks.RequestDeploymentDAOInterface{}

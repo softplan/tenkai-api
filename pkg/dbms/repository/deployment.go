@@ -66,7 +66,7 @@ func (dao DeploymentDAOImpl) ListDeployments(environmentID, requestDeploymentID 
 		reqID, envID, id := 0, 0, 0
 		createdAt := time.Time{}
 		updatedAt := time.Time{}
-		chart, envName, message :=  "", "", ""
+		chart, envName, message := "", "", ""
 		success, processed := false, false
 		rows.Scan(&id, &createdAt, &updatedAt, &chart, &reqID, &envID, &envName, &processed, &success, &message)
 

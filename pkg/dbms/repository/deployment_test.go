@@ -23,7 +23,6 @@ func getDeployment() model2.Deployment {
 	deployment.EnvironmentID = 1
 	deployment.RequestDeploymentID = 1
 
-
 	return deployment
 }
 
@@ -77,10 +76,10 @@ func TestGetDeploymentByID(test *testing.T) {
 	rows := sqlmock.NewRows(
 		[]string{
 			"id", "created_at", "updated_at", "deleted_at",
-			"request_deployment_id", "environment_id", "chart", 
+			"request_deployment_id", "environment_id", "chart",
 			"processed", "success", "message",
 		}).AddRow(999, time.Now(), time.Now(), nil, 17, 17,
-		"Chart Teste",true, true, "",
+		"Chart Teste", true, true, "",
 	)
 
 	mock.ExpectQuery(`SELECT (.*) FROM "deployments"`).WillReturnRows(rows)
