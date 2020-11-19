@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 
 	"github.com/gorilla/mux"
+	"github.com/softplan/tenkai-api/pkg/configs"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
 	mockRabbit "github.com/softplan/tenkai-api/pkg/rabbitmq/mocks"
@@ -37,6 +38,9 @@ func TestListCharts(t *testing.T) {
 
 	appContext := AppContext{}
 	appContext.HelmService = &mockHelm
+
+	appContext.Configuration = &configs.Configuration{App: configs.App{HelmAPIUrl: ""}}
+
 
 	req, err := http.NewRequest("GET", "/listCharts", bytes.NewBuffer(nil))
 	assert.NoError(t, err)
@@ -777,7 +781,6 @@ func TestInstall(t *testing.T) {
 	mockRequestDeploymentDAO := &mockRepo.RequestDeploymentDAOInterface{}
 	mockRequestDeploymentDAO.On("CreateRequestDeployment", mock.Anything).Return(1, nil)
 
-	
 	mockEnvDao := mockGetByID(&appContext)
 	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
 	mockConvention := mockConventionInterface(&appContext)

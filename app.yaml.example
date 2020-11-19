@@ -12,4 +12,4 @@ app:
   dockerApiUrl:  http://localhost:8081
   rabbit:
     uri: amqp://guest:guest@localhost:5672
-  
+  helmApiUrl: "http://localhost:8082"

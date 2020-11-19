@@ -40,7 +40,7 @@ func (appContext *AppContext) listCharts(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	url := global.HelmURL + "charts/" + repo + allVersions
+	url := appContext.Configuration.App.HelmAPIUrl + "/charts/" + repo + allVersions
 
 	data, err := appContext.HelmService.DoGetRequest(url)
 	if err != nil {
