@@ -43,7 +43,6 @@ type Elastic struct {
 	Password string
 }
 
-
 //ReadConfig inicia as configurações
 func ReadConfig(configFile string) (*Configuration, error) {
 

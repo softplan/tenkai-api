@@ -68,8 +68,7 @@ func TestGetRequestDeploymentByID(test *testing.T) {
 		[]string{
 			"id", "created_at", "updated_at", "deleted_at",
 			"success", "processed",
-		}).AddRow(999, time.Now(), time.Now(), nil, true, true,
-	)
+		}).AddRow(999, time.Now(), time.Now(), nil, true, true)
 
 	mock.ExpectQuery(`SELECT (.*) FROM "request_deployments"`).WillReturnRows(rows)
 
@@ -145,14 +144,14 @@ func TestListRequestDeployments(test *testing.T) {
 	rows := sqlmock.NewRows([]string{
 		"id", "created_at", "updated_at", "processed", "success",
 	}).AddRow(1, time.Time{}, time.Time{}, true, true)
-	
+
 	mock.ExpectQuery(
 		`SELECT .* FROM "request_deployments" .* WHERE .*`,
-		).WithArgs(
-			"2020-01-01","2020-01-01",
-		).WillReturnRows(rows)
-	_, err = deploymentDAO.ListRequestDeployments("2020-01-01","2020-01-01","",1,1,100)
-	assert.Nil(test,err,"List has error")
+	).WithArgs(
+		"2020-01-01", "2020-01-01",
+	).WillReturnRows(rows)
+	_, err = deploymentDAO.ListRequestDeployments("2020-01-01", "2020-01-01", "", 1, 1, 100)
+	assert.Nil(test, err, "List has error")
 }
 
 func TestGetCountRequestDeployments(test *testing.T) {
@@ -166,7 +165,7 @@ func TestGetCountRequestDeployments(test *testing.T) {
 	}
 	rows := sqlmock.NewRows([]string{"1,1"}).AddRow(1)
 	mock.ExpectQuery(`SELECT .* FROM "request_deployments" .*`).WillReturnRows(rows)
-	result, err := deploymentDAO.CountRequestDeployments("2020-01-01","2020-01-01","1")
+	result, err := deploymentDAO.CountRequestDeployments("2020-01-01", "2020-01-01", "1")
 	assert.Nil(test, err, "Error on get count of deployments")
 	assert.NotNil(test, result, "Result of count is nil")
 }
