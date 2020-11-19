@@ -41,7 +41,6 @@ func TestListCharts(t *testing.T) {
 
 	appContext.Configuration = &configs.Configuration{App: configs.App{HelmAPIUrl: ""}}
 
-
 	req, err := http.NewRequest("GET", "/listCharts", bytes.NewBuffer(nil))
 	assert.NoError(t, err)
 
