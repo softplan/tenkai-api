@@ -9,7 +9,7 @@ app:
     url: http://localhost:9200
     username: elastic
     password: 1234567
-  dockerApiUrl: 
-  rabbit: http://localhost:8081
+  dockerApiUrl:  http://localhost:8081
+  rabbit:
     uri: amqp://guest:guest@localhost:5672
-  
+  helmApiUrl: "http://localhost:8082"

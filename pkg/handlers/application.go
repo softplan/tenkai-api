@@ -21,6 +21,8 @@ import (
 	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"github.com/softplan/tenkai-api/pkg/service/core"
 	dockerapi "github.com/softplan/tenkai-api/pkg/service/docker"
+	"github.com/softplan/tenkai-api/pkg/tenkaihelm"
+	"github.com/streadway/amqp"
 )
 
 //Repositories  Repositories
@@ -41,6 +43,7 @@ type Repositories struct {
 	NotesDAO               repository.NotesDAOInterface
 	WebHookDAO             repository.WebHookDAOInterface
 	DeploymentDAO          repository.DeploymentDAOInterface
+	RequestDeploymentDAO   repository.RequestDeploymentDAOInterface
 }
 
 //AppContext AppContext
@@ -58,7 +61,10 @@ type AppContext struct {
 	ChartImageCache     sync.Map
 	DockerTagsCache     sync.Map
 	ConfigMapCache      sync.Map
+	RabbitMQConn        *amqp.Connection
+	RabbitMQChannel     *amqp.Channel
 	RabbitImpl          rabbitmq.RabbitInterface
+	HelmService         tenkaihelm.HelmAPIInteface
 }
 
 func defineRotes(r *mux.Router, appContext *AppContext) {
@@ -195,7 +201,8 @@ func defineRotes(r *mux.Router, appContext *AppContext) {
 	r.HandleFunc("/webhooks/edit", appContext.editWebHook).Methods("POST")
 	r.HandleFunc("/webhooks/{id}", appContext.deleteWebHook).Methods("DELETE")
 
-	r.HandleFunc("/deployments", appContext.listDeployments).Methods("GET")
+	r.HandleFunc("/requestDeployments", appContext.listRequestDeployments).Methods("GET")
+	r.HandleFunc("/requestDeployments/{id}", appContext.listDeployments).Methods("GET")
 
 	r.HandleFunc("/", appContext.rootHandler)
 
@@ -219,6 +226,7 @@ func StartHTTPServer(appContext *AppContext) {
 func StartConsumerQueue(appContext *AppContext, queue string) {
 	functionName := "StartConsumerQueue"
 	msgs, err := appContext.RabbitImpl.GetConsumer(
+		appContext.RabbitMQChannel,
 		queue,
 		"",
 		true,
@@ -241,9 +249,28 @@ func StartConsumerQueue(appContext *AppContext, queue string) {
 			checkError(err, functionName)
 			deployment.Success = payload.Success
 			deployment.Message = payload.Error
-
+			deployment.Processed = true
 			err = appContext.Repositories.DeploymentDAO.EditDeployment(deployment)
 			checkError(err, functionName)
+
+			requestDeploymentID := deployment.RequestDeploymentID
+
+			finish, err := appContext.Repositories.RequestDeploymentDAO.CheckIfRequestHasEnded(int(requestDeploymentID))
+			if finish {
+				requestError, err := appContext.Repositories.RequestDeploymentDAO.HasErrorInRequest(int(requestDeploymentID))
+				fmt.Println(err)
+				if !requestError {
+					rd, _ := appContext.Repositories.RequestDeploymentDAO.GetRequestDeploymentByID(int(requestDeploymentID))
+					rd.Success = true
+					rd.Processed = true
+					appContext.Repositories.RequestDeploymentDAO.EditRequestDeployment(rd)
+				} else {
+					rd, _ := appContext.Repositories.RequestDeploymentDAO.GetRequestDeploymentByID(int(requestDeploymentID))
+					rd.Success = false
+					rd.Processed = true
+					appContext.Repositories.RequestDeploymentDAO.EditRequestDeployment(rd)
+				}
+			}
 
 			global.Logger.Info(global.AppFields{global.Function: functionName}, "Update Deployment on Database")
 		}

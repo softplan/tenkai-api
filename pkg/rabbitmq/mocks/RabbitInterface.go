@@ -12,13 +12,13 @@ type RabbitInterface struct {
 	mock.Mock
 }
 
-// GetChannel provides a mock function with given fields:
-func (_m *RabbitInterface) GetChannel() *amqp.Channel {
-	ret := _m.Called()
+// GetChannel provides a mock function with given fields: conn
+func (_m *RabbitInterface) GetChannel(conn *amqp.Connection) *amqp.Channel {
+	ret := _m.Called(conn)
 
 	var r0 *amqp.Channel
-	if rf, ok := ret.Get(0).(func() *amqp.Channel); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(*amqp.Connection) *amqp.Channel); ok {
+		r0 = rf(conn)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*amqp.Channel)
@@ -44,13 +44,13 @@ func (_m *RabbitInterface) GetConnection(uri string) *amqp.Connection {
 	return r0
 }
 
-// GetConsumer provides a mock function with given fields: queue, consumer, autoAck, exclusive, noLocal, noWait, args
-func (_m *RabbitInterface) GetConsumer(queue string, consumer string, autoAck bool, exclusive bool, noLocal bool, noWait bool, args amqp.Table) (<-chan amqp.Delivery, error) {
-	ret := _m.Called(queue, consumer, autoAck, exclusive, noLocal, noWait, args)
+// GetConsumer provides a mock function with given fields: channel, queue, consumer, autoAck, exclusive, noLocal, noWait, args
+func (_m *RabbitInterface) GetConsumer(channel *amqp.Channel, queue string, consumer string, autoAck bool, exclusive bool, noLocal bool, noWait bool, args amqp.Table) (<-chan amqp.Delivery, error) {
+	ret := _m.Called(channel, queue, consumer, autoAck, exclusive, noLocal, noWait, args)
 
 	var r0 <-chan amqp.Delivery
-	if rf, ok := ret.Get(0).(func(string, string, bool, bool, bool, bool, amqp.Table) <-chan amqp.Delivery); ok {
-		r0 = rf(queue, consumer, autoAck, exclusive, noLocal, noWait, args)
+	if rf, ok := ret.Get(0).(func(*amqp.Channel, string, string, bool, bool, bool, bool, amqp.Table) <-chan amqp.Delivery); ok {
+		r0 = rf(channel, queue, consumer, autoAck, exclusive, noLocal, noWait, args)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(<-chan amqp.Delivery)
@@ -58,8 +58,8 @@ func (_m *RabbitInterface) GetConsumer(queue string, consumer string, autoAck bo
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, string, bool, bool, bool, bool, amqp.Table) error); ok {
-		r1 = rf(queue, consumer, autoAck, exclusive, noLocal, noWait, args)
+	if rf, ok := ret.Get(1).(func(*amqp.Channel, string, string, bool, bool, bool, bool, amqp.Table) error); ok {
+		r1 = rf(channel, queue, consumer, autoAck, exclusive, noLocal, noWait, args)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -67,16 +67,37 @@ func (_m *RabbitInterface) GetConsumer(queue string, consumer string, autoAck bo
 	return r0, r1
 }
 
-// Publish provides a mock function with given fields: exchange, key, mandatory, immediate, msg
-func (_m *RabbitInterface) Publish(exchange string, key string, mandatory bool, immediate bool, msg amqp.Publishing) error {
-	ret := _m.Called(exchange, key, mandatory, immediate, msg)
+// Publish provides a mock function with given fields: channel, exchange, key, mandatory, immediate, msg
+func (_m *RabbitInterface) Publish(channel *amqp.Channel, exchange string, key string, mandatory bool, immediate bool, msg amqp.Publishing) error {
+	ret := _m.Called(channel, exchange, key, mandatory, immediate, msg)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string, bool, bool, amqp.Publishing) error); ok {
-		r0 = rf(exchange, key, mandatory, immediate, msg)
+	if rf, ok := ret.Get(0).(func(*amqp.Channel, string, string, bool, bool, amqp.Publishing) error); ok {
+		r0 = rf(channel, exchange, key, mandatory, immediate, msg)
 	} else {
 		r0 = ret.Error(0)
 	}
 
 	return r0
+}
+
+// QueueDeclare provides a mock function with given fields: channel, name, durable, autoDelete, exclusive, noWait, args
+func (_m *RabbitInterface) QueueDeclare(channel *amqp.Channel, name string, durable bool, autoDelete bool, exclusive bool, noWait bool, args amqp.Table) (amqp.Queue, error) {
+	ret := _m.Called(channel, name, durable, autoDelete, exclusive, noWait, args)
+
+	var r0 amqp.Queue
+	if rf, ok := ret.Get(0).(func(*amqp.Channel, string, bool, bool, bool, bool, amqp.Table) amqp.Queue); ok {
+		r0 = rf(channel, name, durable, autoDelete, exclusive, noWait, args)
+	} else {
+		r0 = ret.Get(0).(amqp.Queue)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*amqp.Channel, string, bool, bool, bool, bool, amqp.Table) error); ok {
+		r1 = rf(channel, name, durable, autoDelete, exclusive, noWait, args)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }

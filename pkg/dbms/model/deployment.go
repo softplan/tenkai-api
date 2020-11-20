@@ -6,14 +6,23 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+//RequestDeployment deployment requested from user
+type RequestDeployment struct {
+	gorm.Model
+	Success   bool `json:"success"`
+	Processed bool `json:"processed"`
+	UserID    uint `json:"user_id"`
+}
+
 //Deployment  struct
 type Deployment struct {
 	gorm.Model
-	EnvironmentID uint   `json:"environment_id"`
-	Chart         string `json:"chart"`
-	UserID        uint   `json:"user_id"`
-	Success       bool   `json:"success"`
-	Message       string `json:"message"`
+	RequestDeploymentID uint   `json:"request_deployment_id"`
+	EnvironmentID       uint   `json:"environment_id"`
+	Chart               string `json:"chart"`
+	Processed           bool   `json:"processed"`
+	Success             bool   `json:"success"`
+	Message             string `json:"message"`
 }
 
 //DeploymentResponse struct response /deployments GET
@@ -23,10 +32,11 @@ type DeploymentResponse struct {
 	Data       []Deployments `json:"data"`
 }
 
-//UserEmail is a struct to be used with deployments payload response
-type UserEmail struct {
-	ID    uint   `json:"id"`
-	Email string `json:"email"`
+//ResponseDeploymentResponse struct response /deployments GET
+type ResponseDeploymentResponse struct {
+	Count      int64                `json:"count"`
+	TotalPages int                  `json:"total_pages"`
+	Data       []RequestDeployments `json:"data"`
 }
 
 //EnvironmentName is a struct to be used with deployments payload response
@@ -35,15 +45,32 @@ type EnvironmentName struct {
 	Name string `json:"Name"`
 }
 
-//Deployments struct to fill with query result to response /deployments GET
+//UserEmail is a struct to be used with deployments payload response
+type UserEmail struct {
+	ID    uint   `json:"id"`
+	Email string `json:"email"`
+}
+
+//Deployments struct to fill with query result to response /requestDeployments GET
 type Deployments struct {
-	ID          uint
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	DeletedAt   *time.Time
-	Environment EnvironmentName `json:"environment"`
-	Chart       string          `json:"chart"`
-	User        UserEmail       `json:"user"`
-	Success     bool            `json:"success"`
-	Message     string          `json:"message"`
+	ID                  uint
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+	DeletedAt           *time.Time
+	RequestDeploymentID uint            `json:"request_deployment_id"`
+	Environment         EnvironmentName `json:"environment"`
+	Chart               string          `json:"chart"`
+	Success             bool            `json:"success"`
+	Message             string          `json:"message"`
+	Processed           bool            `json:"processed"`
+}
+
+//RequestDeployments struct to fill with query result to response /requestDeployments{id} GET
+type RequestDeployments struct {
+	ID        uint
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	User      UserEmail `json:"user"`
+	Success   bool      `json:"success"`
+	Processed bool      `json:"processed"`
 }
