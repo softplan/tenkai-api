@@ -30,23 +30,19 @@ func (appContext *AppContext) listCharts(w http.ResponseWriter, r *http.Request)
 	w.Header().Set(global.ContentType, global.JSONContentType)
 
 	vars := mux.Vars(r)
-	repo := vars["repo"] + "?"
+	repo := vars["repo"]
 
 	all, ok := r.URL.Query()["all"]
-	allVersions := "all=false"
+	allVersions := true
 	if ok && len(all[0]) > 0 {
-		if all[0] == "true" {
-			allVersions = "all=true"
-		}
+		allVersions = all[0] == "true"
 	}
 
-	url := appContext.Configuration.App.HelmAPIUrl + "/charts/" + repo + allVersions
+	searchTerms := []string{repo}
+	searchResult := appContext.HelmServiceAPI.SearchCharts(searchTerms, allVersions)
+	result := &model.ChartsResult{Charts: *searchResult}
 
-	data, err := appContext.HelmService.DoGetRequest(url)
-	if err != nil {
-		http.Error(w, "", http.StatusInternalServerError)
-		return
-	}
+	data, _ := json.Marshal(result)
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
