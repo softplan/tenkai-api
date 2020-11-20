@@ -25,10 +25,11 @@ type Dbms struct {
 
 //App struct
 type App struct {
-	Passkey string
-	Dbms    Dbms
-	Elastic Elastic
-	Rabbit  Rabbit
+	Passkey    string
+	Dbms       Dbms
+	Elastic    Elastic
+	Rabbit     Rabbit
+	HelmAPIUrl string
 }
 
 //Rabbit struct

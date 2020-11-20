@@ -30,19 +30,23 @@ func (appContext *AppContext) listCharts(w http.ResponseWriter, r *http.Request)
 	w.Header().Set(global.ContentType, global.JSONContentType)
 
 	vars := mux.Vars(r)
-	repo := vars["repo"]
+	repo := vars["repo"] + "?"
 
 	all, ok := r.URL.Query()["all"]
-	allVersions := true
+	allVersions := "all=false"
 	if ok && len(all[0]) > 0 {
-		allVersions = all[0] == "true"
+		if all[0] == "true" {
+			allVersions = "all=true"
+		}
 	}
 
-	searchTerms := []string{repo}
-	searchResult := appContext.HelmServiceAPI.SearchCharts(searchTerms, allVersions)
-	result := &model.ChartsResult{Charts: *searchResult}
+	url := appContext.Configuration.App.HelmAPIUrl + "/charts/" + repo + allVersions
 
-	data, _ := json.Marshal(result)
+	data, err := appContext.HelmService.DoGetRequest(url)
+	if err != nil {
+		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
@@ -314,7 +318,7 @@ func (appContext *AppContext) getHelmCommand(w http.ResponseWriter, r *http.Requ
 			return
 		}
 
-		command, errX := appContext.simpleInstall(environment, element, out, false, true, "")
+		command, errX := appContext.simpleInstall(environment, element, out, false, true, "", -1)
 		if errX != nil {
 			http.Error(w, err.Error(), 501)
 			return
@@ -419,6 +423,18 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 		environments = append(environments, environment)
 	}
 
+	user, err := appContext.Repositories.UserDAO.FindByEmail(principal.Email)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	requestDeployment := model.RequestDeployment{}
+	requestDeployment.Success = false
+	requestDeployment.Processed = false
+	requestDeployment.UserID = user.ID
+	requestDeploymentID, _ := appContext.Repositories.RequestDeploymentDAO.CreateRequestDeployment(requestDeployment)
+
 	for _, environment := range environments {
 		configMaps, err := appContext.loadConfigMap(payload.Deployables, int(environment.ID))
 		if err != nil {
@@ -435,7 +451,7 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 				return
 			}
 
-			_, err = appContext.simpleInstall(environment, element, out, false, false, principal.Email)
+			_, err = appContext.simpleInstall(environment, element, out, false, false, principal.Email, requestDeploymentID)
 			if err != nil {
 				http.Error(w, err.Error(), 501)
 				return
@@ -550,7 +566,6 @@ func (appContext *AppContext) install(w http.ResponseWriter, r *http.Request) {
 
 	//If not admin, verify authorization of user for specific environment
 	if !isAdmin {
-
 		auth, _ := appContext.hasEnvironmentRole(principal, environment.ID, "ACTION_DEPLOY")
 		if !auth {
 			http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
@@ -558,7 +573,19 @@ func (appContext *AppContext) install(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	_, err = appContext.simpleInstall(environment, payload, out, false, false, principal.Email)
+	user, err := appContext.Repositories.UserDAO.FindByEmail(principal.Email)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	requestDeployment := model.RequestDeployment{}
+	requestDeployment.Success = false
+	requestDeployment.Processed = false
+	requestDeployment.UserID = user.ID
+	requestDeploymentID, _ := appContext.Repositories.RequestDeploymentDAO.CreateRequestDeployment(requestDeployment)
+
+	_, err = appContext.simpleInstall(environment, payload, out, false, false, principal.Email, requestDeploymentID)
 	if err != nil {
 		fmt.Println(out.String())
 		http.Error(w, err.Error(), 501)
@@ -588,7 +615,7 @@ func (appContext *AppContext) helmDryRun(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	_, err = appContext.simpleInstall(environment, payload, out, true, false, "")
+	_, err = appContext.simpleInstall(environment, payload, out, true, false, "", -1)
 
 	if err != nil {
 		http.Error(w, err.Error(), 501)
@@ -640,7 +667,7 @@ func (appContext *AppContext) getArgsWithHelmDefault(variables []model.Variable,
 	return args
 }
 
-func (appContext *AppContext) simpleInstall(environment *model.Environment, installPayload model.InstallPayload, out *bytes.Buffer, dryRun bool, helmCommandOnly bool, userEmail string) (string, error) {
+func (appContext *AppContext) simpleInstall(environment *model.Environment, installPayload model.InstallPayload, out *bytes.Buffer, dryRun bool, helmCommandOnly bool, userID string, requestDeploymentID int) (string, error) {
 
 	//WARNING - VERIFY IF CONFIG FILE EXISTS !!! This is the cause of  u.client.ReleaseHistory fail sometimes.
 
@@ -677,11 +704,15 @@ func (appContext *AppContext) simpleInstall(environment *model.Environment, inst
 			upgradeRequest.Dryrun = dryRun
 			upgradeRequest.Release = name
 
-			user, _ := appContext.Repositories.UserDAO.FindByEmail(userEmail)
+			if dryRun {
+				return appContext.doUpgrade(upgradeRequest, out)
+			}
+
 			deployment := model.Deployment{}
-			deployment.UserID = user.ID
 			deployment.EnvironmentID = environment.ID
+			deployment.RequestDeploymentID = uint(requestDeploymentID)
 			deployment.Chart = installPayload.Chart
+			deployment.Processed = false
 			deploymentID, _ := appContext.Repositories.DeploymentDAO.CreateDeployment(deployment)
 
 			queuePayload := rabbitmq.PayloadRabbit{
@@ -698,6 +729,7 @@ func (appContext *AppContext) simpleInstall(environment *model.Environment, inst
 			queuePayloadJSON, _ := json.Marshal(queuePayload)
 
 			err := appContext.RabbitImpl.Publish(
+				appContext.RabbitMQChannel,
 				"",
 				rabbitmq.InstallQueue,
 				false,

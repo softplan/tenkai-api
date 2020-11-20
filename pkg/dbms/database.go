@@ -50,10 +50,13 @@ func (database *Database) Connect(dbmsURI string, local bool) {
 	database.Db.AutoMigrate(&model2.Notes{})
 	database.Db.AutoMigrate(&model2.WebHook{})
 	database.Db.AutoMigrate(&model2.Deployment{})
+	database.Db.AutoMigrate(&model2.RequestDeployment{})
 	database.Db.Model(&model.ValueRule{}).
 		AddForeignKey("variable_rule_id", "variable_rules(id)", "CASCADE", "CASCADE")
 	database.Db.Model(&model.Deployment{}).
-		AddForeignKey("user_id", "users(id)", "CASCADE", "CASCADE")
-	database.Db.Model(&model.Deployment{}).
 		AddForeignKey("environment_id", "environments(id)", "CASCADE", "CASCADE")
+	database.Db.Model(&model.Deployment{}).
+		AddForeignKey("request_deployment_id", "request_deployments(id)", "CASCADE", "CASCADE")
+	database.Db.Model(&model.RequestDeployment{}).
+		AddForeignKey("user_id", "users(id)", "CASCADE", "CASCADE")
 }

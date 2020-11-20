@@ -23,8 +23,6 @@ func getAppContext() *AppContext {
 		mock.Anything,
 		mock.Anything,
 		mock.Anything,
-		mock.Anything,
-		mock.Anything,
 	).Return(deployments, nil)
 
 	deploymentMock.On(
@@ -44,7 +42,7 @@ func TestListDeploymentsWithRightParams(test *testing.T) {
 
 	req, err := http.NewRequest(
 		"GET",
-		"/deployments?start_date=2020-01-01&end_date=2020-01-01&user_id=1&environment_id=1",
+		"/deployments?user_id=1&environment_id=1&pageSize=10&page=1",
 		nil,
 	)
 	if err != nil {
@@ -60,10 +58,11 @@ func TestListDeploymentsWithRightParams(test *testing.T) {
 	assert.Equal(test, http.StatusOK, rr.Result().StatusCode)
 }
 
-func TestListDeploymentsWithoutParams(test *testing.T) {
+func TestListDeploymentsWrongPageNumber(test *testing.T) {
+
 	req, err := http.NewRequest(
 		"GET",
-		"/deployments",
+		"/deployments?start_date=2020-01-01&end_date=2020-01-01&user_id=1&environment_id=1&page=a",
 		nil,
 	)
 	if err != nil {
@@ -79,10 +78,11 @@ func TestListDeploymentsWithoutParams(test *testing.T) {
 	assert.Equal(test, http.StatusBadRequest, rr.Result().StatusCode)
 }
 
-func TestListDeploymentsOnlyWithEnvironmentAndUser(test *testing.T) {
+func TestListDeploymentsWithPageSizeNotNumber(test *testing.T) {
+
 	req, err := http.NewRequest(
 		"GET",
-		"/deployments?user_id=1&environment_id=1",
+		"/deployments?start_date=2020-01-01&end_date=2020-01-01&pageSize=a",
 		nil,
 	)
 	if err != nil {
@@ -96,4 +96,42 @@ func TestListDeploymentsOnlyWithEnvironmentAndUser(test *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(test, http.StatusBadRequest, rr.Result().StatusCode)
+}
+
+func TestListDeploymentsWithoutParams(test *testing.T) {
+	req, err := http.NewRequest(
+		"GET",
+		"/deployments/1",
+		nil,
+	)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	appContext := getAppContext()
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.listDeployments)
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(test, http.StatusOK, rr.Result().StatusCode)
+}
+
+func TestListDeploymentsOnlyWithEnvironmentAndUser(test *testing.T) {
+	req, err := http.NewRequest(
+		"GET",
+		"/deployments?environment_id=1",
+		nil,
+	)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	appContext := getAppContext()
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.listDeployments)
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(test, http.StatusOK, rr.Result().StatusCode)
 }

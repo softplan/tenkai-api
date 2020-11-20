@@ -173,7 +173,7 @@ func (appContext *AppContext) doIt(kubeConfig string, targetEnvironment *model.E
 
 		installPayload := convertPayload(e)
 
-		_, err := appContext.simpleInstall(targetEnvironment, installPayload, out, false, false, "")
+		_, err := appContext.simpleInstall(targetEnvironment, installPayload, out, false, false, "", -1)
 		if err != nil {
 			global.Logger.Error(logFields, "error: "+err.Error())
 		}
