@@ -15,7 +15,8 @@ import (
 )
 
 func (appContext *AppContext) repoUpdate(w http.ResponseWriter, r *http.Request) {
-
+	url := appContext.Configuration.App.HelmAPIUrl + "/repoUpdate"
+	appContext.HelmService.DoGetRequest(url)
 	appContext.HelmServiceAPI.RepoUpdate()
 }
 
