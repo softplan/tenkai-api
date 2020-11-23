@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	mockAudit "github.com/softplan/tenkai-api/pkg/audit/mocks"
+	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
 )
 
 func doTest(t *testing.T, mode string) {
@@ -34,6 +35,16 @@ func doTest(t *testing.T, mode string) {
 	appContext.Repositories.VariableDAO = mockVariableDAO
 	appContext.HelmServiceAPI = mockHelmSvc
 	appContext.Auditing = auditSvc
+	appContext.RabbitImpl = getMockRabbitMQ()
+
+	user := mockUser()
+	mockUserDAO := &mockRepo.UserDAOInterface{}
+	mockUserDAO.On("FindByEmail", mock.Anything).Return(user, nil)
+	appContext.Repositories.UserDAO = mockUserDAO
+
+	mockDeploymentDAO := &mockRepo.DeploymentDAOInterface{}
+	mockDeploymentDAO.On("CreateDeployment", mock.Anything).Return(1, nil)
+	appContext.Repositories.DeploymentDAO = mockDeploymentDAO
 
 	url := "/promote?mode=" + mode + "&srcEnvID=91&targetEnvID=92"
 	req, err := http.NewRequest("GET", url, nil)

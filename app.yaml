@@ -9,4 +9,6 @@ app:
     url: ""
     username: ""
     password: ""
-
+  rabbit: 
+    uri: ""
+  helmApiUrl: ""

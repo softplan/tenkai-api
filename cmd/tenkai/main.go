@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"os"
 	"sync"
@@ -11,9 +12,12 @@ import (
 	"github.com/softplan/tenkai-api/pkg/dbms/repository"
 	"github.com/softplan/tenkai-api/pkg/global"
 	"github.com/softplan/tenkai-api/pkg/handlers"
+	"github.com/softplan/tenkai-api/pkg/rabbitmq"
 	helmapi "github.com/softplan/tenkai-api/pkg/service/_helm"
 	"github.com/softplan/tenkai-api/pkg/service/core"
 	dockerapi "github.com/softplan/tenkai-api/pkg/service/docker"
+	"github.com/softplan/tenkai-api/pkg/tenkaihelm"
+	"github.com/streadway/amqp"
 )
 
 const (
@@ -48,8 +52,59 @@ func main() {
 	//Elk setup
 	appContext.Elk, _ = appContext.Auditing.ElkClient(config.App.Elastic.URL, config.App.Elastic.Username, config.App.Elastic.Password)
 
+	//RabbitMQ Connection
+	appContext.RabbitImpl = rabbitmq.RabbitImpl{}
+	appContext.RabbitMQConn = appContext.RabbitImpl.GetConnection(config.App.Rabbit.URI)
+	appContext.RabbitMQChannel = appContext.RabbitImpl.GetChannel(appContext.RabbitMQConn)
+	defer appContext.RabbitMQConn.Close()
+	defer appContext.RabbitMQChannel.Close()
+	createQueues(appContext)
+	publishRepoToQueue(appContext)
+	go handlers.StartConsumerQueue(appContext, rabbitmq.ResultInstallQueue)
+
+	appContext.HelmService = tenkaihelm.HelmAPIImpl{}
+
 	global.Logger.Info(logFields, "http server started")
 	handlers.StartHTTPServer(appContext)
+}
+
+func createQueues(appContext *handlers.AppContext) {
+	createQueue(rabbitmq.InstallQueue, appContext)
+	createQueue(rabbitmq.ResultInstallQueue, appContext)
+	createQueue(rabbitmq.RepositoriesQueue, appContext)
+	createQueue(rabbitmq.DeleteRepoQueue, appContext)
+}
+
+func publishRepoToQueue(appContext *handlers.AppContext) {
+	repositories, err := appContext.HelmServiceAPI.GetRepositories()
+	if err != nil {
+		panic("Can not retrieve repositories from helm service API")
+	}
+	for _, repo := range repositories {
+		if repo.Name != "local" && repo.Name != "stable" {
+			queuePayloadJSON, _ := json.Marshal(repo)
+			appContext.RabbitImpl.Publish(
+				appContext.RabbitMQChannel,
+				"",
+				rabbitmq.RepositoriesQueue,
+				false,
+				false,
+				amqp.Publishing{
+					ContentType: "application/json",
+					Body:        queuePayloadJSON,
+				},
+			)
+		}
+	}
+}
+
+func createQueue(queueName string, appContext *handlers.AppContext) {
+	_, err := appContext.RabbitImpl.QueueDeclare(appContext.RabbitMQChannel, queueName, true, false, false, false, nil)
+	if err != nil {
+		global.Logger.Error(
+			global.AppFields{global.Function: "createQueue"},
+			"Could not declare "+queueName+" - "+err.Error())
+	}
 }
 
 func initializeHelm(appContext *handlers.AppContext) {
@@ -89,6 +144,8 @@ func initRepository(database *dbms.Database) handlers.Repositories {
 	repositories.UserEnvironmentRoleDAO = &repository.UserEnvironmentRoleDAOImpl{Db: database.Db}
 	repositories.NotesDAO = &repository.NotesDAOImpl{Db: database.Db}
 	repositories.WebHookDAO = &repository.WebHookDAOImpl{Db: database.Db}
+	repositories.DeploymentDAO = &repository.DeploymentDAOImpl{Db: database.Db}
+	repositories.RequestDeploymentDAO = &repository.RequestDeploymentDAOImpl{Db: database.Db}
 
 	return repositories
 }

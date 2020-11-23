@@ -20,6 +20,9 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
+
+	"github.com/softplan/tenkai-api/pkg/rabbitmq"
+	"github.com/streadway/amqp"
 )
 
 func (appContext *AppContext) listCharts(w http.ResponseWriter, r *http.Request) {
@@ -311,7 +314,7 @@ func (appContext *AppContext) getHelmCommand(w http.ResponseWriter, r *http.Requ
 			return
 		}
 
-		command, errX := appContext.simpleInstall(environment, element, out, false, true)
+		command, errX := appContext.simpleInstall(environment, element, out, false, true, "", -1)
 		if errX != nil {
 			http.Error(w, err.Error(), 501)
 			return
@@ -346,7 +349,7 @@ func (appContext *AppContext) hasConfigMapCached(chart string, version string) (
 	return hasConfigMap, nil
 }
 
-func (appContext *AppContext) loadConfigMap(deployables []model.InstallPayload) ([]model.InstallPayload, error) {
+func (appContext *AppContext) loadConfigMap(deployables []model.InstallPayload, environmentID int) ([]model.InstallPayload, error) {
 	configMaps := make([]model.InstallPayload, 0)
 
 	var config model.ConfigMap
@@ -366,7 +369,7 @@ func (appContext *AppContext) loadConfigMap(deployables []model.InstallPayload) 
 			var ip model.InstallPayload
 			ip.Name = d.Name + "-gcm"
 			ip.Chart = config.Value
-			ip.EnvironmentID = d.EnvironmentID
+			ip.EnvironmentID = environmentID
 
 			configMaps = append(configMaps, ip)
 		}
@@ -390,76 +393,92 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	configMaps, err := appContext.loadConfigMap(payload.Deployables)
+	var environments []*model.Environment
+
+	for _, environmentID := range payload.EnvironmentIDs {
+		//Locate Environment
+		environment, err := appContext.Repositories.EnvironmentDAO.GetByID(environmentID)
+		if err != nil {
+			msg := err.Error()
+			if err.Error() == "record not found" {
+				msg = "Environment " + strconv.Itoa(environmentID) + " not found"
+			}
+			http.Error(w, msg, http.StatusInternalServerError)
+			return
+		}
+
+		//If not admin, verify authorization of user for specific environment
+		if !isAdmin {
+			auth, _ := appContext.hasEnvironmentRole(principal, environment.ID, "ACTION_DEPLOY")
+			if !auth {
+				http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
+				return
+			}
+		}
+
+		environments = append(environments, environment)
+	}
+
+	user, err := appContext.Repositories.UserDAO.FindByEmail(principal.Email)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
-	payload.Deployables = configMaps
 
-	out := &bytes.Buffer{}
+	requestDeployment := model.RequestDeployment{}
+	requestDeployment.Success = false
+	requestDeployment.Processed = false
+	requestDeployment.UserID = user.ID
+	requestDeploymentID, _ := appContext.Repositories.RequestDeploymentDAO.CreateRequestDeployment(requestDeployment)
 
-	//Locate Environment
-	environment, err := appContext.Repositories.EnvironmentDAO.GetByID(payload.EnvironmentID)
-	if err != nil {
-		msg := err.Error()
-		if err.Error() == "record not found" {
-			msg = "Environment " + strconv.Itoa(payload.EnvironmentID) + " not found"
-		}
-		http.Error(w, msg, http.StatusInternalServerError)
-		return
-	}
-
-	//If not admin, verify authorization of user for specific environment
-	if !isAdmin {
-		auth, _ := appContext.hasEnvironmentRole(principal, environment.ID, "ACTION_DEPLOY")
-		if !auth {
-			http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
-			return
-		}
-	}
-
-	for _, element := range payload.Deployables {
-		if err = appContext.updateImageTagBeforeInstallProduct(payload.ProductVersionID,
-			int(environment.ID), element.Chart); err != nil {
-
+	for _, environment := range environments {
+		configMaps, err := appContext.loadConfigMap(payload.Deployables, int(environment.ID))
+		if err != nil {
 			http.Error(w, err.Error(), 500)
 			return
 		}
+		payload.Deployables = configMaps
+		out := &bytes.Buffer{}
 
-		_, err = appContext.simpleInstall(environment, element, out, false, false)
-		if err != nil {
-			http.Error(w, err.Error(), 501)
-			return
+		for _, element := range payload.Deployables {
+			if err = appContext.updateImageTagBeforeInstallProduct(payload.ProductVersionID,
+				int(environment.ID), element.Chart); err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+
+			_, err = appContext.simpleInstall(environment, element, out, false, false, principal.Email, requestDeploymentID)
+			if err != nil {
+				http.Error(w, err.Error(), 501)
+				return
+			}
+
+			auditValues := make(map[string]string)
+			auditValues["environment"] = environment.Name
+			auditValues["chartName"] = element.Chart
+			auditValues["name"] = element.Name
+
+			appContext.Auditing.DoAudit(r.Context(), appContext.Elk, principal.Email, "deploy", auditValues)
+
+			if payload.ProductVersionID > 0 {
+				pv, err := appContext.Repositories.ProductDAO.ListProductVersionsByID(payload.ProductVersionID)
+				if err != nil {
+					http.Error(w, err.Error(), 501)
+					return
+				}
+				environment.ProductVersion = pv.Version
+				if err := appContext.Repositories.EnvironmentDAO.EditEnvironment(*environment); err != nil {
+					http.Error(w, err.Error(), 501)
+					return
+				}
+
+				appContext.triggerProductDeploymentWebhook(int(environment.ID),
+					pv.ProductID, environment.Namespace, pv.Version)
+			}
 		}
-
-		auditValues := make(map[string]string)
-		auditValues["environment"] = environment.Name
-		auditValues["chartName"] = element.Chart
-		auditValues["name"] = element.Name
-
-		appContext.Auditing.DoAudit(r.Context(), appContext.Elk, principal.Email, "deploy", auditValues)
 
 	}
-
-	if payload.ProductVersionID > 0 {
-		pv, err := appContext.Repositories.ProductDAO.ListProductVersionsByID(payload.ProductVersionID)
-		if err != nil {
-			http.Error(w, err.Error(), 501)
-			return
-		}
-		environment.ProductVersion = pv.Version
-		if err := appContext.Repositories.EnvironmentDAO.EditEnvironment(*environment); err != nil {
-			http.Error(w, err.Error(), 501)
-			return
-		}
-
-		appContext.triggerProductDeploymentWebhook(payload.EnvironmentID,
-			pv.ProductID, environment.Namespace, pv.Version)
-	}
-
 	w.WriteHeader(http.StatusOK)
-
 }
 
 func (appContext *AppContext) triggerProductDeploymentWebhook(
@@ -543,7 +562,6 @@ func (appContext *AppContext) install(w http.ResponseWriter, r *http.Request) {
 
 	//If not admin, verify authorization of user for specific environment
 	if !isAdmin {
-
 		auth, _ := appContext.hasEnvironmentRole(principal, environment.ID, "ACTION_DEPLOY")
 		if !auth {
 			http.Error(w, errors.New(global.AccessDenied).Error(), http.StatusUnauthorized)
@@ -551,7 +569,19 @@ func (appContext *AppContext) install(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	_, err = appContext.simpleInstall(environment, payload, out, false, false)
+	user, err := appContext.Repositories.UserDAO.FindByEmail(principal.Email)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	requestDeployment := model.RequestDeployment{}
+	requestDeployment.Success = false
+	requestDeployment.Processed = false
+	requestDeployment.UserID = user.ID
+	requestDeploymentID, _ := appContext.Repositories.RequestDeploymentDAO.CreateRequestDeployment(requestDeployment)
+
+	_, err = appContext.simpleInstall(environment, payload, out, false, false, principal.Email, requestDeploymentID)
 	if err != nil {
 		fmt.Println(out.String())
 		http.Error(w, err.Error(), 501)
@@ -581,7 +611,7 @@ func (appContext *AppContext) helmDryRun(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	_, err = appContext.simpleInstall(environment, payload, out, true, false)
+	_, err = appContext.simpleInstall(environment, payload, out, true, false, "", -1)
 
 	if err != nil {
 		http.Error(w, err.Error(), 501)
@@ -633,7 +663,7 @@ func (appContext *AppContext) getArgsWithHelmDefault(variables []model.Variable,
 	return args
 }
 
-func (appContext *AppContext) simpleInstall(environment *model.Environment, installPayload model.InstallPayload, out *bytes.Buffer, dryRun bool, helmCommandOnly bool) (string, error) {
+func (appContext *AppContext) simpleInstall(environment *model.Environment, installPayload model.InstallPayload, out *bytes.Buffer, dryRun bool, helmCommandOnly bool, userID string, requestDeploymentID int) (string, error) {
 
 	//WARNING - VERIFY IF CONFIG FILE EXISTS !!! This is the cause of  u.client.ReleaseHistory fail sometimes.
 
@@ -670,14 +700,45 @@ func (appContext *AppContext) simpleInstall(environment *model.Environment, inst
 			upgradeRequest.Dryrun = dryRun
 			upgradeRequest.Release = name
 
-			return appContext.doUpgrade(upgradeRequest, out)
+			if dryRun {
+				return appContext.doUpgrade(upgradeRequest, out)
+			}
 
+			deployment := model.Deployment{}
+			deployment.EnvironmentID = environment.ID
+			deployment.RequestDeploymentID = uint(requestDeploymentID)
+			deployment.Chart = installPayload.Chart
+			deployment.Processed = false
+			deploymentID, _ := appContext.Repositories.DeploymentDAO.CreateDeployment(deployment)
+
+			queuePayload := rabbitmq.PayloadRabbit{
+				UpgradeRequest: upgradeRequest,
+				Name:           environment.Name,
+				Token:          environment.Token,
+				Filename:       appContext.K8sConfigPath + environment.Group + "_" + environment.Name,
+				CACertificate:  environment.CACertificate,
+				ClusterURI:     environment.ClusterURI,
+				Namespace:      environment.Namespace,
+				DeploymentID:   uint(deploymentID),
+			}
+
+			queuePayloadJSON, _ := json.Marshal(queuePayload)
+
+			err := appContext.RabbitImpl.Publish(
+				appContext.RabbitMQChannel,
+				"",
+				rabbitmq.InstallQueue,
+				false,
+				false,
+				amqp.Publishing{
+					ContentType: "application/json",
+					Body:        queuePayloadJSON,
+				},
+			)
+			return "", err
 		}
-
 		return getHelmMessage(name, args, environment, installPayload.Chart), nil
-
 	}
-
 	return "", nil
 }
 
