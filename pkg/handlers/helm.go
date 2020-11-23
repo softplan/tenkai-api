@@ -473,7 +473,7 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 				}
 
 				appContext.triggerProductDeploymentWebhook(int(environment.ID),
-					pv.ProductID, environment.Name, pv.Version)
+					pv.ProductID, environment.Namespace, pv.Version)
 			}
 		}
 
