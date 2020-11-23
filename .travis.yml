@@ -9,7 +9,7 @@ go:
 
 branches:
   only:
-  - dev
+  - develop
   - master
   - /^\d{2}\.\d\.\d+(-\d+)?$/
 

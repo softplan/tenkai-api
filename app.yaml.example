@@ -1,0 +1,15 @@
+server:
+  port: 8080
+ 
+app:
+  passkey: "passKey"
+  dbms:
+    uri: "host=localhost port=5432 user=postgres dbname=tenkai sslmode=disable password=123456"
+  elastic:
+    url: http://localhost:9200
+    username: elastic
+    password: 1234567
+  dockerApiUrl:  http://localhost:8081
+  rabbit:
+    uri: amqp://guest:guest@localhost:5672
+  helmApiUrl: "http://localhost:8082"
