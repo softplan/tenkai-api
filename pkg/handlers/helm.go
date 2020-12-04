@@ -459,24 +459,22 @@ func (appContext *AppContext) multipleInstall(w http.ResponseWriter, r *http.Req
 			auditValues["name"] = element.Name
 
 			appContext.Auditing.DoAudit(r.Context(), appContext.Elk, principal.Email, "deploy", auditValues)
-
-			if payload.ProductVersionID > 0 {
-				pv, err := appContext.Repositories.ProductDAO.ListProductVersionsByID(payload.ProductVersionID)
-				if err != nil {
-					http.Error(w, err.Error(), 501)
-					return
-				}
-				environment.ProductVersion = pv.Version
-				if err := appContext.Repositories.EnvironmentDAO.EditEnvironment(*environment); err != nil {
-					http.Error(w, err.Error(), 501)
-					return
-				}
-
-				appContext.triggerProductDeploymentWebhook(int(environment.ID),
-					pv.ProductID, environment.Namespace, pv.Version)
-			}
 		}
+		if payload.ProductVersionID > 0 {
+			pv, err := appContext.Repositories.ProductDAO.ListProductVersionsByID(payload.ProductVersionID)
+			if err != nil {
+				http.Error(w, err.Error(), 501)
+				return
+			}
+			environment.ProductVersion = pv.Version
+			if err := appContext.Repositories.EnvironmentDAO.EditEnvironment(*environment); err != nil {
+				http.Error(w, err.Error(), 501)
+				return
+			}
 
+			appContext.triggerProductDeploymentWebhook(int(environment.ID),
+				pv.ProductID, environment.Namespace, pv.Version)
+		}
 	}
 	w.WriteHeader(http.StatusOK)
 }
