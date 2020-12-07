@@ -7,8 +7,7 @@ import (
 )
 
 
-
-func (appContext *AppContext) health(w http.ResponseWriter, r *http.Request) {
+func (appContext *AppContext) healthRabbit(w http.ResponseWriter, r *http.Request) {
 	_, err := appContext.RabbitMQChannel.QueueInspect("ResultInstallQueue")
 	if err != nil {
 		global.Logger.Error(global.AppFields{global.Function: "health"}, "Error when try to inspect queue")
