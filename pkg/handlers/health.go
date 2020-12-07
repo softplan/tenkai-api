@@ -6,7 +6,6 @@ import (
 	"github.com/softplan/tenkai-api/pkg/global"
 )
 
-
 func (appContext *AppContext) healthRabbit(w http.ResponseWriter, r *http.Request) {
 	_, err := appContext.RabbitMQChannel.QueueInspect("ResultInstallQueue")
 	if err != nil {
