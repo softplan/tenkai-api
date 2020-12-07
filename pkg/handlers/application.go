@@ -204,7 +204,7 @@ func defineRotes(r *mux.Router, appContext *AppContext) {
 	r.HandleFunc("/requestDeployments", appContext.listRequestDeployments).Methods("GET")
 	r.HandleFunc("/requestDeployments/{id}", appContext.listDeployments).Methods("GET")
 
-	r.HandleFunc("/health", appContext.health).Methods("GET")
+	r.HandleFunc("/health", appContext.healthRabbit).Methods("GET")
 
 	r.HandleFunc("/", appContext.rootHandler)
 
