@@ -361,6 +361,7 @@ func (appContext *AppContext) loadConfigMap(deployables []model.InstallPayload, 
 	for _, d := range deployables {
 		configMaps = append(configMaps, d)
 		hasConfigMap, err := appContext.hasConfigMapCached(d.Chart, d.ChartVersion)
+
 		if err != nil {
 			return deployables, err
 		}
@@ -566,6 +567,14 @@ func (appContext *AppContext) install(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	deployables := make([]model.InstallPayload, 0)
+	deployables = append(deployables, payload)
+
+	deployables, err = appContext.loadConfigMap(deployables, int(environment.ID))
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
 
 	user, err := appContext.Repositories.UserDAO.FindByEmail(principal.Email)
 	if err != nil {
@@ -579,11 +588,13 @@ func (appContext *AppContext) install(w http.ResponseWriter, r *http.Request) {
 	requestDeployment.UserID = user.ID
 	requestDeploymentID, _ := appContext.Repositories.RequestDeploymentDAO.CreateRequestDeployment(requestDeployment)
 
-	_, err = appContext.simpleInstall(environment, payload, out, false, false, principal.Email, requestDeploymentID)
-	if err != nil {
-		fmt.Println(out.String())
-		http.Error(w, err.Error(), 501)
-		return
+	for _, deployable := range deployables {
+		_, err = appContext.simpleInstall(environment, deployable, out, false, false, principal.Email, requestDeploymentID)
+		if err != nil {
+			fmt.Println(out.String())
+			http.Error(w, err.Error(), 501)
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusOK)
