@@ -772,6 +772,14 @@ func TestInstall(t *testing.T) {
 
 	appContext := AppContext{}
 
+	mockConfigDAO := &mockRepo.ConfigDAOInterface{}
+
+	var config model.ConfigMap
+	config.Name = "mykey"
+	config.Value = "myvalue"
+	mockConfigDAO.On("GetConfigByName", "commonValuesConfigMapChart").
+		Return(config, nil)
+
 	mockDeploymentDAO := &mockRepo.DeploymentDAOInterface{}
 	mockDeploymentDAO.On("CreateDeployment", mock.Anything).Return(1, nil)
 
@@ -799,6 +807,7 @@ func TestInstall(t *testing.T) {
 	appContext.Repositories.UserDAO = mockUserDAO
 	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
 	appContext.Repositories.DeploymentDAO = mockDeploymentDAO
+	appContext.Repositories.ConfigDAO = mockConfigDAO
 	appContext.Repositories.RequestDeploymentDAO = mockRequestDeploymentDAO
 
 	appContext.RabbitImpl = getMockRabbitMQ()
