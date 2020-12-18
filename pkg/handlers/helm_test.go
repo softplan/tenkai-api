@@ -780,7 +780,6 @@ func TestInstall(t *testing.T) {
 	mockConfigDAO.On("GetConfigByName", "commonValuesConfigMapChart").
 		Return(config, nil)
 
-
 	mockDeploymentDAO := &mockRepo.DeploymentDAOInterface{}
 	mockDeploymentDAO.On("CreateDeployment", mock.Anything).Return(1, nil)
 
