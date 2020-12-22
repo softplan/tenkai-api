@@ -178,12 +178,12 @@ func (appContext *AppContext) newProductVersionService(w http.ResponseWriter, r 
 	}
 
 	if pv.Locked {
-		http.Error(w, pvLockMsg, http.StatusInternalServerError)
+		http.Error(w, pvLockMsg, http.StatusBadRequest)
 		return
 	}
 
 	if !appContext.validateVersion(pv.Version, payload.DockerImageTag) {
-		http.Error(w, "Wrong version", http.StatusInternalServerError)
+		http.Error(w, "Docker image tag must be equal as product version", http.StatusBadRequest)
 		return
 	}
 
@@ -216,7 +216,7 @@ func (appContext *AppContext) editProductVersionService(w http.ResponseWriter, r
 	}
 
 	if pv.Locked {
-		http.Error(w, pvLockMsg, http.StatusInternalServerError)
+		http.Error(w, pvLockMsg, http.StatusBadRequest)
 		return
 	}
 
