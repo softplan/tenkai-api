@@ -183,7 +183,7 @@ func (appContext *AppContext) newProductVersionService(w http.ResponseWriter, r 
 	}
 
 	if !appContext.validateVersion(pv.Version, payload.DockerImageTag) {
-		http.Error(w, "Docker image tag must be equal as product version", http.StatusBadRequest)
+		http.Error(w, "Docker image tag must be compatible as product version", http.StatusBadRequest)
 		return
 	}
 
