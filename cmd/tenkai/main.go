@@ -64,8 +64,23 @@ func main() {
 
 	appContext.HelmService = tenkaihelm.HelmAPIImpl{}
 
+	createEnvironmentFiles(appContext)
+
 	global.Logger.Info(logFields, "http server started")
 	handlers.StartHTTPServer(appContext)
+}
+
+func createEnvironmentFiles(appContext *handlers.AppContext) {
+	envs, err := appContext.Repositories.EnvironmentDAO.GetAllEnvironments("")
+	if err != nil {
+		logFields := global.AppFields{global.Function: "createEnvironmentFiles"}
+		global.Logger.Error(logFields, "Fail on create environment files")
+		return
+	}
+	for _, env := range envs {
+		handlers.CreateEnvironmentFile(env.Name, env.Token, appContext.K8sConfigPath+env.Group+"_"+env.Name,
+			env.CACertificate, env.ClusterURI, env.Namespace)
+	}
 }
 
 func createQueues(appContext *handlers.AppContext) {

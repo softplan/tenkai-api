@@ -276,6 +276,11 @@ func removeEnvironmentFile(fileName string) error {
 	return nil
 }
 
+//CreateEnvironmentFile export function "createEnvironmentFile" for other packages
+func CreateEnvironmentFile(clusterName, clusterUserToken, fileName, ca, server, namespace string) {
+	createEnvironmentFile(clusterName, clusterUserToken, fileName, ca, server, namespace)
+}
+
 func createEnvironmentFile(clusterName string, clusterUserToken string,
 	fileName string, ca string, server string, namespace string) {
 

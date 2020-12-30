@@ -897,7 +897,7 @@ func TestNewProductVersionService_Error2(t *testing.T) {
 
 	mockProductDAO.AssertNumberOfCalls(t, "ListProductVersionsByID", 1)
 
-	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+	assert.Equal(t, http.StatusBadRequest, rr.Code, "Response should be 400.")
 }
 
 func TestNewProductVersionService_Error3(t *testing.T) {
@@ -949,7 +949,7 @@ func TestNewProductVersionService_Error4(t *testing.T) {
 
 	mockProductDAO.AssertNumberOfCalls(t, "ListProductVersionsByID", 1)
 
-	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+	assert.Equal(t, http.StatusBadRequest, rr.Code, "Response should be 400.")
 }
 
 func TestEditProductVersionService(t *testing.T) {
@@ -1030,7 +1030,7 @@ func TestEditProductVersionService_ProductVersionLocked(t *testing.T) {
 	mockProductDAO.AssertNumberOfCalls(t, "ListProductVersionsByID", 1)
 	mockProductDAO.AssertNumberOfCalls(t, "EditProductVersionService", 1)
 
-	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+	assert.Equal(t, http.StatusBadRequest, rr.Code, "Response should be 400.")
 }
 
 func TestEditProductVersionService_EditProductVersionServiceError(t *testing.T) {

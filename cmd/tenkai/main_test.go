@@ -6,6 +6,7 @@ import (
 
 	dbms2 "github.com/softplan/tenkai-api/pkg/dbms"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
+	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
 	"github.com/softplan/tenkai-api/pkg/handlers"
 	"github.com/softplan/tenkai-api/pkg/rabbitmq/mocks"
 	mockHelm "github.com/softplan/tenkai-api/pkg/service/_helm/mocks"
@@ -39,7 +40,7 @@ func TestInitCache(t *testing.T) {
 	initCache(&appContext)
 }
 
-func TestCheckError(t *testing.T) {
+func TestCheckErrorNil(t *testing.T) {
 	checkFatalError(nil)
 }
 
@@ -112,4 +113,44 @@ func TestPublishRepoToQueueWithoutRepos(test *testing.T) {
 	appContext := &handlers.AppContext{}
 	appContext.HelmServiceAPI = &helmMock
 	assert.Panics(test, func() { publishRepoToQueue(appContext) }, appContext)
+}
+
+func TestCreateEnvironmentFiles(test *testing.T) {
+	appContext := handlers.AppContext{}
+	mockGetAllEnvironments(&appContext)
+	createEnvironmentFiles(&appContext)
+}
+
+func TestFailCreateEnvironmentFiles(test *testing.T) {
+	appContext := handlers.AppContext{}
+	mockFailGetAllEnvironments(&appContext)
+	createEnvironmentFiles(&appContext)
+}
+
+func mockGetAllEnvironments(appContext *handlers.AppContext) {
+	var envs []model.Environment
+	envs = append(envs, mockGetEnv())
+	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
+	mockEnvDao.On("GetAllEnvironments", "").Return(envs, nil)
+	appContext.Repositories.EnvironmentDAO = mockEnvDao
+}
+
+func mockFailGetAllEnvironments(appContext *handlers.AppContext) {
+	var envs []model.Environment
+	mockEnvDao := &mockRepo.EnvironmentDAOInterface{}
+	mockEnvDao.On("GetAllEnvironments", "").Return(envs, errors.New("xpto"))
+	appContext.Repositories.EnvironmentDAO = mockEnvDao
+}
+
+func mockGetEnv() model.Environment {
+	var env model.Environment
+	env.ID = 999
+	env.Group = "foo"
+	env.Name = "bar"
+	env.ClusterURI = "https://rancher-k8s-my-domain.com/k8s/clusters/c-kbfxr"
+	env.CACertificate = "my-certificate"
+	env.Token = "kubeconfig-user-ph111:abbkdd57t68tq2lppg6lwb65sb69282jhsmh3ndwn4vhjtt8blmhh2"
+	env.Namespace = "dev"
+	env.Gateway = "my-gateway.istio-system.svc.cluster.local"
+	return env
 }
