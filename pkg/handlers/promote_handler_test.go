@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	mockAudit "github.com/softplan/tenkai-api/pkg/audit/mocks"
+	"github.com/softplan/tenkai-api/pkg/dbms/model"
+	"github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
 	mockRepo "github.com/softplan/tenkai-api/pkg/dbms/repository/mocks"
 )
 
@@ -30,7 +32,21 @@ func doTest(t *testing.T, mode string) {
 	auditSvc := &mockAudit.AuditingInterface{}
 	auditSvc.On("DoAudit", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything)
 
+	configDAO := mocks.ConfigDAOInterface{}
+	var configMap model.ConfigMap
+	configMap.Value = "alfa.beta"
+	configDAO.On("GetConfigByName", mock.Anything).Return(configMap, nil)
+
+	mockRequestDeploymentDAO := &mockRepo.RequestDeploymentDAOInterface{}
+	mockRequestDeploymentDAO.On("CreateRequestDeployment", mock.Anything).Return(1, nil)
+
+	mockDeploymentDAO := &mockRepo.DeploymentDAOInterface{}
+	mockDeploymentDAO.On("CreateDeployment", mock.Anything).Return(1, nil)
+
 	appContext.Repositories = Repositories{}
+	appContext.Repositories.ConfigDAO = &configDAO
+	appContext.Repositories.RequestDeploymentDAO = mockRequestDeploymentDAO
+	appContext.Repositories.DeploymentDAO = mockDeploymentDAO
 	appContext.Repositories.EnvironmentDAO = mockEnvDao
 	appContext.Repositories.VariableDAO = mockVariableDAO
 	appContext.HelmServiceAPI = mockHelmSvc
@@ -41,10 +57,6 @@ func doTest(t *testing.T, mode string) {
 	mockUserDAO := &mockRepo.UserDAOInterface{}
 	mockUserDAO.On("FindByEmail", mock.Anything).Return(user, nil)
 	appContext.Repositories.UserDAO = mockUserDAO
-
-	mockDeploymentDAO := &mockRepo.DeploymentDAOInterface{}
-	mockDeploymentDAO.On("CreateDeployment", mock.Anything).Return(1, nil)
-	appContext.Repositories.DeploymentDAO = mockDeploymentDAO
 
 	url := "/promote?mode=" + mode + "&srcEnvID=91&targetEnvID=92"
 	req, err := http.NewRequest("GET", url, nil)

@@ -170,6 +170,6 @@ func (appContext *AppContext) getModelRepositoryDefault(principal model.Principa
 			return repository, nil
 		}
 	}
-	
+
 	return repo, nil
 }

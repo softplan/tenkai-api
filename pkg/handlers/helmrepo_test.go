@@ -236,3 +236,74 @@ func TestDeleteRepository_RemoveRepositoryError(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 	mockHelmSvc.AssertNumberOfCalls(t, "RemoveRepository", 1)
 }
+
+func getPrincipal() model.Principal {
+	var principal model.Principal
+	principal.Email = "xpto"
+	principal.Name = "xpto"
+	principal.Roles = []string{"role1", "role2"}
+	return principal
+}
+
+func TestGetModelRepositoryDefaultErrorConfigByName(t *testing.T) {
+	appContext := AppContext{}
+
+	configDAO := mocks.ConfigDAOInterface{}
+	configDAO.On("GetConfigByName", mock.Anything).Return(model.ConfigMap{}, errors.New("some error"))
+	appContext.Repositories.ConfigDAO = &configDAO
+	_, err := appContext.getModelRepositoryDefault(getPrincipal())
+	assert.Equal(t, "some error", err.Error())
+}
+
+func TestGetModelRepositoryDefaultErrorRepositorires(t *testing.T) {
+	appContext := AppContext{}
+
+	configDAO := mocks.ConfigDAOInterface{}
+	configDAO.On("GetConfigByName", mock.Anything).Return(model.ConfigMap{}, nil)
+	appContext.Repositories.ConfigDAO = &configDAO
+
+	mockHelmSvc := &mockSvc.HelmServiceInterface{}
+	mockHelmSvc.On("GetRepositories").Return([]model.Repository{}, errors.New("Error on getRepositories"))
+	appContext.HelmServiceAPI = mockHelmSvc
+
+	_, err := appContext.getModelRepositoryDefault(getPrincipal())
+	assert.Equal(t, "Error on getRepositories", err.Error())
+}
+
+func TestGetModelRepositoryOkButEmpty(t *testing.T) {
+	appContext := AppContext{}
+
+	configDAO := mocks.ConfigDAOInterface{}
+	configDAO.On("GetConfigByName", mock.Anything).Return(model.ConfigMap{}, nil)
+	appContext.Repositories.ConfigDAO = &configDAO
+
+	mockHelmSvc := &mockSvc.HelmServiceInterface{}
+	mockHelmSvc.On("GetRepositories").Return([]model.Repository{}, nil)
+	appContext.HelmServiceAPI = mockHelmSvc
+
+	repoResult, err := appContext.getModelRepositoryDefault(getPrincipal())
+	assert.Equal(t, nil, err)
+	assert.Equal(t, model.Repository{}, repoResult)
+}
+
+func TestGetModelRepositoryOk(t *testing.T) {
+	appContext := AppContext{}
+
+	configDAO := mocks.ConfigDAOInterface{}
+	var configMap model.ConfigMap
+	configMap.Value = "xpto"
+	configDAO.On("GetConfigByName", mock.Anything).Return(configMap, nil)
+	appContext.Repositories.ConfigDAO = &configDAO
+
+	mockHelmSvc := &mockSvc.HelmServiceInterface{}
+	var repo model.Repository
+	repo.Name = "xpto"
+	repos := make([]model.Repository, 0)
+	repos = append(repos, repo)
+	mockHelmSvc.On("GetRepositories").Return(repos, nil)
+	appContext.HelmServiceAPI = mockHelmSvc
+
+	repoResult, err := appContext.getModelRepositoryDefault(getPrincipal())
+	assert.Equal(t, nil, err)
+	assert.Equal(t, repo.Name, repoResult.Name)
+}

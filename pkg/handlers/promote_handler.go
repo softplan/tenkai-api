@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -156,8 +157,7 @@ func (appContext *AppContext) promote(w http.ResponseWriter, r *http.Request) {
 
 }
 
-
-func (appContext *AppContext) doIt(kubeConfig string, targetEnvironment *model.Environment, toPurge []releaseToDeploy, toDeploy []releaseToDeploy, principal model.Principal) (error) {
+func (appContext *AppContext) doIt(kubeConfig string, targetEnvironment *model.Environment, toPurge []releaseToDeploy, toDeploy []releaseToDeploy, principal model.Principal) error {
 
 	logFields := global.AppFields{global.Function: "doIt - promoting", "target": targetEnvironment.Name}
 
@@ -179,19 +179,34 @@ func (appContext *AppContext) doIt(kubeConfig string, targetEnvironment *model.E
 		return err
 	}
 
-	chartsToDeploy := make([]model.InstallPayload, 0)
-	
+	out := &bytes.Buffer{}
+
+	requestDeployment := model.RequestDeployment{}
+	requestDeployment.Success = false
+	requestDeployment.Processed = false
+	requestDeployment.UserID = user.ID
+	requestDeploymentID, err := appContext.Repositories.RequestDeploymentDAO.CreateRequestDeployment(requestDeployment)
+
 	for _, e := range toDeploy {
 		installPayload := convertPayload(e)
 		installPayload.Chart = addRepoPrefix(installPayload.Chart, repository)
 		installPayload.EnvironmentID = int(targetEnvironment.ID)
 
-		chartsToDeploy = append(chartsToDeploy, installPayload)
+		if err != nil {
+			global.Logger.Info(logFields, "helmInstall - error: "+err.Error())
+		} else {
+			appContext.simpleInstall(
+				targetEnvironment,
+				installPayload,
+				out,
+				false,
+				false,
+				fmt.Sprint(user.ID),
+				requestDeploymentID,
+			)
+		}
 	}
-
-	out := &bytes.Buffer{}
-	return appContext.helmInstall(chartsToDeploy, *targetEnvironment, user, out, false, false)
-
+	return nil
 }
 
 func addRepoPrefix(chart string, repository model.Repository) string {
@@ -289,7 +304,7 @@ func retrieveReleasesToDeploy(hsi helmapi.HelmServiceInterface, kubeConfig strin
 	for _, e := range list.Releases {
 		name := strings.ReplaceAll(e.Name, "-"+srcNamespace, "")
 		lastHifen := strings.LastIndex(e.Chart, "-")
-		chartVersion := e.Chart[lastHifen + 1:]
+		chartVersion := e.Chart[lastHifen+1:]
 		chart := e.Chart[:lastHifen]
 
 		result = append(result, releaseToDeploy{Name: name, Chart: chart, ChartVersion: chartVersion})
