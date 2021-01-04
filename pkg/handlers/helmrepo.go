@@ -14,6 +14,8 @@ import (
 	"github.com/streadway/amqp"
 )
 
+const defaultRepo = "DEFAULT_REPO_"
+
 func (appContext *AppContext) repoUpdate(w http.ResponseWriter, r *http.Request) {
 	url := appContext.Configuration.App.HelmAPIUrl + "/repoUpdate"
 	appContext.HelmService.DoGetRequest(url)
@@ -92,7 +94,7 @@ func (appContext *AppContext) setDefaultRepo(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	configMap := model.ConfigMap{Name: "DEFAULT_REPO_" + principal.Email, Value: payload.Reponame}
+	configMap := model.ConfigMap{Name: defaultRepo + principal.Email, Value: payload.Reponame}
 
 	if _, err := appContext.Repositories.ConfigDAO.CreateOrUpdateConfig(configMap); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -105,9 +107,8 @@ func (appContext *AppContext) setDefaultRepo(w http.ResponseWriter, r *http.Requ
 func (appContext *AppContext) getDefaultRepo(w http.ResponseWriter, r *http.Request) {
 	principal := util.GetPrincipal(r)
 
-	var config model.ConfigMap
-	var err error
-	if config, err = appContext.Repositories.ConfigDAO.GetConfigByName("DEFAULT_REPO_" + principal.Email); err != nil {
+	config, err := appContext.Repositories.ConfigDAO.GetConfigByName(defaultRepo + principal.Email)
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -151,4 +152,24 @@ func (appContext *AppContext) deleteRepository(w http.ResponseWriter, r *http.Re
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (appContext *AppContext) getModelRepositoryDefault(principal model.Principal) (model.Repository, error) {
+	var repo model.Repository
+
+	config, err := appContext.Repositories.ConfigDAO.GetConfigByName(defaultRepo + principal.Email)
+	if err != nil {
+		return repo, err
+	}
+	repositories, err := appContext.HelmServiceAPI.GetRepositories()
+	if err != nil {
+		return repo, err
+	}
+	for _, repository := range repositories {
+		if config.Value == repository.Name {
+			return repository, nil
+		}
+	}
+	
+	return repo, nil
 }
