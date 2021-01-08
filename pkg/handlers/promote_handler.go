@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -111,13 +112,13 @@ func (appContext *AppContext) promote(w http.ResponseWriter, r *http.Request) {
 
 		err = appContext.deleteEnvironmentVariables(targetEnvironment.ID)
 		if err != nil {
-			http.Error(w, err.Error(), 501)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		err = appContext.copyEnvironmentVariablesFromSrcToTarget(srcEnvironment.ID, targetEnvironment.ID)
 		if err != nil {
-			http.Error(w, err.Error(), 501)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -125,7 +126,7 @@ func (appContext *AppContext) promote(w http.ResponseWriter, r *http.Request) {
 
 		err = appContext.copyImageAndTagFromSrcToTarget(srcEnvironment.ID, targetEnvironment.ID)
 		if err != nil {
-			http.Error(w, err.Error(), 501)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -133,17 +134,17 @@ func (appContext *AppContext) promote(w http.ResponseWriter, r *http.Request) {
 
 	toPurge, err := retrieveReleasesToPurge(appContext.HelmServiceAPI, kubeConfig, targetEnvironment.Namespace)
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	toDeploy, err := retrieveReleasesToDeploy(appContext.HelmServiceAPI, kubeConfig, srcEnvironment.Namespace)
 	if err != nil {
-		http.Error(w, err.Error(), 501)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	go appContext.doIt(kubeConfig, targetEnvironment, toPurge, toDeploy)
+	appContext.doIt(kubeConfig, targetEnvironment, toPurge, toDeploy, principal)
 
 	auditValues := make(map[string]string)
 	auditValues["sourceEnvironment"] = srcEnvironment.Name
@@ -156,29 +157,64 @@ func (appContext *AppContext) promote(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (appContext *AppContext) doIt(kubeConfig string, targetEnvironment *model.Environment, toPurge []releaseToDeploy, toDeploy []releaseToDeploy) {
-
-	out := &bytes.Buffer{}
+func (appContext *AppContext) doIt(kubeConfig string, targetEnvironment *model.Environment, toPurge []releaseToDeploy, toDeploy []releaseToDeploy, principal model.Principal) error {
 
 	logFields := global.AppFields{global.Function: "doIt - promoting", "target": targetEnvironment.Name}
 
+	global.Logger.Info(logFields, "purgeAll")
 	err := appContext.purgeAll(kubeConfig, toPurge)
 	if err != nil {
-		global.Logger.Error(logFields, "error: "+err.Error())
-		return
+		return err
 	}
+
+	global.Logger.Info(logFields, "findByEmail")
+	user, err := appContext.Repositories.UserDAO.FindByEmail(principal.Email)
+	if err != nil {
+		return err
+	}
+
+	global.Logger.Info(logFields, "getModelRepository")
+	repository, err := appContext.getModelRepositoryDefault(principal)
+	if err != nil {
+		return err
+	}
+
+	out := &bytes.Buffer{}
+
+	requestDeployment := model.RequestDeployment{}
+	requestDeployment.Success = false
+	requestDeployment.Processed = false
+	requestDeployment.UserID = user.ID
+	requestDeploymentID, err := appContext.Repositories.RequestDeploymentDAO.CreateRequestDeployment(requestDeployment)
 
 	for _, e := range toDeploy {
-		global.Logger.Info(logFields, "deploying: "+e.Name+" - "+e.Chart)
-
 		installPayload := convertPayload(e)
+		installPayload.Chart = addRepoPrefix(installPayload.Chart, repository)
+		installPayload.EnvironmentID = int(targetEnvironment.ID)
 
-		_, err := appContext.simpleInstall(targetEnvironment, installPayload, out, false, false, "", -1)
 		if err != nil {
-			global.Logger.Error(logFields, "error: "+err.Error())
+			global.Logger.Info(logFields, "helmInstall - error: "+err.Error())
+		} else {
+			appContext.simpleInstall(
+				targetEnvironment,
+				installPayload,
+				out,
+				false,
+				false,
+				fmt.Sprint(user.ID),
+				requestDeploymentID,
+			)
 		}
 	}
+	return nil
+}
 
+func addRepoPrefix(chart string, repository model.Repository) string {
+	repo := ""
+	if repository.Name != "" {
+		repo = repository.Name + "/"
+	}
+	return repo + chart
 }
 
 func convertPayload(e releaseToDeploy) model.InstallPayload {
@@ -268,9 +304,10 @@ func retrieveReleasesToDeploy(hsi helmapi.HelmServiceInterface, kubeConfig strin
 	for _, e := range list.Releases {
 		name := strings.ReplaceAll(e.Name, "-"+srcNamespace, "")
 		lastHifen := strings.LastIndex(e.Chart, "-")
-
+		chartVersion := e.Chart[lastHifen+1:]
 		chart := e.Chart[:lastHifen]
-		result = append(result, releaseToDeploy{Name: name, Chart: chart})
+
+		result = append(result, releaseToDeploy{Name: name, Chart: chart, ChartVersion: chartVersion})
 	}
 	return result, nil
 }
