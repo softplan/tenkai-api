@@ -280,6 +280,7 @@ func getProduct() model.Product {
 	var payload model.Product
 	payload.ID = 999
 	payload.Name = "my-product"
+	payload.ValidateReleases = true
 	return payload
 }
 
