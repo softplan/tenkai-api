@@ -182,8 +182,14 @@ func (appContext *AppContext) newProductVersionService(w http.ResponseWriter, r 
 		return
 	}
 
-	if !appContext.validateVersion(pv.Version, payload.DockerImageTag) {
-		http.Error(w, "Docker image tag must be compatible with product version", http.StatusBadRequest)
+	p, e := appContext.Repositories.ProductDAO.FindProductByID(pv.ProductID)
+	if e != nil {
+		http.Error(w, "Can't get product from product version service.", http.StatusInternalServerError)
+		return
+	}
+
+	if p.ValidateReleases && !appContext.validateVersion(pv.Version, payload.DockerImageTag) {
+		http.Error(w, "Service should have a version compatible with release version.", http.StatusBadRequest)
 		return
 	}
 
