@@ -87,11 +87,12 @@ func TestCreateProduct(t *testing.T) {
 
 	product := model.Product{}
 	product.Name = "xpto"
+	product.ValidateReleases = true
 
 	rows := sqlmock.NewRows([]string{"id"}).AddRow(99)
 
 	mock.ExpectQuery(`INSERT INTO "products"`).
-		WithArgs(AnyTime{}, AnyTime{}, nil, product.Name).WillReturnRows(rows)
+		WithArgs(AnyTime{}, AnyTime{}, nil, product.Name, product.ValidateReleases).WillReturnRows(rows)
 
 	_, err = produtDAO.CreateProduct(product)
 	assert.Nil(t, err)
@@ -115,9 +116,10 @@ func TestEdit(t *testing.T) {
 	product := model.Product{}
 	product.Name = "xpto"
 	product.ID = 99
+	product.ValidateReleases = true
 
 	mock.ExpectExec(`UPDATE "products" SET (.*) WHERE (.*)`).
-		WithArgs(AnyTime{}, nil, product.Name, product.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+		WithArgs(AnyTime{}, nil, product.Name, product.ValidateReleases, product.ID).WillReturnResult(sqlmock.NewResult(1, 1))
 
 	err = produtDAO.EditProduct(product)
 	assert.Nil(t, err)
