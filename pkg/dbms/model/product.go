@@ -9,7 +9,8 @@ import (
 //Product struct
 type Product struct {
 	gorm.Model
-	Name string `json:"name"`
+	Name             string `json:"name"`
+	ValidateReleases bool   `json:"validateReleases"`
 }
 
 //ProductVersion struct

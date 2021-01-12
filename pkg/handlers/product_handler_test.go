@@ -206,7 +206,8 @@ func TestListProducts(t *testing.T) {
 
 	response := string(rr.Body.Bytes())
 	assert.Contains(t, response, `{"list":[{"ID":999,`)
-	assert.Contains(t, response, `"name":"my-product"}]}`)
+	assert.Contains(t, response, `"name":"my-product",`)
+	assert.Contains(t, response, `"validateReleases":true}]}`)
 }
 
 func TestListProducts_Error(t *testing.T) {
@@ -828,9 +829,11 @@ func TestNewProductVersionService(t *testing.T) {
 
 	pv := getProductVersionWithoutID(0)
 	pv.ID = 999
-	mockProductDAO.On("ListProductVersionsByID", 999).Return(&pv, nil)
 
+	mockProductDAO.On("ListProductVersionsByID", 999).Return(&pv, nil)
 	mockProductDAO.On("CreateProductVersionService", pvs).Return(888, nil)
+	mockProductDAO.On("FindProductByID", 999).Return(getProduct(), nil)
+
 	appContext.Repositories.ProductDAO = mockProductDAO
 
 	req, err := http.NewRequest("POST", "/productVersionServices", payload(pvs))
@@ -842,6 +845,7 @@ func TestNewProductVersionService(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	mockProductDAO.AssertNumberOfCalls(t, "ListProductVersionsByID", 1)
+	mockProductDAO.AssertNumberOfCalls(t, "FindProductByID", 1)
 	mockProductDAO.AssertNumberOfCalls(t, "CreateProductVersionService", 1)
 
 	assert.Equal(t, http.StatusCreated, rr.Code, "Response should be Created.")
@@ -910,6 +914,7 @@ func TestNewProductVersionService_Error3(t *testing.T) {
 	mockProductDAO.On("ListProductVersionsByID", 999).Return(&pv, nil)
 
 	mockProductDAO.On("CreateProductVersionService", mock.Anything).Return(0, errors.New("some error"))
+	mockProductDAO.On("FindProductByID", 999).Return(getProduct(), nil)
 	appContext.Repositories.ProductDAO = mockProductDAO
 
 	req, err := http.NewRequest("POST", "/productVersionServices", payload(getProductVersionSvc()))
@@ -921,6 +926,7 @@ func TestNewProductVersionService_Error3(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	mockProductDAO.AssertNumberOfCalls(t, "ListProductVersionsByID", 1)
+	mockProductDAO.AssertNumberOfCalls(t, "FindProductByID", 1)
 	mockProductDAO.AssertNumberOfCalls(t, "CreateProductVersionService", 1)
 
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be Created.")
@@ -936,6 +942,7 @@ func TestNewProductVersionService_Error4(t *testing.T) {
 	pv.ID = 999
 	pv.Version = "19.0.2-0"
 	mockProductDAO.On("ListProductVersionsByID", 999).Return(&pv, nil)
+	mockProductDAO.On("FindProductByID", 999).Return(getProduct(), nil)
 
 	appContext.Repositories.ProductDAO = mockProductDAO
 
@@ -948,8 +955,43 @@ func TestNewProductVersionService_Error4(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	mockProductDAO.AssertNumberOfCalls(t, "ListProductVersionsByID", 1)
+	mockProductDAO.AssertNumberOfCalls(t, "FindProductByID", 1)
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code, "Response should be 400.")
+}
+
+func TestNewProductVersionService_ReleaseValidationDisabled(t *testing.T) {
+	appContext := AppContext{}
+
+	pvs := getProductVersionSvc()
+	mockProductDAO := &mockRepo.ProductDAOInterface{}
+
+	pv := getProductVersionWithoutID(0)
+	pv.ID = 999
+	pv.Version = "19.0.2-0"
+
+	p := getProduct()
+	p.ValidateReleases = false
+
+	mockProductDAO.On("ListProductVersionsByID", 999).Return(&pv, nil)
+	mockProductDAO.On("FindProductByID", 999).Return(p, nil)
+	mockProductDAO.On("CreateProductVersionService", pvs).Return(888, nil)
+
+	appContext.Repositories.ProductDAO = mockProductDAO
+
+	req, err := http.NewRequest("POST", "/productVersionServices", payload(pvs))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.newProductVersionService)
+	handler.ServeHTTP(rr, req)
+
+	mockProductDAO.AssertNumberOfCalls(t, "ListProductVersionsByID", 1)
+	mockProductDAO.AssertNumberOfCalls(t, "FindProductByID", 1)
+	mockProductDAO.AssertNumberOfCalls(t, "CreateProductVersionService", 1)
+
+	assert.Equal(t, http.StatusCreated, rr.Code, "Response should be 201.")
 }
 
 func TestEditProductVersionService(t *testing.T) {
