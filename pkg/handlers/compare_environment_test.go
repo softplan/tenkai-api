@@ -1060,5 +1060,4 @@ func TestHasPermissionToCompareWithError(t *testing.T) {
 	appContext.Repositories.UserDAO = mockUserDAO
 	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
 
-	
 }
