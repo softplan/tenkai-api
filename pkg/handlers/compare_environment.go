@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"hash/fnv"
 	"net/http"
@@ -373,13 +374,11 @@ func hasPermissionToCompare(principal model.Principal, sourceEnvID, targetEnvID 
 	if util.Contains(principal.Roles, constraints.TenkaiAdmin) {
 		return true, nil
 	}
-	hasPermissionSourceEnv, err := appContext.hasEnvironmentRole(principal, sourceEnvID, "ACTION_COMPARE_ENVS")
-	if err != nil {
-		return false, err
-	}
-	hasPermissionTargetEnv, err := appContext.hasEnvironmentRole(principal, targetEnvID, "ACTION_COMPARE_ENVS")
-	if err != nil {
-		return false, err
+	hasPermissionSourceEnv, errorSrc := appContext.hasEnvironmentRole(principal, sourceEnvID, "ACTION_COMPARE_ENVS")
+
+	hasPermissionTargetEnv, errorTrg := appContext.hasEnvironmentRole(principal, targetEnvID, "ACTION_COMPARE_ENVS")
+	if errorSrc != nil || errorTrg != nil{
+		return false, errors.New("Error with permissions")
 	}
 	return hasPermissionSourceEnv && hasPermissionTargetEnv, nil
 }
