@@ -377,7 +377,7 @@ func hasPermissionToCompare(principal model.Principal, sourceEnvID, targetEnvID 
 	hasPermissionSourceEnv, errorSrc := appContext.hasEnvironmentRole(principal, sourceEnvID, "ACTION_COMPARE_ENVS")
 
 	hasPermissionTargetEnv, errorTrg := appContext.hasEnvironmentRole(principal, targetEnvID, "ACTION_COMPARE_ENVS")
-	if errorSrc != nil || errorTrg != nil {
+	if errorSrc != nil || errorTrg != nil{
 		return false, errors.New("Error with permissions")
 	}
 	return hasPermissionSourceEnv && hasPermissionTargetEnv, nil
