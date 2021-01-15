@@ -38,6 +38,19 @@ func TestCompareEnvironments(t *testing.T) {
 	mockVarDao.On("GetAllVariablesByEnvironment", p.TargetEnvID).Return(tVars, nil)
 	appContext.Repositories.VariableDAO = mockVarDao
 
+	user := mockUser()
+	mockUserDAO := &mockRepo.UserDAOInterface{}
+	mockUserDAO.On("FindByEmail", mock.Anything).Return(user, nil)
+
+	secOper := mockSecurityOperations()
+	secOper.Name = "DEPLOY_AND_COMPARE"
+	mockUserEnvRoleDAO := &mockRepo.UserEnvironmentRoleDAOInterface{}
+	mockUserEnvRoleDAO.On("GetRoleByUserAndEnvironment", user, mock.Anything).
+		Return(&secOper, nil)
+
+	appContext.Repositories.UserDAO = mockUserDAO
+	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
+
 	req, err := http.NewRequest("POST", "/compare-environments", payload(p))
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
@@ -90,6 +103,19 @@ func TestCompareEnvironmentsFilterExceptCharts(t *testing.T) {
 	mockVarDao.On("GetAllVariablesByEnvironment", p.SourceEnvID).Return(sVars, nil)
 	mockVarDao.On("GetAllVariablesByEnvironment", p.TargetEnvID).Return(tVars, nil)
 	appContext.Repositories.VariableDAO = mockVarDao
+
+	user := mockUser()
+	mockUserDAO := &mockRepo.UserDAOInterface{}
+	mockUserDAO.On("FindByEmail", mock.Anything).Return(user, nil)
+
+	secOper := mockSecurityOperations()
+	secOper.Name = "DEPLOY_AND_COMPARE"
+	mockUserEnvRoleDAO := &mockRepo.UserEnvironmentRoleDAOInterface{}
+	mockUserEnvRoleDAO.On("GetRoleByUserAndEnvironment", user, mock.Anything).
+		Return(&secOper, nil)
+
+	appContext.Repositories.UserDAO = mockUserDAO
+	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
 
 	req, err := http.NewRequest("POST", "/compare-environments", payload(p))
 	assert.NoError(t, err)
@@ -144,6 +170,19 @@ func TestCompareEnvironmentsFilterOnlyCharts(t *testing.T) {
 	mockVarDao.On("GetAllVariablesByEnvironment", p.TargetEnvID).Return(tVars, nil)
 	appContext.Repositories.VariableDAO = mockVarDao
 
+	user := mockUser()
+	mockUserDAO := &mockRepo.UserDAOInterface{}
+	mockUserDAO.On("FindByEmail", mock.Anything).Return(user, nil)
+
+	secOper := mockSecurityOperations()
+	secOper.Name = "DEPLOY_AND_COMPARE"
+	mockUserEnvRoleDAO := &mockRepo.UserEnvironmentRoleDAOInterface{}
+	mockUserEnvRoleDAO.On("GetRoleByUserAndEnvironment", user, mock.Anything).
+		Return(&secOper, nil)
+
+	appContext.Repositories.UserDAO = mockUserDAO
+	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
+
 	req, err := http.NewRequest("POST", "/compare-environments", payload(p))
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
@@ -195,6 +234,19 @@ func TestCompareEnvironmentsFilterExceptFields(t *testing.T) {
 	mockVarDao.On("GetAllVariablesByEnvironment", p.TargetEnvID).Return(tVars, nil)
 	appContext.Repositories.VariableDAO = mockVarDao
 
+	user := mockUser()
+	mockUserDAO := &mockRepo.UserDAOInterface{}
+	mockUserDAO.On("FindByEmail", mock.Anything).Return(user, nil)
+
+	secOper := mockSecurityOperations()
+	secOper.Name = "DEPLOY_AND_COMPARE"
+	mockUserEnvRoleDAO := &mockRepo.UserEnvironmentRoleDAOInterface{}
+	mockUserEnvRoleDAO.On("GetRoleByUserAndEnvironment", user, mock.Anything).
+		Return(&secOper, nil)
+
+	appContext.Repositories.UserDAO = mockUserDAO
+	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
+
 	req, err := http.NewRequest("POST", "/compare-environments", payload(p))
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
@@ -245,6 +297,19 @@ func TestCompareEnvironmentsFilterOnlyFields(t *testing.T) {
 	mockVarDao.On("GetAllVariablesByEnvironment", p.SourceEnvID).Return(sVars, nil)
 	mockVarDao.On("GetAllVariablesByEnvironment", p.TargetEnvID).Return(tVars, nil)
 	appContext.Repositories.VariableDAO = mockVarDao
+
+	user := mockUser()
+	mockUserDAO := &mockRepo.UserDAOInterface{}
+	mockUserDAO.On("FindByEmail", mock.Anything).Return(user, nil)
+
+	secOper := mockSecurityOperations()
+	secOper.Name = "DEPLOY_AND_COMPARE"
+	mockUserEnvRoleDAO := &mockRepo.UserEnvironmentRoleDAOInterface{}
+	mockUserEnvRoleDAO.On("GetRoleByUserAndEnvironment", user, mock.Anything).
+		Return(&secOper, nil)
+
+	appContext.Repositories.UserDAO = mockUserDAO
+	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
 
 	req, err := http.NewRequest("POST", "/compare-environments", payload(p))
 	assert.NoError(t, err)
@@ -305,6 +370,19 @@ func TestCompareEnvironmentsFilterCustomByStartsWith(t *testing.T) {
 	mockVarDao.On("GetAllVariablesByEnvironment", p.TargetEnvID).Return(tVars, nil)
 	appContext.Repositories.VariableDAO = mockVarDao
 
+	user := mockUser()
+	mockUserDAO := &mockRepo.UserDAOInterface{}
+	mockUserDAO.On("FindByEmail", mock.Anything).Return(user, nil)
+
+	secOper := mockSecurityOperations()
+	secOper.Name = "DEPLOY_AND_COMPARE"
+	mockUserEnvRoleDAO := &mockRepo.UserEnvironmentRoleDAOInterface{}
+	mockUserEnvRoleDAO.On("GetRoleByUserAndEnvironment", user, mock.Anything).
+		Return(&secOper, nil)
+
+	appContext.Repositories.UserDAO = mockUserDAO
+	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
+
 	req, err := http.NewRequest("POST", "/compare-environments", payload(p))
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
@@ -358,6 +436,19 @@ func TestCompareEnvironmentsFilterCustomByContains(t *testing.T) {
 	mockVarDao.On("GetAllVariablesByEnvironment", p.SourceEnvID).Return(sVars, nil)
 	mockVarDao.On("GetAllVariablesByEnvironment", p.TargetEnvID).Return(tVars, nil)
 	appContext.Repositories.VariableDAO = mockVarDao
+
+	user := mockUser()
+	mockUserDAO := &mockRepo.UserDAOInterface{}
+	mockUserDAO.On("FindByEmail", mock.Anything).Return(user, nil)
+
+	secOper := mockSecurityOperations()
+	secOper.Name = "DEPLOY_AND_COMPARE"
+	mockUserEnvRoleDAO := &mockRepo.UserEnvironmentRoleDAOInterface{}
+	mockUserEnvRoleDAO.On("GetRoleByUserAndEnvironment", user, mock.Anything).
+		Return(&secOper, nil)
+
+	appContext.Repositories.UserDAO = mockUserDAO
+	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
 
 	req, err := http.NewRequest("POST", "/compare-environments", payload(p))
 	assert.NoError(t, err)
@@ -413,6 +504,19 @@ func TestCompareEnvironmentsFilterCustomByEndsWith(t *testing.T) {
 	mockVarDao.On("GetAllVariablesByEnvironment", p.TargetEnvID).Return(tVars, nil)
 	appContext.Repositories.VariableDAO = mockVarDao
 
+	user := mockUser()
+	mockUserDAO := &mockRepo.UserDAOInterface{}
+	mockUserDAO.On("FindByEmail", mock.Anything).Return(user, nil)
+
+	secOper := mockSecurityOperations()
+	secOper.Name = "DEPLOY_AND_COMPARE"
+	mockUserEnvRoleDAO := &mockRepo.UserEnvironmentRoleDAOInterface{}
+	mockUserEnvRoleDAO.On("GetRoleByUserAndEnvironment", user, mock.Anything).
+		Return(&secOper, nil)
+
+	appContext.Repositories.UserDAO = mockUserDAO
+	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
+
 	req, err := http.NewRequest("POST", "/compare-environments", payload(p))
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
@@ -466,6 +570,19 @@ func TestCompareEnvironmentsFilterCustomByRegex(t *testing.T) {
 	mockVarDao.On("GetAllVariablesByEnvironment", p.SourceEnvID).Return(sVars, nil)
 	mockVarDao.On("GetAllVariablesByEnvironment", p.TargetEnvID).Return(tVars, nil)
 	appContext.Repositories.VariableDAO = mockVarDao
+
+	user := mockUser()
+	mockUserDAO := &mockRepo.UserDAOInterface{}
+	mockUserDAO.On("FindByEmail", mock.Anything).Return(user, nil)
+
+	secOper := mockSecurityOperations()
+	secOper.Name = "DEPLOY_AND_COMPARE"
+	mockUserEnvRoleDAO := &mockRepo.UserEnvironmentRoleDAOInterface{}
+	mockUserEnvRoleDAO.On("GetRoleByUserAndEnvironment", user, mock.Anything).
+		Return(&secOper, nil)
+
+	appContext.Repositories.UserDAO = mockUserDAO
+	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
 
 	req, err := http.NewRequest("POST", "/compare-environments", payload(p))
 	assert.NoError(t, err)
@@ -530,6 +647,19 @@ func TestCompareEnvironmentsFilterCustom(t *testing.T) {
 	mockVarDao.On("GetAllVariablesByEnvironment", p.SourceEnvID).Return(sVars, nil)
 	mockVarDao.On("GetAllVariablesByEnvironment", p.TargetEnvID).Return(tVars, nil)
 	appContext.Repositories.VariableDAO = mockVarDao
+
+	user := mockUser()
+	mockUserDAO := &mockRepo.UserDAOInterface{}
+	mockUserDAO.On("FindByEmail", mock.Anything).Return(user, nil)
+
+	secOper := mockSecurityOperations()
+	secOper.Name = "DEPLOY_AND_COMPARE"
+	mockUserEnvRoleDAO := &mockRepo.UserEnvironmentRoleDAOInterface{}
+	mockUserEnvRoleDAO.On("GetRoleByUserAndEnvironment", user, mock.Anything).
+		Return(&secOper, nil)
+
+	appContext.Repositories.UserDAO = mockUserDAO
+	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
 
 	req, err := http.NewRequest("POST", "/compare-environments", payload(p))
 	assert.NoError(t, err)
