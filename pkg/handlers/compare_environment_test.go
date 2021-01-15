@@ -44,6 +44,7 @@ func TestCompareEnvironments(t *testing.T) {
 
 	secOper := mockSecurityOperations()
 	secOper.Name = "DEPLOY_AND_COMPARE"
+	secOper.Policies[0] = "ACTION_COMPARE_ENVS"
 	mockUserEnvRoleDAO := &mockRepo.UserEnvironmentRoleDAOInterface{}
 	mockUserEnvRoleDAO.On("GetRoleByUserAndEnvironment", user, mock.Anything).
 		Return(&secOper, nil)
@@ -110,6 +111,7 @@ func TestCompareEnvironmentsFilterExceptCharts(t *testing.T) {
 
 	secOper := mockSecurityOperations()
 	secOper.Name = "DEPLOY_AND_COMPARE"
+	secOper.Policies[0] = "ACTION_COMPARE_ENVS"
 	mockUserEnvRoleDAO := &mockRepo.UserEnvironmentRoleDAOInterface{}
 	mockUserEnvRoleDAO.On("GetRoleByUserAndEnvironment", user, mock.Anything).
 		Return(&secOper, nil)
@@ -176,6 +178,7 @@ func TestCompareEnvironmentsFilterOnlyCharts(t *testing.T) {
 
 	secOper := mockSecurityOperations()
 	secOper.Name = "DEPLOY_AND_COMPARE"
+	secOper.Policies[0] = "ACTION_COMPARE_ENVS"
 	mockUserEnvRoleDAO := &mockRepo.UserEnvironmentRoleDAOInterface{}
 	mockUserEnvRoleDAO.On("GetRoleByUserAndEnvironment", user, mock.Anything).
 		Return(&secOper, nil)
@@ -240,6 +243,7 @@ func TestCompareEnvironmentsFilterExceptFields(t *testing.T) {
 
 	secOper := mockSecurityOperations()
 	secOper.Name = "DEPLOY_AND_COMPARE"
+	secOper.Policies[0] = "ACTION_COMPARE_ENVS"
 	mockUserEnvRoleDAO := &mockRepo.UserEnvironmentRoleDAOInterface{}
 	mockUserEnvRoleDAO.On("GetRoleByUserAndEnvironment", user, mock.Anything).
 		Return(&secOper, nil)
@@ -304,6 +308,7 @@ func TestCompareEnvironmentsFilterOnlyFields(t *testing.T) {
 
 	secOper := mockSecurityOperations()
 	secOper.Name = "DEPLOY_AND_COMPARE"
+	secOper.Policies[0] = "ACTION_COMPARE_ENVS"
 	mockUserEnvRoleDAO := &mockRepo.UserEnvironmentRoleDAOInterface{}
 	mockUserEnvRoleDAO.On("GetRoleByUserAndEnvironment", user, mock.Anything).
 		Return(&secOper, nil)
@@ -376,6 +381,7 @@ func TestCompareEnvironmentsFilterCustomByStartsWith(t *testing.T) {
 
 	secOper := mockSecurityOperations()
 	secOper.Name = "DEPLOY_AND_COMPARE"
+	secOper.Policies[0] = "ACTION_COMPARE_ENVS"
 	mockUserEnvRoleDAO := &mockRepo.UserEnvironmentRoleDAOInterface{}
 	mockUserEnvRoleDAO.On("GetRoleByUserAndEnvironment", user, mock.Anything).
 		Return(&secOper, nil)
@@ -443,6 +449,7 @@ func TestCompareEnvironmentsFilterCustomByContains(t *testing.T) {
 
 	secOper := mockSecurityOperations()
 	secOper.Name = "DEPLOY_AND_COMPARE"
+	secOper.Policies[0] = "ACTION_COMPARE_ENVS"
 	mockUserEnvRoleDAO := &mockRepo.UserEnvironmentRoleDAOInterface{}
 	mockUserEnvRoleDAO.On("GetRoleByUserAndEnvironment", user, mock.Anything).
 		Return(&secOper, nil)
@@ -510,6 +517,7 @@ func TestCompareEnvironmentsFilterCustomByEndsWith(t *testing.T) {
 
 	secOper := mockSecurityOperations()
 	secOper.Name = "DEPLOY_AND_COMPARE"
+	secOper.Policies[0] = "ACTION_COMPARE_ENVS"
 	mockUserEnvRoleDAO := &mockRepo.UserEnvironmentRoleDAOInterface{}
 	mockUserEnvRoleDAO.On("GetRoleByUserAndEnvironment", user, mock.Anything).
 		Return(&secOper, nil)
@@ -577,6 +585,7 @@ func TestCompareEnvironmentsFilterCustomByRegex(t *testing.T) {
 
 	secOper := mockSecurityOperations()
 	secOper.Name = "DEPLOY_AND_COMPARE"
+	secOper.Policies[0] = "ACTION_COMPARE_ENVS"
 	mockUserEnvRoleDAO := &mockRepo.UserEnvironmentRoleDAOInterface{}
 	mockUserEnvRoleDAO.On("GetRoleByUserAndEnvironment", user, mock.Anything).
 		Return(&secOper, nil)
@@ -654,6 +663,7 @@ func TestCompareEnvironmentsFilterCustom(t *testing.T) {
 
 	secOper := mockSecurityOperations()
 	secOper.Name = "DEPLOY_AND_COMPARE"
+	secOper.Policies[0] = "ACTION_COMPARE_ENVS"
 	mockUserEnvRoleDAO := &mockRepo.UserEnvironmentRoleDAOInterface{}
 	mockUserEnvRoleDAO.On("GetRoleByUserAndEnvironment", user, mock.Anything).
 		Return(&secOper, nil)
