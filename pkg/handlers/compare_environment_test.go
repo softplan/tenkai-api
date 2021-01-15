@@ -1097,7 +1097,7 @@ func TestCompareEnvironmentsView_NoPermission(t *testing.T) {
 
 	secOper := mockSecurityOperations()
 	secOper.Name = "DEPLOY_AND_COMPARE"
-//	secOper.Policies[0] = "ACTION_COMPARE_ENVS"
+	//	secOper.Policies[0] = "ACTION_COMPARE_ENVS"
 	mockUserEnvRoleDAO := &mockRepo.UserEnvironmentRoleDAOInterface{}
 	mockUserEnvRoleDAO.On("GetRoleByUserAndEnvironment", user, mock.Anything).
 		Return(&secOper, nil)
