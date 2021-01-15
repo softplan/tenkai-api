@@ -403,7 +403,7 @@ func createPayloadWithScopeAndID(id int, scope string) *bytes.Buffer {
 
 func mockPolicies() []string {
 	var policies []string
-	policies = append(policies, "ACTION_COMPARE_ENVS")
+	policies = append(policies, "ACTION_DEPLOY")
 	return policies
 }
 
