@@ -1046,9 +1046,14 @@ func mockCompareEnvPayload() model.SaveCompareEnvQuery {
 func TestHasPermissionToCompareWithError(t *testing.T) {
 	appContext := AppContext{}
 
+	var principal model.Principal
+	principal.Email = "beta@alfa.com"
+	principal.Name = "xpto"
+	principal.Roles = []string{"role1", "role2"}
+
 	user := mockUser()
 	mockUserDAO := &mockRepo.UserDAOInterface{}
-	mockUserDAO.On("FindByEmail", mock.Anything).Return(user, nil)
+	mockUserDAO.On("FindByEmail", mock.Anything).Return(user, errors.New("Error"))
 
 	secOper := mockSecurityOperations()
 	secOper.Name = "DEPLOY_AND_COMPARE"
@@ -1060,4 +1065,5 @@ func TestHasPermissionToCompareWithError(t *testing.T) {
 	appContext.Repositories.UserDAO = mockUserDAO
 	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
 
+	hasPermissionToCompare(principal, 999, 888, &appContext)
 }
