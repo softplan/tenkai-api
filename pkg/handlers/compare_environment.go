@@ -374,9 +374,9 @@ func hasPermissionToCompare(principal model.Principal, sourceEnvID, targetEnvID 
 	if util.Contains(principal.Roles, constraints.TenkaiAdmin) {
 		return true, nil
 	}
-	hasPermissionSourceEnv, errorSrc := appContext.hasEnvironmentRole(principal, sourceEnvID, "ACTION_COMPARE_ENVS")
+	hasPermissionSourceEnv, errorSrc := appContext.hasEnvironmentRole(principal, sourceEnvID, "ACTION_DEPLOY")
 
-	hasPermissionTargetEnv, errorTrg := appContext.hasEnvironmentRole(principal, targetEnvID, "ACTION_COMPARE_ENVS")
+	hasPermissionTargetEnv, errorTrg := appContext.hasEnvironmentRole(principal, targetEnvID, "ACTION_DEPLOY")
 	if errorSrc != nil || errorTrg != nil {
 		return false, errors.New("Error with permissions")
 	}
