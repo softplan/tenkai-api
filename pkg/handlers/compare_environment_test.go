@@ -1046,3 +1046,50 @@ func TestHasPermissionToCompareWithError(t *testing.T) {
 
 	hasPermissionToCompare(principal, 999, 888, &appContext)
 }
+
+func TestCompareEnvironmentsView_NoPermission(t *testing.T) {
+	appContext := AppContext{}
+
+	exceptCharts := make([]string, 0)
+	onlyCharts := make([]string, 0)
+	exceptFields := make([]string, 0)
+	onlyFields := make([]string, 0)
+
+	var p model.CompareEnvironments
+	p.SourceEnvID = 888
+	p.TargetEnvID = 999
+	p.ExceptCharts = exceptCharts
+	p.OnlyCharts = onlyCharts
+	p.ExceptFields = exceptFields
+	p.OnlyFields = onlyFields
+
+	mockVarDao := &mockRepo.VariableDAOInterface{}
+	sVars := mockSourceEnvs()
+	tVars := mockTargetVars()
+	mockVarDao.On("GetAllVariablesByEnvironment", p.SourceEnvID).Return(sVars, nil)
+	mockVarDao.On("GetAllVariablesByEnvironment", p.TargetEnvID).Return(tVars, nil)
+	appContext.Repositories.VariableDAO = mockVarDao
+
+	user := mockUser()
+	mockUserDAO := &mockRepo.UserDAOInterface{}
+	mockUserDAO.On("FindByEmail", mock.Anything).Return(user, nil)
+
+	secOper := mockSecurityOperations()
+	mockUserEnvRoleDAO := &mockRepo.UserEnvironmentRoleDAOInterface{}
+	mockUserEnvRoleDAO.On("GetRoleByUserAndEnvironment", user, mock.Anything).
+		Return(&secOper, nil)
+	secOper.Policies[0] = "ACTION_DEPLOY_ERROR"
+
+	appContext.Repositories.UserDAO = mockUserDAO
+	appContext.Repositories.UserEnvironmentRoleDAO = mockUserEnvRoleDAO
+
+	req, err := http.NewRequest("POST", "/compare-environments", payload(p))
+	assert.NoError(t, err)
+	assert.NotNil(t, req)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.compareEnvironments)
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusUnauthorized, rr.Code, "Response is not Ok.")
+}
