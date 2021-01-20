@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"hash/fnv"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm/dialects/postgres"
+	"github.com/softplan/tenkai-api/pkg/constraints"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 	"github.com/softplan/tenkai-api/pkg/global"
 	"github.com/softplan/tenkai-api/pkg/util"
@@ -21,9 +23,21 @@ func (appContext *AppContext) compareEnvironments(w http.ResponseWriter, r *http
 	w.Header().Set(global.ContentType, global.JSONContentType)
 
 	var payload model.CompareEnvironments
-
 	if err := util.UnmarshalPayload(r, &payload); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	principal := util.GetPrincipal(r)
+
+	hasPermission, err := hasPermissionToCompare(principal, uint(payload.SourceEnvID), uint(payload.TargetEnvID), appContext)
+
+	if err != nil {
+		http.Error(w, "", http.StatusInternalServerError)
+	}
+
+	if !hasPermission {
+		http.Error(w, "", http.StatusUnauthorized)
 		return
 	}
 
@@ -37,7 +51,6 @@ func (appContext *AppContext) compareEnvironments(w http.ResponseWriter, r *http
 		return
 	}
 
-	var err error
 	var sourceVars []model.Variable
 	if sourceVars, err = appContext.Repositories.VariableDAO.
 		GetAllVariablesByEnvironment(payload.SourceEnvID); err != nil {
@@ -355,4 +368,17 @@ func hash(e model.EnvironmentsDiff) uint32 {
 	h := fnv.New32a()
 	h.Write([]byte(key))
 	return h.Sum32()
+}
+
+func hasPermissionToCompare(principal model.Principal, sourceEnvID, targetEnvID uint, appContext *AppContext) (bool, error) {
+	if util.Contains(principal.Roles, constraints.TenkaiAdmin) {
+		return true, nil
+	}
+	hasPermissionSourceEnv, errorSrc := appContext.hasEnvironmentRole(principal, sourceEnvID, "ACTION_DEPLOY")
+
+	hasPermissionTargetEnv, errorTrg := appContext.hasEnvironmentRole(principal, targetEnvID, "ACTION_DEPLOY")
+	if errorSrc != nil || errorTrg != nil {
+		return false, errors.New("Error with permissions")
+	}
+	return hasPermissionSourceEnv && hasPermissionTargetEnv, nil
 }
