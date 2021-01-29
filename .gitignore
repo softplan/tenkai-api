@@ -18,5 +18,4 @@ coverage.html
 # Ignore vscode workspace file
 *.code-workspace
 
-app.yaml
 foo_bar

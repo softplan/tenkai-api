@@ -50,6 +50,7 @@ func ReadConfig(configFile string) (*Configuration, error) {
 	var configuration Configuration
 
 	viper.SetConfigName(configFile)
+	viper.AddConfigPath(".")
 	viper.AddConfigPath("/etc/")
 	viper.AddConfigPath("/tmp/")
 	viper.AddConfigPath("$HOME/")
