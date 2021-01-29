@@ -23,6 +23,7 @@ import (
 	dockerapi "github.com/softplan/tenkai-api/pkg/service/docker"
 	"github.com/softplan/tenkai-api/pkg/tenkaihelm"
 	"github.com/streadway/amqp"
+	"go.elastic.co/apm/module/apmgorilla"
 )
 
 //Repositories  Repositories
@@ -68,6 +69,8 @@ type AppContext struct {
 }
 
 func defineRotes(r *mux.Router, appContext *AppContext) {
+
+	r.Use(apmgorilla.Middleware())
 
 	r.HandleFunc("/getVirtualServices", appContext.getVirtualServices).Methods("GET")
 	r.HandleFunc("/install", appContext.install).Methods("POST")
