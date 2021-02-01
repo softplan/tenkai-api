@@ -31,5 +31,3 @@ type WebHookNewReleasePostPayload struct {
 	Release        string `json:"release"`
 	AdditionalData string `json:"additionalData"`
 }
-
-

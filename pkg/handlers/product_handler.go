@@ -147,7 +147,6 @@ func (appContext *AppContext) triggerNewReleaseWebhook(productID int, release st
 
 }
 
-
 func (appContext *AppContext) editProductVersion(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set(global.ContentType, global.JSONContentType)

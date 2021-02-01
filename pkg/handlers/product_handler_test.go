@@ -237,6 +237,19 @@ func TestNewProductVersion(t *testing.T) {
 	mockProductDAO.On("CreateProductVersionCopying", mock.Anything).Return(999, nil)
 	appContext.Repositories.ProductDAO = mockProductDAO
 
+	webHooks := make([]model.WebHook, 0)
+	webHooks = append(webHooks, mockWebHook())
+	mockWebHookDAO := &mockRepo.WebHookDAOInterface{}
+	mockWebHookDAO.On("ListWebHooksByEnvAndType", -1, "HOOK_NEW_RELEASE").
+		Return(webHooks, nil)
+	appContext.Repositories.WebHookDAO = mockWebHookDAO
+
+	var product model.Product
+	product.ID = 999
+	product.Name = "My Product"
+	mockProductDAO.On("FindProductByID", 999).Return(product, nil)
+	appContext.Repositories.ProductDAO = mockProductDAO
+
 	req, err := http.NewRequest("POST", "/productVersions", payload(pv))
 	assert.NoError(t, err)
 	assert.NotNil(t, req)
