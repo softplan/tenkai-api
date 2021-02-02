@@ -1522,12 +1522,12 @@
   version = "v1.1.0"
 
 [[projects]]
-  branch = "master"
-  digest = "1:9132eacc44d9bd1e03145ea2e9d4888800da7773d6edebb401f8cd34c9fb8380"
-  name = "vbom.ml/util"
-  packages = ["sortorder"]
+  digest = "1:06271c18f99ea67b3ee8bf029ea916fa025f937e5a5fe60fd706681416edbea9"
+  name = "vbom.ml/util/sortorder"
+  packages = ["."]
   pruneopts = "UT"
-  revision = "efcd4e0f97874370259c7d93e12aad57911dea81"
+  revision = "a1ddee917217bbd0691affdca9c88d24d3f5c27d"
+  version = "v1.0.1"
 
 [solve-meta]
   analyzer-name = "dep"
