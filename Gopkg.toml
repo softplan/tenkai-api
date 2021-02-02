@@ -86,3 +86,7 @@
 [prune]
   go-tests = true
   unused-packages = true
+
+[[constraint]]
+  name = "go.elastic.co/apm"
+  version = "1.10.0"

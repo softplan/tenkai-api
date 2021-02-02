@@ -13,3 +13,13 @@ app:
   rabbit:
     uri: amqp://guest:guest@localhost:5672
   helmApiUrl: "http://localhost:8082"
+elastic:
+  apm:
+    server:
+      url: ""
+    secret:
+      token: ""
+    service:
+      name: ""
+apm:
+  environment: ""

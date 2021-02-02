@@ -1,0 +1,25 @@
+server:
+  port: 8080
+ 
+app:
+  passkey: ""
+  dbms:
+    uri: ""
+  elastic:
+    url: ""
+    username: ""
+    password: ""
+  dockerApiUrl: ""
+  rabbit:
+    uri: ""
+  helmApiUrl: ""
+elastic:
+  apm:
+    server:
+      url: ""
+    secret:
+      token: ""
+    service:
+      name: ""
+apm:
+  environment: ""
