@@ -103,19 +103,19 @@ func (appContext *AppContext) newProductVersion(w http.ResponseWriter, r *http.R
 
 	payload.Date = time.Now()
 
-	_, err := appContext.Repositories.ProductDAO.CreateProductVersionCopying(payload)
+	productVersionID, err := appContext.Repositories.ProductDAO.CreateProductVersionCopying(payload)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	appContext.triggerNewReleaseWebhook(payload.ProductID, payload.Version)
+	go appContext.triggerNewReleaseWebhook(payload.ProductID, payload.Version, productVersionID)
 
 	w.WriteHeader(http.StatusCreated)
 
 }
 
-func (appContext *AppContext) triggerNewReleaseWebhook(productID int, release string) {
+func (appContext *AppContext) triggerNewReleaseWebhook(productID int, release string, productVersionID int) {
 	fmt.Println("Trigger New Release Webhook")
 
 	var err error
@@ -133,12 +133,23 @@ func (appContext *AppContext) triggerNewReleaseWebhook(productID int, release st
 		return
 	}
 
+	productVersionList, err := appContext.Repositories.ProductDAO.ListProductsVersionServices(productVersionID)
+	if err != nil {
+		log.Println("Error trying to find list of product versions", err)
+		return
+	}
+
+	var services []string
+	for _, productVersion := range productVersionList {
+		services = append(services, productVersion.ServiceName)
+	}
+
 	for _, hook := range webHooks {
 		var p model.WebHookNewReleasePostPayload
 		p.ProductName = product.Name
 		p.Release = release
 		p.AdditionalData = hook.AdditionalData
-
+		p.Services = services
 		payloadStr, _ := json.Marshal(p)
 		if _, err := http.Post(hook.URL, "application/json", bytes.NewBuffer(payloadStr)); err != nil {
 			log.Println("Error trying to post to webhook: ", hook.URL, err)

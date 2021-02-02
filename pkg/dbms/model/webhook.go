@@ -26,8 +26,9 @@ type WebHookPostPayload struct {
 
 //WebHookNewReleasePostPayload struct
 type WebHookNewReleasePostPayload struct {
-	Environment    string `json:"environment"`
-	ProductName    string `json:"productName"`
-	Release        string `json:"release"`
-	AdditionalData string `json:"additionalData"`
+	Environment    string   `json:"environment"`
+	ProductName    string   `json:"productName"`
+	Release        string   `json:"release"`
+	AdditionalData string   `json:"additionalData"`
+	Services       []string `json:"services"`
 }

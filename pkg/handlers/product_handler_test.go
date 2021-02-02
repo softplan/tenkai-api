@@ -231,10 +231,12 @@ func TestListProducts_Error(t *testing.T) {
 
 func TestNewProductVersion(t *testing.T) {
 	appContext := AppContext{}
+	childs := getProductVersionSvcReqResp()
 
 	pv := getProductVersionWithoutID(0)
 	mockProductDAO := &mockRepo.ProductDAOInterface{}
 	mockProductDAO.On("CreateProductVersionCopying", mock.Anything).Return(999, nil)
+	mockProductDAO.On("ListProductsVersionServices", 999).Return(childs.List, nil)
 	appContext.Repositories.ProductDAO = mockProductDAO
 
 	webHooks := make([]model.WebHook, 0)
