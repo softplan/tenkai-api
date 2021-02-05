@@ -16,6 +16,7 @@ func getWebHook() model.WebHook {
 	item.Type = "HOOK_DEPLOY_PRODUCT"
 	item.URL = "http://example.com"
 	item.EnvironmentID = 999
+	item.AdditionalData = "Additional Data"
 	return item
 }
 
@@ -42,7 +43,7 @@ func TestCreateWebHook(t *testing.T) {
 	rows := sqlmock.NewRows([]string{"id"}).AddRow(1)
 
 	mock.ExpectQuery(`INSERT INTO "web_hooks" *`).
-		WithArgs(AnyTime{}, AnyTime{}, nil, item.Name, item.Type, item.URL, item.EnvironmentID).
+		WithArgs(AnyTime{}, AnyTime{}, nil, item.Name, item.Type, item.URL, item.EnvironmentID, item.AdditionalData).
 		WillReturnRows(rows)
 
 	result, e := dao.CreateWebHook(item)
@@ -73,7 +74,7 @@ func TestEditWebHook(t *testing.T) {
 	item.ID = 999
 
 	mock.ExpectExec(`UPDATE "web_hooks" SET (.*) WHERE (.*)`).
-		WithArgs(AnyTime{}, nil, item.Name, item.Type, item.URL, item.EnvironmentID, item.ID).
+		WithArgs(AnyTime{}, nil, item.Name, item.Type, item.URL, item.EnvironmentID, item.AdditionalData, item.ID).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	e := dao.EditWebHook(item)

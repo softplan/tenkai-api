@@ -231,10 +231,25 @@ func TestListProducts_Error(t *testing.T) {
 
 func TestNewProductVersion(t *testing.T) {
 	appContext := AppContext{}
+	childs := getProductVersionSvcReqResp()
 
 	pv := getProductVersionWithoutID(0)
 	mockProductDAO := &mockRepo.ProductDAOInterface{}
 	mockProductDAO.On("CreateProductVersionCopying", mock.Anything).Return(999, nil)
+	mockProductDAO.On("ListProductsVersionServices", 999).Return(childs.List, nil)
+	appContext.Repositories.ProductDAO = mockProductDAO
+
+	webHooks := make([]model.WebHook, 0)
+	webHooks = append(webHooks, mockWebHook())
+	mockWebHookDAO := &mockRepo.WebHookDAOInterface{}
+	mockWebHookDAO.On("ListWebHooksByEnvAndType", -1, "HOOK_NEW_RELEASE").
+		Return(webHooks, nil)
+	appContext.Repositories.WebHookDAO = mockWebHookDAO
+
+	var product model.Product
+	product.ID = 999
+	product.Name = "My Product"
+	mockProductDAO.On("FindProductByID", 999).Return(product, nil)
 	appContext.Repositories.ProductDAO = mockProductDAO
 
 	req, err := http.NewRequest("POST", "/productVersions", payload(pv))
@@ -1712,4 +1727,34 @@ func getTagResponse(tag string) *model.ListDockerTagsResult {
 	result.TagResponse = append(result.TagResponse, tr)
 
 	return result
+}
+
+func TestTriggerNewReleaseWebhookErrorListWebHooksByEnvAndType(t *testing.T) {
+	appContext := AppContext{}
+
+	mockWebHookDAO := &mockRepo.WebHookDAOInterface{}
+	mockWebHookDAO.On("ListWebHooksByEnvAndType", -1, "HOOK_NEW_RELEASE").
+		Return(nil, errors.New("error"))
+	appContext.Repositories.WebHookDAO = mockWebHookDAO
+	appContext.triggerNewReleaseWebhook(1, "release", 1)
+	mockWebHookDAO.AssertNumberOfCalls(t, "ListWebHooksByEnvAndType", 1)
+}
+
+func TestTriggerNewReleaseWebhookErrorFindProductByID(t *testing.T) {
+	appContext := AppContext{}
+
+	webHooks := make([]model.WebHook, 0)
+	webHooks = append(webHooks, mockWebHook())
+	mockWebHookDAO := &mockRepo.WebHookDAOInterface{}
+	mockWebHookDAO.On("ListWebHooksByEnvAndType", -1, "HOOK_NEW_RELEASE").
+		Return(webHooks, nil)
+	appContext.Repositories.WebHookDAO = mockWebHookDAO
+
+	mockProductDAO := &mockRepo.ProductDAOInterface{}
+	mockProductDAO.On("FindProductByID", 999).Return(model.Product{}, errors.New("error"))
+	appContext.Repositories.ProductDAO = mockProductDAO
+
+	appContext.triggerNewReleaseWebhook(999, "release", 999)
+
+	mockWebHookDAO.AssertNumberOfCalls(t, "ListWebHooksByEnvAndType", 1)
 }

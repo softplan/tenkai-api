@@ -54,7 +54,12 @@ func (dao WebHookDAOImpl) ListWebHooksByEnvAndType(
 	environmentID int, hookType string) ([]model.WebHook, error) {
 
 	list := make([]model.WebHook, 0)
-	condition := &model.WebHook{EnvironmentID: environmentID, Type: hookType}
+	var condition *model.WebHook
+	if environmentID != -1 {
+		condition = &model.WebHook{EnvironmentID: environmentID, Type: hookType}
+	} else {
+		condition = &model.WebHook{Type: hookType}
+	}
 
 	if err := dao.Db.Where(condition).Find(&list).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {

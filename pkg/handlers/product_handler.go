@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"sort"
 	"strconv"
@@ -101,12 +103,58 @@ func (appContext *AppContext) newProductVersion(w http.ResponseWriter, r *http.R
 
 	payload.Date = time.Now()
 
-	if _, err := appContext.Repositories.ProductDAO.CreateProductVersionCopying(payload); err != nil {
+	productVersionID, err := appContext.Repositories.ProductDAO.CreateProductVersionCopying(payload)
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	go appContext.triggerNewReleaseWebhook(payload.ProductID, payload.Version, productVersionID)
+
 	w.WriteHeader(http.StatusCreated)
+
+}
+
+func (appContext *AppContext) triggerNewReleaseWebhook(productID int, release string, productVersionID int) {
+	fmt.Println("Trigger New Release Webhook")
+
+	var err error
+	var webHooks []model.WebHook
+	webHooks, err = appContext.Repositories.WebHookDAO.
+		ListWebHooksByEnvAndType(-1, "HOOK_NEW_RELEASE")
+	if err != nil {
+		log.Println("Error trying to find webhooks", err)
+		return
+	}
+
+	var product model.Product
+	if product, err = appContext.Repositories.ProductDAO.FindProductByID(productID); err != nil {
+		log.Println("Error trying to find product", err)
+		return
+	}
+
+	productVersionList, err := appContext.Repositories.ProductDAO.ListProductsVersionServices(productVersionID)
+	if err != nil {
+		log.Println("Error trying to find list of product versions", err)
+		return
+	}
+
+	var services []string
+	for _, productVersion := range productVersionList {
+		services = append(services, productVersion.ServiceName)
+	}
+
+	for _, hook := range webHooks {
+		var p model.WebHookNewReleasePostPayload
+		p.ProductName = product.Name
+		p.Release = release
+		p.AdditionalData = hook.AdditionalData
+		p.Services = services
+		payloadStr, _ := json.Marshal(p)
+		if _, err := http.Post(hook.URL, "application/json", bytes.NewBuffer(payloadStr)); err != nil {
+			log.Println("Error trying to post to webhook: ", hook.URL, err)
+		}
+	}
 
 }
 

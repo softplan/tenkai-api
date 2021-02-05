@@ -190,7 +190,8 @@ func TestListWebHook(t *testing.T) {
 	assert.Contains(t, response, `"name":"Product Deploy",`)
 	assert.Contains(t, response, `"type":"HOOK_DEPLOY_PRODUCT"`)
 	assert.Contains(t, response, `"url":"http://example.com"`)
-	assert.Contains(t, response, `"environmentId":999}]}`)
+	assert.Contains(t, response, `"environmentId":999`)
+	assert.Contains(t, response, `"additionalData":""}]}`)
 }
 
 func TestListWebHook_Error(t *testing.T) {
