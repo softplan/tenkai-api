@@ -124,7 +124,7 @@ func TestSaveVariableValues_GetByIDError(t *testing.T) {
 
 	mockEnvDao.AssertNumberOfCalls(t, "GetByID", 1)
 
-	assert.Equal(t, http.StatusNotImplemented, rr.Code, "Response should be 501.")
+	assert.Equal(t, http.StatusBadRequest, rr.Code, "Response should be 400.")
 }
 
 func TestSaveVariableValues_HasAccessError(t *testing.T) {

@@ -48,7 +48,7 @@ func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.
 	targetEnvironment, err := appContext.Repositories.EnvironmentDAO.GetByID(int(firstVar.EnvironmentID))
 	if err != nil {
 		global.Logger.Error(logFields, "Error appContext.Repositories.EnvironmentDAO.GetByID")
-		http.Error(w, err.Error(), 501)
+		http.Error(w, "Environment not found", http.StatusBadRequest)
 		return
 	}
 
@@ -83,7 +83,7 @@ func (appContext *AppContext) saveVariableValues(w http.ResponseWriter, r *http.
 
 		if err := appContext.loadChartVars(cacheVars, item); err != nil {
 			global.Logger.Error(logFields, "Error appContext.loadChartVars")
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Helm chart does not exist", http.StatusBadRequest)
 			return
 		}
 
@@ -186,7 +186,6 @@ func (appContext *AppContext) getHelmChartAppVars(chart string, chartVersion str
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(string(chartVariables))
 
 	var result map[string]interface{}
 	json.Unmarshal(chartVariables, &result)
