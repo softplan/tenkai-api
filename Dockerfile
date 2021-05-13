@@ -1,4 +1,4 @@
-FROM ubuntu:18.04
+FROM ubuntu:18.04 
 ADD ca-certificates.crt /etc/ssl/certs/
 WORKDIR /app
 ADD build/tenkai-api /app
