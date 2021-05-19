@@ -51,4 +51,4 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: tenkai-api
-          path: buidl/tenkai-api
+          path: build/tenkai-api
