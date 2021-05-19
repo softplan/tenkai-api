@@ -6,24 +6,26 @@ jobs:
   build:
     runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v2
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
           go-version: '1.15.0'
       
       - name: Install dependencies
+        uses: actions/setup-go@v2
         run: |
           ls
           go version
           go get -u golang.org/x/lint/golint
 
       - name: Before Script
+        uses: actions/setup-go@v2
         run: |
           srccheck/verify-gofmt.sh
           srccheck/verify-govet.sh
           srccheck/verify-golint.sh
 
       - name: Build
+        uses: actions/setup-go@v2
         run: make build
       
