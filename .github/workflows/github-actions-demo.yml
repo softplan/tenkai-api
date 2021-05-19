@@ -3,17 +3,21 @@ name: Tenkai-API CI
 on: [push, pull_request]
 
 jobs:
-  test:
-    strategy:
-      matrix:
-        go-version: [1.15.x]
-        os: [ubuntu-18.04]
-      runs-on: ${{ matrix.os }}
-      steps:
-        - name: Install Go
-          uses: actions/setup-go@v2
-          with:
-            go-version: ${{ matrix.go-version }}
-        - name: Build
-          run: make build
-            
+  build:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.15.0'
+      
+      - name: Install dependencies
+        run: |
+          go version
+          go get -u golang.org/x/lint/golint
+      
+      - name: Build
+        run: make build
+      
