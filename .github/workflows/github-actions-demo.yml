@@ -2,9 +2,16 @@ name: Tenkai-API CI
 
 on: [push, pull_request]
 
+env: 
+  GOPATH: ${{ github.workspace }}
+  GO111MODULE: off
+
+defaults:
+  run:
+    working-directory: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}
+
 jobs:
   build:
-    runs-on: ubuntu-18.04
     env:
       GOPATH: ${{ github.workspace }}
       GO111MODULE: off
@@ -12,43 +19,31 @@ jobs:
       run:
         working-directory: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v2
-        with:
-          path: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}
+
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
           go-version: '1.15.0'
       
       - name: Install dependencies
-        run: |
-          go version
-          go get -u golang.org/x/lint/golint
+        run: go get -u golang.org/x/lint/golint
 
-      - name: Before Script
+      - name: Source Check
         run: |
           srccheck/verify-gofmt.sh
           srccheck/verify-govet.sh
           srccheck/verify-golint.sh
 
-      - name: Build
-        run: |
-          make build
-
       - name: Test
-        run: |
-          make test
-
+        run: make test
+      
+      - name: Build
+        run: make build
+      
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v1.6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        
-
-      - name: Dockerize
-        run: |
-          make container-image
-
-          
