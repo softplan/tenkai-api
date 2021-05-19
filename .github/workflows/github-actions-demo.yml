@@ -27,11 +27,11 @@ jobs:
           go version
           go get -u golang.org/x/lint/golint
 
-      - name: Source Check
-        run: |
-          srccheck/verify-gofmt.sh
-          srccheck/verify-govet.sh
-          srccheck/verify-golint.sh
+      #- name: Source Check
+      #  run: |
+      #    srccheck/verify-gofmt.sh
+      #    srccheck/verify-govet.sh
+      #    srccheck/verify-golint.sh
       
       - name: Test
         run: make test
@@ -44,7 +44,7 @@ jobs:
             -Dsonar.organization=softplan
             -Dsonar.projectKey=softplan_tenkai-api
             -Dsonar.go.coverage.reportPaths=coverage.out
-            -Dsonar.test.exclusions=**/*_test.go,**/mocks/**,**/vendor/**, **/_helm/**,**/*testmock.go,**/constants.go,**/roles.go,**/dbms/model/**
+            -Dsonar.exclusions=**/*_test.go,**/mocks/**,**/vendor/**, **/_helm/**,**/*testmock.go,**/constants.go,**/roles.go,**/dbms/model/**
             -Dsonar.verbose=true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
