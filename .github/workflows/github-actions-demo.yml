@@ -23,7 +23,7 @@ jobs:
           go-version: '1.15.0'
       
       - name: Install dependencies
-        run: go get -u golang.org/x/lint/golint
+        run: go get golang.org/x/lint/golint
 
       - name: Source Check
         run: |
