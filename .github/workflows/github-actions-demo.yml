@@ -25,18 +25,27 @@ jobs:
         run: |
           go version
           go get -u golang.org/x/lint/golint
-          export 
 
-      - uses: actions/setup-go@v2
       - name: Before Script
         run: |
-          ls
           srccheck/verify-gofmt.sh
           srccheck/verify-govet.sh
           srccheck/verify-golint.sh
 
       - name: Build
         run: |
-          ls
           make build
+
+      - name: Test
+        run: |
+          make test
       
+      - name: Sonnar Scanner
+        run: |
+          sonar-scanner
+      
+      - name: Dockerize
+        run: |
+          make container-image
+
+          
