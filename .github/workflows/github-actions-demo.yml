@@ -5,6 +5,12 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-18.04
+    env:
+      GOPATH: ${{ github.workspace }}
+      GO111MODULE: off
+    defaults:
+      run:
+        working-directory: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}
     steps:
       - uses: actions/checkout@v2
       - name: Setup Go
@@ -16,6 +22,7 @@ jobs:
         run: |
           go version
           go get -u golang.org/x/lint/golint
+          export 
 
       - uses: actions/setup-go@v2
       - name: Before Script
