@@ -1,6 +1,6 @@
 name: Tenkai-API CI
 
-on: [push, pull_request, tags]
+on: [push, pull_request]
 
 
 
