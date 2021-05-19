@@ -40,12 +40,6 @@ jobs:
         uses: SonarSource/sonarcloud-github-action@v1.6
         with:
           projectBaseDir: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}
-          args: >
-            -Dsonar.organization=softplan
-            -Dsonar.projectKey=softplan_tenkai-api
-            -Dsonar.go.coverage.reportPaths=coverage.out
-            -Dsonar.exclusions=**/*_test.go,**/mocks/**,**/vendor/**, **/_helm/**,**/*testmock.go,**/constants.go,**/roles.go,**/dbms/model/**
-            -Dsonar.verbose=true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
