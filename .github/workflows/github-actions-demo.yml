@@ -17,7 +17,13 @@ jobs:
         run: |
           go version
           go get -u golang.org/x/lint/golint
-      
+
+      - name: Before Script
+        run: |
+          srccheck/verify-gofmt.sh
+          srccheck/verify-govet.sh
+          srccheck/verify-golint.sh
+
       - name: Build
         run: make build
       
