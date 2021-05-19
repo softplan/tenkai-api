@@ -14,10 +14,10 @@ jobs:
       
       - name: Install dependencies
         run: |
-          ls
           go version
           go get -u golang.org/x/lint/golint
 
+      - uses: actions/setup-go@v2
       - name: Before Script
         run: |
           ls
