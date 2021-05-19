@@ -27,11 +27,11 @@ jobs:
           go version
           go get -u golang.org/x/lint/golint
 
-      #- name: Source Check
-      #  run: |
-      #    srccheck/verify-gofmt.sh
-      #    srccheck/verify-govet.sh
-      #    srccheck/verify-golint.sh
+      - name: Source Check
+        run: |
+          srccheck/verify-gofmt.sh
+          srccheck/verify-govet.sh
+          srccheck/verify-golint.sh
       
       - name: Test
         run: make test
@@ -43,3 +43,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      
+      - name: Build
+        run: make build
+      
+      - name: Archive build artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: tenkai-api
+          path: buidl/tenkai-api
