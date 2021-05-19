@@ -5,10 +5,7 @@ on: [push, pull_request]
 env: 
   GOPATH: ${{ github.workspace }}
   GO111MODULE: off
-
-defaults:
-  run:
-    working-directory: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}
+  working-directory: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}
 
 jobs:
   build:
@@ -16,11 +13,14 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2
+        with:
+          path: ${{ env.working-directory }}
 
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
           go-version: '1.15.0'
+          path: ${{ env.working-directory }}
       
       - name: Install dependencies
         run: go get -u golang.org/x/lint/golint
