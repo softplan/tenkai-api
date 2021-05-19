@@ -12,7 +12,10 @@ jobs:
       run:
         working-directory: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          path: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
