@@ -11,8 +11,8 @@ defaults:
     working-directory: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}
 
 jobs:
-  runs-on: ubuntu-18.04
   build:
+    runs-on: ubuntu-18.04
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2
