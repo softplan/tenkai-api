@@ -1,7 +1,9 @@
 name: Tenkai-API CI
 
 on: [push, pull_request]
-
+env:
+  COMMIT_REF: ${GITHUB_BASE_REF}
+      
 jobs:
   build:
     runs-on: ubuntu-18.04
@@ -51,8 +53,6 @@ jobs:
   dockerize:
     needs: build
     runs-on: ubuntu-18.04
-    env:
-      COMMIT_REF: ${GITHUB_BASE_REF}
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v2
