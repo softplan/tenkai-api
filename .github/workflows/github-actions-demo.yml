@@ -27,7 +27,7 @@ jobs:
           go version
           go get -u golang.org/x/lint/golint
 
-      # - name: Source Check
+      # - name: Lint
       #   run: |
       #     srccheck/verify-gofmt.sh
       #     srccheck/verify-govet.sh
@@ -47,5 +47,8 @@ jobs:
       - name: Build
         run: make build
       
-      - name: Archive build artifact
-        run: ls
+      - name: Dockerize
+        run: |
+          make container-image
+          make tag-image
+          make publish
