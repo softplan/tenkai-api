@@ -51,6 +51,8 @@ jobs:
   dockerize:
     needs: build
     runs-on: ubuntu-18.04
+    env:
+      COMMIT_REF: ${GITHUB_BASE_REF}
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v2
@@ -59,7 +61,7 @@ jobs:
       - name: Dockerize
         run: |
           make container-image
-          echo $GITHUB_BASE_REF
-          docker tag softplan/tenkai-api softplan/tenkai-api:$GITHUB_BASE_REF
+          echo ${{ env.COMMIT_REF }}
+          docker tag softplan/tenkai-api softplan/tenkai-api:$
           
             
