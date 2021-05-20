@@ -59,6 +59,8 @@ jobs:
       - name: Dockerize
         run: |
           make container-image
-          docker tag softplan/tenkai-api softplan/tenkai-api:$GITHUB_BASE_REF
+          echo $GITHUB_BASE_REF
+          echo ${$GITHUB_BASE_REF}
+          docker tag softplan/tenkai-api softplan/tenkai-api:${GITHUB_BASE_REF}
           
             
