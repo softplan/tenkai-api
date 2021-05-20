@@ -57,8 +57,7 @@ jobs:
       - name: Dockerize
         run: |
           make container-image
-          echo $GITHUB_REF
-          echo ${GITHUB_REF/refs\/heads\/}
           docker tag softplan/tenkai-api softplan/tenkai-api:${GITHUB_REF/refs\/heads\/}
-          
+          @docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+          docker push softplan/tenkai-api:${GITHUB_REF/refs\/heads\/}
             
