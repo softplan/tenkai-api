@@ -50,7 +50,7 @@ jobs:
           path: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}/build/tenkai-api
   dockerize:
     env:
-      COMMIT_REF: ${{ GITHUB_BASE_REF }}
+      COMMIT_REF: $(GITHUB_BASE_REF)
     needs: build
     runs-on: ubuntu-18.04
     steps:
