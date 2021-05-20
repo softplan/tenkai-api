@@ -28,12 +28,12 @@ pre-build:
 #Tag images
 tag-image: 
 	@echo 'Tagging docker image'
+	@echo $(GITHUB_REF)
 	@docker tag $(IMAGE_REPO) $(IMAGE_REPO):$(TAG)
 
 #Docker push image
 publish:
 	@echo "Pushing docker image to repository"
-	@echo $(GITHUB_REF)
 	@docker login -u $(DOCKER_USERNAME) -p $(DOCKER_PASSWORD)
 	@docker push $(IMAGE_REPO):$(TAG)
 
