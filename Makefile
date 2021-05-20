@@ -33,6 +33,7 @@ tag-image:
 #Docker push image
 publish:
 	@echo "Pushing docker image to repository"
+	@echo $(GITHUB_REF)
 	@docker login -u $(DOCKER_USERNAME) -p $(DOCKER_PASSWORD)
 	@docker push $(IMAGE_REPO):$(TAG)
 
