@@ -57,7 +57,7 @@ jobs:
         with:
           name: 
       - name: Dockerize
-      - run: |
+        run: |
           make container-image
           make tag-image
             
