@@ -1,8 +1,6 @@
 name: Tenkai-API CI
 
 on: [push, pull_request]
-env:
-  COMMIT_REF: ${GITHUB_BASE_REF}
       
 jobs:
   build:
@@ -51,6 +49,8 @@ jobs:
           name: build
           path: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}/build/tenkai-api
   dockerize:
+    env:
+      COMMIT_REF: ${{ GITHUB_BASE_REF }}
     needs: build
     runs-on: ubuntu-18.04
     steps:
@@ -60,6 +60,7 @@ jobs:
         run: |
           make container-image
           echo ${{ env.COMMIT_REF }}
+          
           docker tag softplan/tenkai-api softplan/tenkai-api:${{ env.COMMIT_REF }}
           
             
