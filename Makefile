@@ -1,4 +1,5 @@
 IMAGE_REPO=softplan/tenkai-api
+TAG=${GITHUB_BASE_REF/\//-}
 
 .DEFAULT_GOAL := build
 .PHONY: build container-image pre-build tag-image publish
@@ -30,8 +31,9 @@ tag-image:
 	@echo 'Tagging docker image'
 	@export TAG=${GITHUB_REF/refs\/heads\/}
 	@export TAG=${GITHUB_REF/\//-}
-	@echo ${TAG}
-	@docker tag $(IMAGE_REPO) $(IMAGE_REPO):$(TAG)
+	@echo $(TAG)
+	@echo docker tag $(IMAGE_REPO):latest $(IMAGE_REPO):$(TAG)
+	@docker tag $(IMAGE_REPO):latest $(IMAGE_REPO):$(TAG)
 
 #Docker push image
 publish:
