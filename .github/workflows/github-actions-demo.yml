@@ -60,7 +60,6 @@ jobs:
         run: |
           make container-image
           echo $GITHUB_BASE_REF
-          echo ${$GITHUB_BASE_REF}
-          docker tag softplan/tenkai-api softplan/tenkai-api:${GITHUB_BASE_REF}
+          docker tag softplan/tenkai-api softplan/tenkai-api:$GITHUB_BASE_REF
           
             
