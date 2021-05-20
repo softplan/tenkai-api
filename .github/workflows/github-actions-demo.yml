@@ -50,4 +50,4 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: my-artifact
-          path: build/tenkai-api
+          path: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}/build/tenkai-api
