@@ -51,8 +51,6 @@ jobs:
   dockerize:
     needs: build
     runs-on: ubuntu-18.04
-    env:
-
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v2
