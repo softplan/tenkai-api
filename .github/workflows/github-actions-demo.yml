@@ -28,10 +28,7 @@ jobs:
           go get -u golang.org/x/lint/golint
 
       # - name: Lint
-      #   run: |
-      #     srccheck/verify-gofmt.sh
-      #     srccheck/verify-govet.sh
-      #     srccheck/verify-golint.sh
+      #   run: make lint
       
       # - name: Test
       #   run: make test
@@ -49,5 +46,14 @@ jobs:
       
       - uses: actions/upload-artifact@v2
         with:
-          name: my-artifact
+          name: tenkai-api
           path: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}/build/tenkai-api
+  dockerize:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          name: tenkai-api
+      - name: Test
+        run: ls
