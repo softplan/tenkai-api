@@ -49,6 +49,7 @@ jobs:
           name: tenkai-api
           path: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}/build/tenkai-api
   dockerize:
+    needs: build
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
