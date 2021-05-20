@@ -46,15 +46,20 @@ jobs:
       
       - uses: actions/upload-artifact@v2
         with:
-          name: tenkai-api
+          name: build
           path: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}/build/tenkai-api
   dockerize:
     needs: build
     runs-on: ubuntu-18.04
+    env:
+
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v2
         with:
           name: tenkai-api
       - name: Test
-        run: ls
+        run: |
+          echo ::set-output name=SOURCE_NAME::${GITHUB_REF#refs/*/}
+          echo ::set-output name=SOURCE_BRANCH::${GITHUB_REF#refs/heads/}
+          echo ::set-output name=SOURCE_TAG::${GITHUB_REF#refs/tags/}
