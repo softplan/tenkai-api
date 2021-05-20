@@ -58,6 +58,6 @@ jobs:
         run: |
           make container-image
           docker tag softplan/tenkai-api softplan/tenkai-api:${GITHUB_REF/refs\/heads\/}
-          @docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+          docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
           docker push softplan/tenkai-api:${GITHUB_REF/refs\/heads\/}
             
