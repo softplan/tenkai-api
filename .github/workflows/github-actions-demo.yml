@@ -59,6 +59,6 @@ jobs:
           make container-image
           echo $GITHUB_REF
           echo ${GITHUB_REF/refs\/heads\/}
-          docker tag softplan/tenkai-api softplan/tenkai-api:$GITHUB_REF
+          docker tag softplan/tenkai-api softplan/tenkai-api:${GITHUB_REF/refs\/heads\/}
           
             
