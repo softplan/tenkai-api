@@ -30,7 +30,7 @@ tag-image:
 	@echo 'Tagging docker image'
 	@export TAG=${GITHUB_REF/refs\/heads\/}
 	@export TAG=${GITHUB_REF/\//-}
-	@echo $(TAG)
+	@echo ${TAG}
 	@docker tag $(IMAGE_REPO) $(IMAGE_REPO):$(TAG)
 
 #Docker push image

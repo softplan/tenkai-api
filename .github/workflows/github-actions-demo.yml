@@ -59,5 +59,9 @@ jobs:
       - name: Dockerize
         run: |
           make container-image
-          make tag-image
+          export TAG=${GITHUB_REF/refs\/heads\/}
+          export TAG=${GITHUB_REF/\//-}
+          echo ${TAG}
+          docker tag $(IMAGE_REPO) $(IMAGE_REPO):$(TAG)
+          
             
