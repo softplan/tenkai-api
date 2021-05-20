@@ -47,8 +47,7 @@ jobs:
       - name: Build
         run: make build
       
-      - name: Dockerize
-        run: |
-          make container-image
-          make tag-image
-          make publish
+      - uses: actions/upload-artifact@v2
+        with:
+          name: my-artifact
+          path: build/tenkai-api
