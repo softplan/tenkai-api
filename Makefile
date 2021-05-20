@@ -28,7 +28,9 @@ pre-build:
 #Tag images
 tag-image: 
 	@echo 'Tagging docker image'
-	@echo $(GITHUB_REF)
+	@export TAG=${GITHUB_REF/refs\/heads\/}
+	@export TAG=${GITHUB_REF/\//-}
+	@echo $(TAG)
 	@docker tag $(IMAGE_REPO) $(IMAGE_REPO):$(TAG)
 
 #Docker push image
