@@ -1,7 +1,7 @@
 IMAGE_REPO=softplan/tenkai-api
 
 .DEFAULT_GOAL := build
-.PHONY: build container-image pre-build tag-image publish
+.PHONY: build container-image pre-build publish
 
 #Build the binary
 build: pre-build
@@ -24,12 +24,6 @@ container-image:
 pre-build:
 	@echo "Checking system information"
 	@if [ -z "$(shell go env GOOS)" ] || [ -z "$(shell go env GOARCH)" ] ; then echo 'ERROR: Could not determine the system architecture.' && exit 1 ; fi
-
-#Tag images
-tag-image: 
-	@echo 'Tagging docker image'
-	@echo docker tag $(IMAGE_REPO):latest $(IMAGE_REPO):$(GITHUB_BASE_REF)
-	@docker tag $(IMAGE_REPO):latest $(IMAGE_REPO):$(GITHUB_BASE_REF)
 
 #Docker push image
 publish:

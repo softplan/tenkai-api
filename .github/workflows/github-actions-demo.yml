@@ -27,19 +27,19 @@ jobs:
           go version
           go get -u golang.org/x/lint/golint
 
-      # - name: Lint
-      #   run: make lint
+      - name: Lint
+        run: make lint
       
-      # - name: Test
-      #   run: make test
+      - name: Test
+        run: make test
 
-      # - name: SonarCloud Scan
-      #   uses: SonarSource/sonarcloud-github-action@v1.6
-      #   with:
-      #     projectBaseDir: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v1.6
+        with:
+          projectBaseDir: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       
       - name: Build
         run: make build
@@ -51,13 +51,14 @@ jobs:
   dockerize:
     needs: build
     runs-on: ubuntu-18.04
+    env:
+      IMAGE_REPO: softplan/tenkai-api
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v2
       - name: Dockerize
         run: |
           make container-image
-          docker tag softplan/tenkai-api softplan/tenkai-api:${GITHUB_REF/refs\/heads\/}
+          docker tag ${{ env.IMAGE_REPO }} ${{ env.IMAGE_REPO }}:${GITHUB_REF/refs\/heads\/}
           docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-          docker push softplan/tenkai-api:${GITHUB_REF/refs\/heads\/}
-            
+          docker push ${{ env.IMAGE_REPO }}:${GITHUB_REF/refs\/heads\/}
