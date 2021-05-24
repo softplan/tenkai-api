@@ -53,7 +53,7 @@ jobs:
     runs-on: ubuntu-18.04
     env:
       IMAGE_REPO: softplan/tenkai-api
-    if: contains($GITHUB_REF, 'refs\/heads') || contains($GITHUB_REF, 'refs\/tags')
+    if: contains(github.ref, 'refs/heads/master') || contains(github.ref, 'refs/tags')
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v2
