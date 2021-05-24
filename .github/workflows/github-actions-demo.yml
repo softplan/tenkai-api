@@ -59,6 +59,8 @@ jobs:
       - name: Dockerize
         run: |
           make container-image
-          docker tag ${{ env.IMAGE_REPO }} ${{ env.IMAGE_REPO }}:${GITHUB_REF/refs\/heads\/}
+          export TAG=${GITHUB_REF/refs\/heads\/}
+          export TAG=${TAG/refs\/tags\/}
+          docker tag ${{ env.IMAGE_REPO }} ${{ env.IMAGE_REPO }}:$TAG
           docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-          docker push ${{ env.IMAGE_REPO }}:${GITHUB_REF/refs\/heads\/}
+          docker push ${{ env.IMAGE_REPO }}:$TAG
