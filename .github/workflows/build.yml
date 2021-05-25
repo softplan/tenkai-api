@@ -59,6 +59,7 @@ jobs:
       - uses: actions/download-artifact@v2
       - name: Dockerize
         run: |
+          chmod +x build/tenkai-api
           make container-image
           export TAG=${GITHUB_REF/refs\/heads\/}
           export TAG=${TAG/refs\/tags\/}
