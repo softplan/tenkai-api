@@ -203,6 +203,7 @@ func (appContext *AppContext) getVariablesByEnvironmentAndScope(w http.ResponseW
 	type Payload struct {
 		EnvironmentID int    `json:"environmentId"`
 		Scope         string `json:"scope"`
+		ScopeVersion  string `json:"scopeVersion"`
 	}
 
 	var payload Payload
@@ -214,6 +215,7 @@ func (appContext *AppContext) getVariablesByEnvironmentAndScope(w http.ResponseW
 
 	has, failed := appContext.hasAccess(principal.Email, payload.EnvironmentID)
 	if failed != nil || !has {
+
 		http.Error(w, errors.New("Access Denied in this environment").Error(), http.StatusUnauthorized)
 		return
 	}
@@ -228,11 +230,31 @@ func (appContext *AppContext) getVariablesByEnvironmentAndScope(w http.ResponseW
 
 	appContext.decodeSecrets(variableResult)
 
+	if payload.ScopeVersion != "" {
+		chartVars, err := appContext.getHelmChartAppVars(payload.Scope, payload.ScopeVersion)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		variableResult.Variables = filterChartVars(chartVars, variableResult.Variables)
+	}
+
 	data, _ := json.Marshal(variableResult)
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 
+}
+
+func filterChartVars(chartVars map[string]interface{}, databaseVars []model.Variable) (list []model.Variable) {
+	for _, databaseVar := range databaseVars {
+		for chartVarKey := range chartVars {
+			if databaseVar.Name == chartVarKey {
+				list = append(list, databaseVar)
+			}
+		}
+	}
+	return
 }
 
 func (appContext *AppContext) decodeSecrets(variableResult *model.VariablesResult) {
