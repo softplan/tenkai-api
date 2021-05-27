@@ -401,6 +401,22 @@ func createPayloadWithScopeAndID(id int, scope string) *bytes.Buffer {
 	return bytes.NewBuffer(payloadStr)
 }
 
+func createPayloadWithScopeVersion(id int, scope string) *bytes.Buffer {
+	type Payload struct {
+		EnvironmentID int    `json:"environmentId"`
+		Scope         string `json:"scope"`
+		ScopeVersion  string `json:"scopeVersion"`
+	}
+
+	var payload Payload
+	payload.EnvironmentID = id
+	payload.Scope = scope
+	payload.ScopeVersion = "xpto"
+	payloadStr, _ := json.Marshal(payload)
+
+	return bytes.NewBuffer(payloadStr)
+}
+
 func mockPolicies() []string {
 	var policies []string
 	policies = append(policies, "ACTION_DEPLOY")
