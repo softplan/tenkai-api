@@ -297,3 +297,26 @@ func TestGetVariablesByEnvironmentAndScopeWithScopeVersion(t *testing.T) {
 	assert.Contains(t, response, `"scope":"global","chartVersion":"","name":"username","value":"user",`)
 	assert.Contains(t, response, `"secret":false,"description":"Login username.","environmentId":999}]}`)
 }
+
+func TestGetVariablesWithScopeVersionError(t *testing.T) {
+	appContext := AppContext{}
+
+	req, err := http.NewRequest("POST", "/listVariables", createPayloadWithScopeVersion(999, "teste"))
+	assert.NoError(t, err)
+
+	mockPrincipal(req)
+
+	mockGetAllEnvironments(&appContext)
+	mockGetAllVariablesByEnvironmentAndScope(&appContext)
+
+	mockHelmSvc := &mocks.HelmServiceInterface{}
+	mockHelmSvc.On("GetTemplate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]byte{}, errors.New("Error"))
+	appContext.HelmServiceAPI = mockHelmSvc
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.getVariablesByEnvironmentAndScope)
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be Interal Server Error.")
+
+}
