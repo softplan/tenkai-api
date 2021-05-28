@@ -267,3 +267,56 @@ func TestGetVariablesNotUsed(t *testing.T) {
 	assert.Equal(t, `[{"id":0,"scope":"bar","name":"password","value":"password"}]`,
 		string(rr.Body.Bytes()), "Should found 1 not used variable.")
 }
+
+func TestGetVariablesByEnvironmentAndScopeWithScopeVersion(t *testing.T) {
+	appContext := AppContext{}
+
+	req, err := http.NewRequest("POST", "/listVariables", createPayloadWithScopeVersion(999, "teste"))
+	assert.NoError(t, err)
+
+	mockPrincipal(req)
+
+	mockEnvDao := mockGetAllEnvironments(&appContext)
+	mockVariableDAO := mockGetAllVariablesByEnvironmentAndScope(&appContext)
+	chartValue := `{"app":{"username":"myvalue"}}`
+	mockHelmSvc := &mocks.HelmServiceInterface{}
+	mockHelmSvc.On("GetTemplate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]byte(chartValue), nil)
+	appContext.HelmServiceAPI = mockHelmSvc
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.getVariablesByEnvironmentAndScope)
+	handler.ServeHTTP(rr, req)
+
+	mockVariableDAO.AssertNumberOfCalls(t, "GetAllVariablesByEnvironmentAndScope", 1)
+	mockEnvDao.AssertNumberOfCalls(t, "GetAllEnvironments", 1)
+
+	assert.Equal(t, http.StatusOK, rr.Code, "Response should be ok.")
+
+	response := string(rr.Body.Bytes())
+	assert.Contains(t, response, `{"Variables":[{"ID":0,`)
+	assert.Contains(t, response, `"scope":"global","chartVersion":"","name":"username","value":"user",`)
+	assert.Contains(t, response, `"secret":false,"description":"Login username.","environmentId":999}]}`)
+}
+
+func TestGetVariablesWithScopeVersionError(t *testing.T) {
+	appContext := AppContext{}
+
+	req, err := http.NewRequest("POST", "/listVariables", createPayloadWithScopeVersion(999, "teste"))
+	assert.NoError(t, err)
+
+	mockPrincipal(req)
+
+	mockGetAllEnvironments(&appContext)
+	mockGetAllVariablesByEnvironmentAndScope(&appContext)
+
+	mockHelmSvc := &mocks.HelmServiceInterface{}
+	mockHelmSvc.On("GetTemplate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]byte{}, errors.New("Error"))
+	appContext.HelmServiceAPI = mockHelmSvc
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(appContext.getVariablesByEnvironmentAndScope)
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be Interal Server Error.")
+
+}
