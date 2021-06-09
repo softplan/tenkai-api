@@ -55,5 +55,5 @@ func (rabbit RabbitImpl) GetConsumer(channel *amqp.Channel, queue, consumer stri
 
 //QueueDeclare declare a queue
 func (rabbit RabbitImpl) QueueDeclare(channel *amqp.Channel, name string, durable bool, autoDelete bool, exclusive bool, noWait bool, args amqp.Table) (amqp.Queue, error) {
-	return channel.QueueDeclare(name, true, false, false, false, nil)
+	return channel.QueueDeclare(name, false, false, false, false, nil)
 }
