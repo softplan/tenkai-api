@@ -16,14 +16,9 @@ import (
 const defaultRepo = "DEFAULT_REPO_"
 
 func (appContext *AppContext) publishRepoMessage(exchange string, body interface{}) error {
-	bodyBytes := []byte{}
-	var err error
-	if bodyBytes, err = json.Marshal(body); err != nil {
-		global.Logger.Error(global.AppFields{global.Function: "repoUpdate"}, "Error on marshal body message "+err.Error())
-		return err
-	}
+	bodyBytes, _ := json.Marshal(body)
 
-	if err = appContext.RabbitImpl.Publish(
+	if err := appContext.RabbitImpl.Publish(
 		appContext.RabbitMQChannel,
 		exchange,
 		"",
