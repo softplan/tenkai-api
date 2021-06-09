@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"database/sql"
+
 	"github.com/jinzhu/gorm"
 	model2 "github.com/softplan/tenkai-api/pkg/dbms/model"
 )
@@ -10,9 +12,10 @@ type UserDAOInterface interface {
 	CreateUser(user model2.User) error
 	DeleteUser(id int) error
 	AssociateEnvironmentUser(userID int, environmentID int) error
-	ListAllUsers() ([]model2.User, error)
+	ListAllUsers() ([]model2.LightUser, error)
 	CreateOrUpdateUser(user model2.User) error
 	FindByEmail(email string) (model2.User, error)
+	FindByID(id string) (model2.User, error)
 }
 
 //UserDAOImpl UserDAOImpl
@@ -66,10 +69,17 @@ func (dao UserDAOImpl) AssociateEnvironmentUser(userID int, environmentID int) e
 }
 
 //ListAllUsers - List all users
-func (dao UserDAOImpl) ListAllUsers() ([]model2.User, error) {
-	users := make([]model2.User, 0)
-	if err := dao.Db.Preload("Environments").Find(&users).Error; err != nil {
+func (dao UserDAOImpl) ListAllUsers() ([]model2.LightUser, error) {
+	users := make([]model2.LightUser, 0)
+	var rows *sql.Rows
+	var err error
+	if rows, err = dao.Db.Table("users").Select([]string{"id", "email"}).Where("deleted_at IS NULL").Rows(); err != nil {
 		return nil, err
+	}
+	for rows.Next() {
+		user := model2.LightUser{}
+		rows.Scan(&user.ID, &user.Email)
+		users = append(users, user)
 	}
 	return users, nil
 }
@@ -144,10 +154,16 @@ func (dao UserDAOImpl) CreateOrUpdateUser(user model2.User) error {
 //FindByEmail FindByEmail
 func (dao UserDAOImpl) FindByEmail(email string) (model2.User, error) {
 	var user model2.User
-	//if err := dao.Db.Where("email = ?", email).Find(&user).Error; err != nil {
-	//	return user, err
-	//}
 	if err := dao.Db.Where(&model2.User{Email: email}).Find(&user).Error; err != nil {
+		return user, err
+	}
+	return user, nil
+}
+
+//FindByID FindByID
+func (dao UserDAOImpl) FindByID(id string) (model2.User, error) {
+	var user model2.User
+	if err := dao.Db.Preload("Environments").Where("id = ?", id).Take(&user).Error; err != nil {
 		return user, err
 	}
 	return user, nil
