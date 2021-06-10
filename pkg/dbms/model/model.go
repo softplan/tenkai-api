@@ -40,9 +40,15 @@ type UserEnvironmentRole struct {
 	SecurityOperationID uint `json:"securityOperationId"`
 }
 
+//LightUser LightUser
+type LightUser struct {
+	ID    int
+	Email string `json:"email"`
+}
+
 //UserResult struct
 type UserResult struct {
-	Users []User `json:"users"`
+	Users []LightUser `json:"users"`
 }
 
 //DataElement dataElement

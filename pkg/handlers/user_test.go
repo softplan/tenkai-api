@@ -241,3 +241,41 @@ func TestDeleteUser_Error(t *testing.T) {
 	userDAO.AssertNumberOfCalls(t, "DeleteUser", 1)
 	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
 }
+
+func TestGetUserOk(t *testing.T) {
+	appContext := AppContext{}
+
+	userDAO := mocks.UserDAOInterface{}
+	userDAO.On("FindByID", mock.Anything).Return(model.User{}, nil)
+	appContext.Repositories.UserDAO = &userDAO
+
+	req, err := http.NewRequest("GET", "/users/9999", nil)
+	assert.NoError(t, err)
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/users/{id}", appContext.getUser).Methods("GET")
+	r.ServeHTTP(rr, req)
+
+	userDAO.AssertNumberOfCalls(t, "FindByID", 1)
+	assert.Equal(t, http.StatusOK, rr.Code, "Response should be 200.")
+}
+
+func TestGetUserError(t *testing.T) {
+	appContext := AppContext{}
+
+	userDAO := mocks.UserDAOInterface{}
+	userDAO.On("FindByID", mock.Anything).Return(model.User{}, errors.New("error"))
+	appContext.Repositories.UserDAO = &userDAO
+
+	req, err := http.NewRequest("GET", "/users/1", nil)
+	assert.NoError(t, err)
+
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	r.HandleFunc("/users/{id}", appContext.getUser).Methods("GET")
+	r.ServeHTTP(rr, req)
+
+	userDAO.AssertNumberOfCalls(t, "FindByID", 1)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "Response should be 500.")
+}
