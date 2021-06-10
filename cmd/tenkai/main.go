@@ -86,8 +86,6 @@ func createEnvironmentFiles(appContext *handlers.AppContext) {
 func createQueues(appContext *handlers.AppContext) {
 	createQueue(rabbitmq.InstallQueue, appContext)
 	createQueue(rabbitmq.ResultInstallQueue, appContext)
-	createQueue(rabbitmq.RepositoriesQueue, appContext)
-	createQueue(rabbitmq.DeleteRepoQueue, appContext)
 }
 
 func publishRepoToQueue(appContext *handlers.AppContext) {
@@ -100,8 +98,8 @@ func publishRepoToQueue(appContext *handlers.AppContext) {
 			queuePayloadJSON, _ := json.Marshal(repo)
 			appContext.RabbitImpl.Publish(
 				appContext.RabbitMQChannel,
+				"add.repository.fx",
 				"",
-				rabbitmq.RepositoriesQueue,
 				false,
 				false,
 				amqp.Publishing{
@@ -114,7 +112,7 @@ func publishRepoToQueue(appContext *handlers.AppContext) {
 }
 
 func createQueue(queueName string, appContext *handlers.AppContext) {
-	_, err := appContext.RabbitImpl.QueueDeclare(appContext.RabbitMQChannel, queueName, true, false, false, false, nil)
+	_, err := appContext.RabbitImpl.QueueDeclare(appContext.RabbitMQChannel, queueName, false, false, false, false, nil)
 	if err != nil {
 		global.Logger.Error(
 			global.AppFields{global.Function: "createQueue"},

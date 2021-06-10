@@ -751,7 +751,7 @@ func getMockRabbitMQ() *mockRabbit.RabbitInterface {
 
 	mockRabbitMQ.Mock.On("Publish",
 		mock.Anything,
-		"",
+		mock.Anything,
 		mock.Anything,
 		false,
 		false,
