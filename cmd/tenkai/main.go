@@ -58,7 +58,9 @@ func main() {
 	appContext.RabbitMQChannel = appContext.RabbitImpl.GetChannel(appContext.RabbitMQConn)
 	defer appContext.RabbitMQConn.Close()
 	defer appContext.RabbitMQChannel.Close()
+
 	createQueues(appContext)
+	createExchanges(appContext)
 	publishRepoToQueue(appContext)
 	go handlers.StartConsumerQueue(appContext, rabbitmq.ResultInstallQueue)
 
@@ -83,6 +85,15 @@ func createEnvironmentFiles(appContext *handlers.AppContext) {
 	}
 }
 
+func createExchanges(appContext *handlers.AppContext) {
+	list := []string{rabbitmq.ExchangeDelRepo, rabbitmq.ExchangeAddRepo, rabbitmq.ExchangeUpdateRepo}
+	for _, exchange := range list {
+		if err := appContext.RabbitImpl.CreateFanoutExchange(appContext.RabbitMQChannel, exchange); err != nil {
+			checkFatalError(err)
+		}
+	}
+}
+
 func createQueues(appContext *handlers.AppContext) {
 	createQueue(rabbitmq.InstallQueue, appContext)
 	createQueue(rabbitmq.ResultInstallQueue, appContext)
@@ -98,7 +109,7 @@ func publishRepoToQueue(appContext *handlers.AppContext) {
 			queuePayloadJSON, _ := json.Marshal(repo)
 			appContext.RabbitImpl.Publish(
 				appContext.RabbitMQChannel,
-				"add.repository.fx",
+				rabbitmq.ExchangeAddRepo,
 				"",
 				false,
 				false,
