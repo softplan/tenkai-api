@@ -1,11 +1,12 @@
 package audit
 
 import (
+	"testing"
+
 	"github.com/olivere/elastic"
 	"github.com/softplan/tenkai-api/pkg/audit/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"testing"
 )
 
 func TestGetElkClient(t *testing.T) {
@@ -13,7 +14,7 @@ func TestGetElkClient(t *testing.T) {
 	mockElk := &mocks.ElkInterface{}
 	audit.Elk = mockElk
 	elkClient := elastic.Client{}
-	mockElk.On("NewClient", mock.Anything).Return(&elkClient, nil)
+	mockElk.On("NewClient", mock.Anything, mock.Anything, mock.Anything).Return(&elkClient, nil)
 	_, e := audit.ElkClient("http://localhost:8080", "alfa", "beta")
 	assert.Nil(t, e)
 }
@@ -29,9 +30,4 @@ func TestBuildDock(t *testing.T) {
 	myMap["b"] = "b_value"
 	doc := buildDoc("alfa", "beta", myMap)
 	assert.NotNil(t, doc)
-}
-
-func TestBuildConfig(t *testing.T) {
-	config := buildConfig("http://audit", "alfa", "beta")
-	assert.NotNil(t, config)
 }

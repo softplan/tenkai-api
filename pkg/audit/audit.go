@@ -2,9 +2,10 @@ package audit
 
 import (
 	"context"
-	"github.com/olivere/elastic"
-	"github.com/olivere/elastic/config"
 	"time"
+
+	"github.com/olivere/elastic"
+	"github.com/softplan/tenkai-api/pkg/global"
 )
 
 //AuditingInterface AuditingInterface
@@ -15,7 +16,7 @@ type AuditingInterface interface {
 
 //ElkInterface ElkInterface
 type ElkInterface interface {
-	NewClient(config *config.Config) (*elastic.Client, error)
+	NewClient(url string, username string, password string) (*elastic.Client, error)
 }
 
 //ElkImpl ElkImpl
@@ -42,8 +43,14 @@ func AuditingBuilder() AuditingInterface {
 }
 
 //NewClient NewClient
-func (a ElkImpl) NewClient(config *config.Config) (*elastic.Client, error) {
-	elasticClient, err := elastic.NewClientFromConfig(config)
+func (a ElkImpl) NewClient(url string, username string, password string) (*elastic.Client, error) {
+	elasticClient, err := elastic.NewClient(
+		elastic.SetSniff(false),
+		elastic.SetHealthcheck(false),
+		elastic.SetURL(url),
+		elastic.SetBasicAuth(username, password),
+	)
+
 	if err != nil {
 		return nil, err
 	}
@@ -52,8 +59,8 @@ func (a ElkImpl) NewClient(config *config.Config) (*elastic.Client, error) {
 
 //ElkClient return a new ElkClient
 func (a AuditingImpl) ElkClient(url string, username string, password string) (*elastic.Client, error) {
-	config := buildConfig(url, username, password)
-	return a.Elk.NewClient(config)
+	return a.Elk.NewClient(url, username, password)
+
 }
 
 //DoAudit create new audit log into elk
@@ -61,7 +68,9 @@ func (a AuditingImpl) DoAudit(ctx context.Context, client *elastic.Client, usern
 	if client != nil {
 		bulk := client.Bulk().Index("tenkai1audit").Type("audit")
 		doc := buildDoc(username, operation, values)
-		bulk.Add(elastic.NewBulkIndexRequest().Doc(doc)).Do(ctx)
+		if _, err := bulk.Add(elastic.NewBulkIndexRequest().Doc(doc)).Do(ctx); err != nil {
+			global.Logger.Error(global.AppFields{global.Function: "DoAudit"}, err.Error())
+		}
 	}
 }
 
@@ -74,14 +83,4 @@ func buildDoc(username string, operation string, values map[string]string) map[s
 		doc[k] = v
 	}
 	return doc
-}
-
-func buildConfig(url string, username string, password string) *config.Config {
-	config := &config.Config{
-		URL:      url,
-		Username: username,
-		Password: password,
-		Index:    "tenkai1audit",
-	}
-	return config
 }
