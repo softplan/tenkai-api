@@ -40,3 +40,8 @@ func TestGetChannel(test *testing.T) {
 	rabbitImpl, _, _, connection := beforeTest()
 	assert.Panics(test, func() { rabbitImpl.GetChannel(connection) }, "Error on test GetConnection")
 }
+
+func TestCreateFanoutExchange(test *testing.T) {
+	rabbitImpl, _, channel, _ := beforeTest()
+	assert.Panics(test, func() { rabbitImpl.CreateFanoutExchange(channel, mock.Anything) }, "Error on create exchange")
+}
