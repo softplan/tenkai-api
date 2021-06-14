@@ -31,3 +31,9 @@ func TestBuildDock(t *testing.T) {
 	doc := buildDoc("alfa", "beta", myMap)
 	assert.NotNil(t, doc)
 }
+
+func TestNewClient(t *testing.T) {
+	elk := ElkImpl{}
+	_, err := elk.NewClient("test", "test", "test")
+	assert.Error(t, err)
+}
