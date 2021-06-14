@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"os"
 	"sync"
 
@@ -177,6 +176,6 @@ func initRepository(database *dbms.Database) handlers.Repositories {
 func checkFatalError(err error) {
 	if err != nil {
 		global.Logger.Error(global.AppFields{global.Function: "upload", "error": err}, "erro fatal")
-		log.Fatal(err)
+		panic(err)
 	}
 }
