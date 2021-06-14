@@ -154,3 +154,17 @@ func mockGetEnv() model.Environment {
 	env.Gateway = "my-gateway.istio-system.svc.cluster.local"
 	return env
 }
+
+func TestCreateExchanges(t *testing.T) {
+	mockRabbitMQ := mocks.RabbitInterface{}
+	mockRabbitMQ.On("CreateFanoutExchange", mock.Anything, mock.Anything).Return(nil)
+	appContext := handlers.AppContext{RabbitImpl: &mockRabbitMQ}
+	createExchanges(&appContext)
+}
+
+func TestCreateExchangesFail(t *testing.T) {
+	mockRabbitMQ := mocks.RabbitInterface{}
+	mockRabbitMQ.On("CreateFanoutExchange", mock.Anything, mock.Anything).Return(errors.New("some error"))
+	appContext := handlers.AppContext{RabbitImpl: &mockRabbitMQ}
+	assert.Panics(t, func() { createExchanges(&appContext) }, "Error on create exchange")	
+}
