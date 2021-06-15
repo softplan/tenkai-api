@@ -95,3 +95,22 @@ func (appContext *AppContext) deleteUser(w http.ResponseWriter, r *http.Request)
 	}
 	w.WriteHeader(http.StatusOK)
 }
+
+func (appContext *AppContext) getUser(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	var user model.User
+	var err error
+	if user, err = appContext.Repositories.UserDAO.FindByID(id); err != nil {
+		global.Logger.Info(global.AppFields{global.Function: "getUser"}, err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data, _ := json.Marshal(user)
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+	w.Header().Add(global.ContentType, global.JSONContentType)
+}

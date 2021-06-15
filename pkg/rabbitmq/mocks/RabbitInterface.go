@@ -12,6 +12,20 @@ type RabbitInterface struct {
 	mock.Mock
 }
 
+// CreateFanoutExchange provides a mock function with given fields: channel, name
+func (_m *RabbitInterface) CreateFanoutExchange(channel *amqp.Channel, name string) error {
+	ret := _m.Called(channel, name)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*amqp.Channel, string) error); ok {
+		r0 = rf(channel, name)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetChannel provides a mock function with given fields: conn
 func (_m *RabbitInterface) GetChannel(conn *amqp.Connection) *amqp.Channel {
 	ret := _m.Called(conn)

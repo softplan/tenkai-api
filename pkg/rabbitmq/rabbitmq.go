@@ -11,6 +11,7 @@ type RabbitInterface interface {
 	Publish(channel *amqp.Channel, exchange, key string, mandatory, immediate bool, msg amqp.Publishing) error
 	GetConsumer(channel *amqp.Channel, queue, consumer string, autoAck, exclusive, noLocal, noWait bool, args amqp.Table) (<-chan amqp.Delivery, error)
 	QueueDeclare(channel *amqp.Channel, name string, durable bool, autoDelete bool, exclusive bool, noWait bool, args amqp.Table) (amqp.Queue, error)
+	CreateFanoutExchange(channel *amqp.Channel, name string) error
 }
 
 //RabbitImpl struct
@@ -23,6 +24,13 @@ const (
 	ResultInstallQueue = "ResultInstallQueue"
 	RepositoriesQueue  = "RepositoriesQueue"
 	DeleteRepoQueue    = "DeleteRepoQueue"
+)
+
+//Exchanges
+const (
+	ExchangeAddRepo    = "add.repository.fx"
+	ExchangeDelRepo    = "del.repository.fx"
+	ExchangeUpdateRepo = "update.repository.fx"
 )
 
 //GetConnection to the RabbitMQ Server
@@ -55,5 +63,13 @@ func (rabbit RabbitImpl) GetConsumer(channel *amqp.Channel, queue, consumer stri
 
 //QueueDeclare declare a queue
 func (rabbit RabbitImpl) QueueDeclare(channel *amqp.Channel, name string, durable bool, autoDelete bool, exclusive bool, noWait bool, args amqp.Table) (amqp.Queue, error) {
-	return channel.QueueDeclare(name, true, false, false, false, nil)
+	return channel.QueueDeclare(name, false, false, false, false, nil)
+}
+
+//CreateFanoutExchange func
+func (rabbit RabbitImpl) CreateFanoutExchange(channel *amqp.Channel, name string) error {
+	err := channel.ExchangeDeclare(
+		name, "fanout", false, true, false, false, nil,
+	)
+	return err
 }

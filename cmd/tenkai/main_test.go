@@ -55,7 +55,7 @@ func TestCreateQueue(t *testing.T) {
 	queue := amqp.Queue{}
 
 	mockRabbitMQ.Mock.On(
-		"QueueDeclare", mock.Anything, mock.Anything, true, false, false, false, mock.Anything).Return(queue, nil)
+		"QueueDeclare", mock.Anything, mock.Anything, false, false, false, false, mock.Anything).Return(queue, nil)
 	appContext.RabbitImpl = &mockRabbitMQ
 	createQueues(&appContext)
 }
@@ -72,7 +72,7 @@ func TestCreateQueueWithError(t *testing.T) {
 	err := errors.New("Error")
 
 	mockRabbitMQ.Mock.On(
-		"QueueDeclare", mock.Anything, mock.Anything, true, false, false, false, mock.Anything).Return(queue, err)
+		"QueueDeclare", mock.Anything, mock.Anything, false, false, false, false, mock.Anything).Return(queue, err)
 	appContext.RabbitImpl = &mockRabbitMQ
 	createQueues(&appContext)
 }
@@ -91,7 +91,7 @@ func TestPublishRepoToQueueWithRepos(test *testing.T) {
 
 	mockRabbitMQ.Mock.On("Publish",
 		mock.Anything,
-		"",
+		mock.Anything,
 		mock.Anything,
 		false,
 		false,
@@ -153,4 +153,18 @@ func mockGetEnv() model.Environment {
 	env.Namespace = "dev"
 	env.Gateway = "my-gateway.istio-system.svc.cluster.local"
 	return env
+}
+
+func TestCreateExchanges(t *testing.T) {
+	mockRabbitMQ := mocks.RabbitInterface{}
+	mockRabbitMQ.On("CreateFanoutExchange", mock.Anything, mock.Anything).Return(nil)
+	appContext := handlers.AppContext{RabbitImpl: &mockRabbitMQ}
+	createExchanges(&appContext)
+}
+
+func TestCreateExchangesFail(t *testing.T) {
+	mockRabbitMQ := mocks.RabbitInterface{}
+	mockRabbitMQ.On("CreateFanoutExchange", mock.Anything, mock.Anything).Return(errors.New("some error"))
+	appContext := handlers.AppContext{RabbitImpl: &mockRabbitMQ}
+	assert.Panics(t, func() { createExchanges(&appContext) }, "Error on create exchange")	
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"os"
 	"sync"
 
@@ -58,7 +57,9 @@ func main() {
 	appContext.RabbitMQChannel = appContext.RabbitImpl.GetChannel(appContext.RabbitMQConn)
 	defer appContext.RabbitMQConn.Close()
 	defer appContext.RabbitMQChannel.Close()
+
 	createQueues(appContext)
+	createExchanges(appContext)
 	publishRepoToQueue(appContext)
 	go handlers.StartConsumerQueue(appContext, rabbitmq.ResultInstallQueue)
 
@@ -83,11 +84,18 @@ func createEnvironmentFiles(appContext *handlers.AppContext) {
 	}
 }
 
+func createExchanges(appContext *handlers.AppContext) {
+	list := []string{rabbitmq.ExchangeDelRepo, rabbitmq.ExchangeAddRepo, rabbitmq.ExchangeUpdateRepo}
+	for _, exchange := range list {
+		if err := appContext.RabbitImpl.CreateFanoutExchange(appContext.RabbitMQChannel, exchange); err != nil {
+			checkFatalError(err)
+		}
+	}
+}
+
 func createQueues(appContext *handlers.AppContext) {
 	createQueue(rabbitmq.InstallQueue, appContext)
 	createQueue(rabbitmq.ResultInstallQueue, appContext)
-	createQueue(rabbitmq.RepositoriesQueue, appContext)
-	createQueue(rabbitmq.DeleteRepoQueue, appContext)
 }
 
 func publishRepoToQueue(appContext *handlers.AppContext) {
@@ -100,8 +108,8 @@ func publishRepoToQueue(appContext *handlers.AppContext) {
 			queuePayloadJSON, _ := json.Marshal(repo)
 			appContext.RabbitImpl.Publish(
 				appContext.RabbitMQChannel,
+				rabbitmq.ExchangeAddRepo,
 				"",
-				rabbitmq.RepositoriesQueue,
 				false,
 				false,
 				amqp.Publishing{
@@ -114,7 +122,7 @@ func publishRepoToQueue(appContext *handlers.AppContext) {
 }
 
 func createQueue(queueName string, appContext *handlers.AppContext) {
-	_, err := appContext.RabbitImpl.QueueDeclare(appContext.RabbitMQChannel, queueName, true, false, false, false, nil)
+	_, err := appContext.RabbitImpl.QueueDeclare(appContext.RabbitMQChannel, queueName, false, false, false, false, nil)
 	if err != nil {
 		global.Logger.Error(
 			global.AppFields{global.Function: "createQueue"},
@@ -168,6 +176,6 @@ func initRepository(database *dbms.Database) handlers.Repositories {
 func checkFatalError(err error) {
 	if err != nil {
 		global.Logger.Error(global.AppFields{global.Function: "upload", "error": err}, "erro fatal")
-		log.Fatal(err)
+		panic(err)
 	}
 }

@@ -159,6 +159,7 @@ func defineRotes(r *mux.Router, appContext *AppContext) {
 	r.HandleFunc("/users", appContext.newUser).Methods("POST")
 	r.HandleFunc("/users", appContext.listUsers).Methods("GET")
 	r.HandleFunc("/users/{id}", appContext.deleteUser).Methods("DELETE")
+	r.HandleFunc("/users/{id}", appContext.getUser).Methods("GET")
 
 	r.HandleFunc("/promote", appContext.promote).Methods("GET")
 
