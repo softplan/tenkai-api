@@ -243,7 +243,6 @@ func (appContext *AppContext) getVariablesByEnvironmentAndScope(w http.ResponseW
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
-
 }
 
 func filterChartVars(chartVars map[string]interface{}, databaseVars []model.Variable) (list []model.Variable) {
@@ -344,4 +343,222 @@ func scopeRunning(helmList *helmapi.HelmListResult, scope string, namespace stri
 		}
 	}
 	return result
+}
+
+func (appContext *AppContext) listVariablesNew(w http.ResponseWriter, r *http.Request) {
+	logFields := global.AppFields{global.Function: "listVariables"}
+	global.Logger.Info(logFields, "Request received")
+
+	type Payload struct {
+		Repo          string `json:"repo"`
+		ChartName     string `json:"chartName"`
+		ChartVersion  string `json:"chartVersion"`
+		EnvironmentID int    `json:"environmentId"`
+	}
+
+	var payload Payload
+	if err := util.UnmarshalPayload(r, &payload); err != nil {
+		http.Error(w, "Invalid payload - "+err.Error(), http.StatusBadRequest)
+		global.Logger.Error(logFields, "Error unmarshaling payload - "+err.Error())
+		return
+	}
+	chartName := fmt.Sprintf("%s/%s", payload.Repo, payload.ChartName)
+
+	principal := util.GetPrincipal(r)
+
+	if has, err := appContext.hasAccess(principal.Email, payload.EnvironmentID); err != nil || !has {
+		global.Logger.Error(logFields, "Error appContext.hasAccess - "+err.Error())
+		http.Error(w, global.AccessDenied, http.StatusUnauthorized)
+		return
+	}
+
+	variableResult := &model.VariablesResult{}
+
+	var err error
+	if variableResult.Variables, err = appContext.Repositories.VariableDAO.GetAllVariablesByEnvironmentAndScope(payload.EnvironmentID, chartName); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	chartVars, err := appContext.getHelmChartAppVars(chartName, payload.ChartVersion)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	chartVarsConverted := convertChartVars(chartVars, payload.ChartName, payload.ChartVersion, payload.EnvironmentID)
+	vars := findNewVars(chartVarsConverted, variableResult.Variables)
+
+	data, _ := json.Marshal(vars)
+
+	w.Header().Add(global.ContentType, global.JSONContentType)
+	w.Write(data)
+}
+
+func convertChartVars(chartVars map[string]interface{}, chartName, chartVersion string, environmentID int) []model.NewVariable {
+	list := make([]model.NewVariable, 0)
+	for key, value := range chartVars {
+		list = append(list, model.NewVariable{
+			Scope:         chartName,
+			ChartVersion:  chartVersion,
+			Name:          key,
+			Value:         fmt.Sprintf("%v", value),
+			Secret:        false,
+			Description:   "",
+			EnvironmentID: environmentID,
+		})
+	}
+	return list
+}
+
+func findNewVars(chartVars []model.NewVariable, databaseVars []model.Variable) []model.NewVariable {
+	list := make([]model.NewVariable, 0)
+	for _, chartVar := range chartVars {
+		if exists, dbVar := existsInDatabase(chartVar.Name, databaseVars); exists {
+			chartVar.Value = dbVar.Value
+			chartVar.New = false
+		} else {
+			chartVar.New = true
+		}
+		list = append(list, chartVar)
+	}
+	return list
+}
+
+func existsInDatabase(varName string, databaseVars []model.Variable) (bool, model.Variable) {
+	if len(databaseVars) == 0 {
+		return false, model.Variable{}
+	}
+
+	for _, dv := range databaseVars {
+		if dv.Name == varName {
+			return true, dv
+		}
+	}
+	return false, model.Variable{}
+}
+
+func (appContext *AppContext) validateNewVariablesBeforeInstall(w http.ResponseWriter, r *http.Request) {
+	logFields := global.AppFields{global.Function: "listVariables"}
+	logger := global.Logger
+
+	logger.Info(logFields, "Request received")
+
+	type Payload struct {
+		Charts       []model.Chart
+		Environments []int
+	}
+
+	type Response struct {
+		EnvironmentID int `json:"environmentId"`
+		Charts        []model.Chart
+	}
+
+	var payload Payload
+	if err := util.UnmarshalPayload(r, &payload); err != nil {
+		http.Error(w, "Invalid payload - "+err.Error(), http.StatusBadRequest)
+		logger.Error(logFields, "Error unmarshaling payload - "+err.Error())
+		return
+	}
+
+	envs := make([]string, 0)
+	for _, envID := range payload.Environments {
+		envs = append(envs, strconv.Itoa(envID))
+	}
+
+	charts := make([]string, 0)
+	for _, chart := range payload.Charts {
+		fullname := fmt.Sprintf("%s/%s", chart.Repo, chart.Name)
+		charts = append(charts, fullname)
+	}
+
+	rawVariables, err := appContext.Repositories.VariableDAO.GetAllVariablesByEnvironmentsAndScopes(envs, charts)
+	if err != nil {
+		http.Error(w, "", http.StatusInternalServerError)
+		logger.Error(logFields, err.Error())
+		return
+	}
+
+	variablesDatabase := formatAllDatabaseVariables(rawVariables)
+	variablesTemplate := make([]model.VariablesDefault, 0)
+
+	for _, chart := range payload.Charts {
+		//get chart vars
+		chartFullname := fmt.Sprintf("%s/%s", chart.Repo, chart.Name)
+		chartVars, err := appContext.getHelmChartAppVars(chartFullname, chart.Version)
+		if err != nil {
+			http.Error(w, "Invalid chart - "+chartFullname, http.StatusBadRequest)
+			logger.Error(logFields, err.Error())
+			return
+		}
+		variablesTemplate = append(variablesTemplate, model.VariablesDefault{Chart: chartFullname, Variables: chartVars})
+	}
+
+	result := compare(variablesTemplate, variablesDatabase, payload.Environments)
+
+	data, _ := json.Marshal(result)
+
+	w.Header().Add(global.ContentType, global.JSONContentType)
+	w.Write(data)
+}
+
+func formatAllDatabaseVariables(variables []model.Variable) []model.VariablesByChartAndEnvironment {
+	list := make([]model.VariablesByChartAndEnvironment, 0)
+	for _, variable := range variables {
+		environmentID := variable.EnvironmentID
+		chartName := variable.Scope
+		exists, index := existsInList(list, environmentID, chartName)
+		if !exists {
+			list = append(list, model.VariablesByChartAndEnvironment{EnvironmentID: environmentID, Chart: chartName})
+			index = len(list) - 1
+		}
+		list[index].Variables = append(list[index].Variables, variable)
+	}
+	return list
+}
+
+func existsInList(list []model.VariablesByChartAndEnvironment, environmentID int, chartName string) (bool, int) {
+	for index, item := range list {
+		if item.EnvironmentID == environmentID && chartName == item.Chart {
+			return true, index
+		}
+	}
+	return false, -1
+}
+
+func compare(chartVars []model.VariablesDefault, databaseVars []model.VariablesByChartAndEnvironment, environments []int) []map[string]interface{} {
+	returnable := make([]map[string]interface{}, 0)
+	for _, env := range environments {
+		failed := make([]string, 0)
+		for _, chart := range chartVars {
+			variables := getVariablesByEnvironmentAndScopeFromList(env, chart.Chart, databaseVars)
+			if !validateOneChart(chart, variables) {
+				failed = append(failed, chart.Chart)
+			}
+		}
+		if len(failed) > 0 {
+			returnable = append(returnable, map[string]interface{}{"environmentId": env, "charts": failed})
+		}
+	}
+	return returnable
+}
+
+func getVariablesByEnvironmentAndScopeFromList(envID int, scope string, list []model.VariablesByChartAndEnvironment) []model.Variable {
+	for _, item := range list {
+		if item.Chart == scope && item.EnvironmentID == envID {
+			return item.Variables
+		}
+	}
+	return []model.Variable{}
+}
+
+func validateOneChart(chart model.VariablesDefault, dbVars []model.Variable) bool {
+	for chartVarName := range chart.Variables {
+		if !(chartVarName == "dateHour" || chartVarName == "version") {
+			exists, _ := existsInDatabase(chartVarName, dbVars)
+			if !exists {
+				return false
+			}
+		}
+	}
+	return true
 }
