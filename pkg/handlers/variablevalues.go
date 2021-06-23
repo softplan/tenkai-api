@@ -476,6 +476,7 @@ func (appContext *AppContext) validateNewVariablesBeforeInstall(w http.ResponseW
 		envs = append(envs, strconv.Itoa(envID))
 		if _, err := appContext.Repositories.EnvironmentDAO.GetByID(envID); err != nil {
 			logger.Error(logFields, fmt.Sprintf("Invalida environment id: %d", envID))
+			http.Error(w, fmt.Sprintf("Invalid environment: %d", envID), http.StatusBadRequest)
 			return
 		}
 	}
