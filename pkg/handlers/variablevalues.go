@@ -357,11 +357,23 @@ func (appContext *AppContext) listVariablesNew(w http.ResponseWriter, r *http.Re
 	}
 
 	var payload Payload
-	if err := util.UnmarshalPayload(r, &payload); err != nil {
-		http.Error(w, "Invalid payload - "+err.Error(), http.StatusBadRequest)
-		global.Logger.Error(logFields, "Error unmarshaling payload - "+err.Error())
+	payload.Repo = r.URL.Query().Get("repo")
+	payload.ChartName = r.URL.Query().Get("chartName")
+	payload.ChartVersion = r.URL.Query().Get("chartVersion")
+
+	if payload.Repo == "" || payload.ChartName == "" || payload.ChartVersion == "" {
+		http.Error(w, "Invalid payload", http.StatusBadRequest)
+		global.Logger.Error(logFields, "Invalid payload")
 		return
 	}
+	environmentID, err := strconv.Atoi(r.URL.Query().Get("environmentId"))
+	if err != nil {
+		http.Error(w, "Invalid payload", http.StatusBadRequest)
+		global.Logger.Error(logFields, "Invalid payload")
+		return
+	}
+	payload.EnvironmentID = environmentID
+
 	chartName := fmt.Sprintf("%s/%s", payload.Repo, payload.ChartName)
 
 	principal := util.GetPrincipal(r)
@@ -374,7 +386,6 @@ func (appContext *AppContext) listVariablesNew(w http.ResponseWriter, r *http.Re
 
 	variableResult := &model.VariablesResult{}
 
-	var err error
 	if variableResult.Variables, err = appContext.Repositories.VariableDAO.GetAllVariablesByEnvironmentAndScope(payload.EnvironmentID, chartName); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
