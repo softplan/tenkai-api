@@ -63,15 +63,10 @@ func TestListVariablesNewOk(t *testing.T) {
 	appContext.Repositories.VariableDAO = &mockVariableDAO
 	appContext.HelmServiceAPI = mockHelmSvc
 
-	payload := map[string]interface{}{
-		"repo":          "repoxpto",
-		"chartName":     "repoxpto/chartxpto",
-		"chartVersion":  "0.1.0",
-		"environmentId": 999,
-	}
+	params := "?repo=repoxpto&chartName=chartxpto&chartVersion=0.1.0&environmentId=999" 
 
 	data, _ = json.Marshal(payload)
-	req, err := http.NewRequest("POST", "/listVariablesNew", bytes.NewBuffer(data))
+	req, err := http.NewRequest("POST", "/listVariablesNew" + params, nil)
 	assert.NoError(t, err)
 
 	rr := httptest.NewRecorder()
