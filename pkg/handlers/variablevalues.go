@@ -463,6 +463,10 @@ func (appContext *AppContext) validateNewVariablesBeforeInstall(w http.ResponseW
 	envs := make([]string, 0)
 	for _, envID := range payload.Environments {
 		envs = append(envs, strconv.Itoa(envID))
+		if _, err := appContext.Repositories.EnvironmentDAO.GetByID(envID); err != nil {
+			logger.Error(logFields, fmt.Sprintf("Invalida environment id: %d", envID))
+			return
+		}
 	}
 
 	charts := make([]string, 0)

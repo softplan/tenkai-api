@@ -93,8 +93,12 @@ func TestValidateNewVariablesBeforeInstallOK(t *testing.T) {
 	mockHelmSvc := &mockSvc.HelmServiceInterface{}
 	mockHelmSvc.On("GetTemplate", mock.Anything, mock.Anything, mock.Anything, "values").Return(data, nil)
 
+	mockEnv := mocks.EnvironmentDAOInterface{}
+	mockEnv.On("GetByID", mock.Anything).Return(nil, nil)
+
 	appContext.Repositories.VariableDAO = &mockVariableDAO
 	appContext.HelmServiceAPI = mockHelmSvc
+	appContext.Repositories.EnvironmentDAO = &mockEnv
 	payload := map[string]interface{}{
 		"charts": []model.Chart{
 			{Repo: "repoxpto", Name: "chartxpto", Version: "0.1.0"},
