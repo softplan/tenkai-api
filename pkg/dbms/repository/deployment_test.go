@@ -22,7 +22,8 @@ func getDeployment() model2.Deployment {
 	deployment.Message = "Message teste"
 	deployment.EnvironmentID = 1
 	deployment.RequestDeploymentID = 1
-
+	deployment.ChartVersion = "0.1.0"
+	deployment.DockerVersion = "master"
 	return deployment
 }
 
@@ -50,9 +51,11 @@ func TestCreateDeployment(test *testing.T) {
 		deployment.RequestDeploymentID,
 		deployment.EnvironmentID,
 		deployment.Chart,
+		deployment.ChartVersion,
 		deployment.Processed,
 		deployment.Success,
 		deployment.Message,
+		deployment.DockerVersion,
 	).WillReturnRows(rows)
 
 	_, err = deploymentDAO.CreateDeployment(deployment)
@@ -110,9 +113,11 @@ func TestEditDeployment(test *testing.T) {
 		deployment.RequestDeploymentID,
 		deployment.EnvironmentID,
 		deployment.Chart,
+		deployment.ChartVersion,
 		deployment.Processed,
 		deployment.Success,
 		deployment.Message,
+		deployment.DockerVersion,
 		deployment.ID,
 	).WillReturnResult(
 		sqlmock.NewResult(1, 1),
