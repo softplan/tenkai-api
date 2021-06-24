@@ -20,9 +20,11 @@ type Deployment struct {
 	RequestDeploymentID uint   `json:"request_deployment_id"`
 	EnvironmentID       uint   `json:"environment_id"`
 	Chart               string `json:"chart"`
+	ChartVersion        string `json:"chartVersion"`
 	Processed           bool   `json:"processed"`
 	Success             bool   `json:"success"`
 	Message             string `json:"message"`
+	DockerVersion       string `json:"dockerVersion"`
 }
 
 //DeploymentResponse struct response /deployments GET
@@ -63,6 +65,8 @@ type Deployments struct {
 	Success             bool            `json:"success"`
 	Message             string          `json:"message"`
 	Processed           bool            `json:"processed"`
+	DockerVersion       string          `json:"dockerVersion"`
+	ChartVersion        string          `json:"chartVersion"`
 }
 
 //RequestDeployments struct to fill with query result to response /requestDeployments{id} GET
