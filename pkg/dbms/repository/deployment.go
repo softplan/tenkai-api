@@ -1,8 +1,6 @@
 package repository
 
 import (
-	"time"
-
 	"github.com/jinzhu/gorm"
 	"github.com/softplan/tenkai-api/pkg/dbms/model"
 )
@@ -57,34 +55,29 @@ func (dao DeploymentDAOImpl) ListDeployments(environmentID, requestDeploymentID 
 	var deployments []model.Deployments
 	sql := prepareSQL(environmentID)
 	rows, err := dao.Db.Table("deployments").Select(
-		"deployments.id AS id, deployments.created_at AS created_at, deployments.updated_at AS updated_at,chart, request_deployment_id, environments.id AS environments_id, environments.name AS environments_name, processed ,success, message ",
+		"deployments.id AS id, deployments.created_at AS created_at, deployments.updated_at AS updated_at,chart, request_deployment_id, environments.id AS environments_id, environments.name AS environments_name, processed ,success, message, chart_version, docker_version ",
 	).Joins(
 		"JOIN environments ON deployments.environment_id = environments.id",
 	).Where(sql, requestDeploymentID).Offset((pageNumber - 1) * pageSize).Limit(pageSize).Rows()
 
 	for rows.Next() {
-		reqID, envID, id := 0, 0, 0
-		createdAt := time.Time{}
-		updatedAt := time.Time{}
-		chart, envName, message := "", "", ""
-		success, processed := false, false
-		rows.Scan(&id, &createdAt, &updatedAt, &chart, &reqID, &envID, &envName, &processed, &success, &message)
-
 		deployment := model.Deployments{}
-		deployment.ID = uint(id)
-		deployment.CreatedAt = createdAt
-		deployment.UpdatedAt = updatedAt
-		deployment.Chart = chart
-		deployment.Environment.ID = uint(envID)
-		deployment.Environment.Name = envName
-		deployment.Processed = processed
-		deployment.RequestDeploymentID = uint(reqID)
-		deployment.Success = success
-		deployment.Message = message
-
+		rows.Scan(
+			&deployment.ID,
+			&deployment.CreatedAt,
+			&deployment.UpdatedAt,
+			&deployment.Chart,
+			&deployment.RequestDeploymentID,
+			&deployment.Environment.ID,
+			&deployment.Environment.Name,
+			&deployment.Processed,
+			&deployment.Success,
+			&deployment.Message,
+			&deployment.ChartVersion,
+			&deployment.DockerVersion,
+		)
 		deployments = append(deployments, deployment)
 	}
-
 	return deployments, err
 }
 

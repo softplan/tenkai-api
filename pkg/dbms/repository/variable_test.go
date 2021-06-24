@@ -491,3 +491,25 @@ func TestVariableGetByID(t *testing.T) {
 
 	mock.ExpectationsWereMet()
 }
+
+func TestGetVarImageTagByEnvsAndScopes(t *testing.T) {
+
+	db, mock, err := sqlmock.New()
+	assert.Nil(t, err)
+	gormDB, err := gorm.Open("postgres", db)
+	defer gormDB.Close()
+
+	dao := VariableDAOImpl{}
+	dao.Db = gormDB
+
+	rows := sqlmock.NewRows([]string{"id", "scope", "name", "value", "description", "environment_id", "secret"}).
+		AddRow(888, "repo/my-chart", "env-name", "env-value", "description_value", 999, false)
+	envs, scopes := []string{"999", "888"}, []string{"repo/my-chart", "repo/other-chart"}
+	mock.ExpectQuery(`SELECT (.*) FROM .*`).WillReturnRows(rows)
+
+	variable, err := dao.GetAllVariablesByEnvironmentsAndScopes(envs, scopes)
+	assert.Nil(t, err)
+	assert.NotNil(t, variable)
+
+	mock.ExpectationsWereMet()
+}

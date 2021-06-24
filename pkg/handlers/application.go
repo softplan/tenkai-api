@@ -80,6 +80,7 @@ func defineRotes(r *mux.Router, appContext *AppContext) {
 	r.HandleFunc("/getVariablesNotUsed/{id}", appContext.getVariablesNotUsed).Methods("GET")
 
 	r.HandleFunc("/listVariables", appContext.getVariablesByEnvironmentAndScope).Methods("POST")
+	r.HandleFunc("/listVariablesNew", appContext.listVariablesNew).Methods("GET")
 	r.HandleFunc("/saveVariableValues", appContext.saveVariableValues).Methods("POST")
 	r.HandleFunc("/getChartVariables", appContext.getChartVariables).Methods("POST")
 	r.HandleFunc("/listHelmDeploymentsByEnvironment/{id}", appContext.listHelmDeploymentsByEnvironment).Methods("GET")
@@ -209,6 +210,8 @@ func defineRotes(r *mux.Router, appContext *AppContext) {
 	r.HandleFunc("/requestDeployments/{id}", appContext.listDeployments).Methods("GET")
 
 	r.HandleFunc("/health", appContext.healthRabbit).Methods("GET")
+
+	r.HandleFunc("/validateCharts", appContext.validateNewVariablesBeforeInstall).Methods("POST")
 
 	r.HandleFunc("/", appContext.rootHandler)
 
