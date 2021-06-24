@@ -14,6 +14,7 @@ type VariableDAOInterface interface {
 	CreateVariableWithDefaultValue(variable model2.Variable) (map[string]string, bool, error)
 	GetAllVariablesByEnvironment(envID int) ([]model2.Variable, error)
 	GetAllVariablesByEnvironmentAndScope(envID int, scope string) ([]model2.Variable, error)
+	GetAllVariablesByEnvironmentsAndScopes(envID []string, scope []string) ([]model2.Variable, error)
 	DeleteVariable(id int) error
 	DeleteVariableByEnvironmentID(envID int) error
 	GetByID(id uint) (*model2.Variable, error)
@@ -131,6 +132,32 @@ func (dao VariableDAOImpl) GetAllVariablesByEnvironmentAndScope(envID int, scope
 		if err := dao.Db.Where("environment_id = ? AND scope LIKE ?", envID, "%"+scope).Find(&variables).Error; err != nil {
 			return nil, err
 		}
+	}
+
+	return variables, nil
+}
+
+//GetAllVariablesByEnvironmentsAndScopes func
+func (dao VariableDAOImpl) GetAllVariablesByEnvironmentsAndScopes(envID []string, scope []string) ([]model2.Variable, error) {
+	variables := make([]model2.Variable, 0)
+	where := "environment_id IN ("
+	for index, env := range envID {
+		if index > 0 {
+			where = where + ", "
+		}
+		where = where + env
+	}
+	where = where + ") AND scope IN ('"
+	for index, scope := range scope {
+		if index > 0 {
+			where = where + "', '"
+		}
+		where = where + scope
+	}
+	where = where + "')"
+
+	if err := dao.Db.Where(where).Find(&variables).Error; err != nil {
+		return nil, err
 	}
 
 	return variables, nil

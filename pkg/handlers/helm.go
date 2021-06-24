@@ -718,6 +718,8 @@ func (appContext *AppContext) simpleInstall(environment *model.Environment, inst
 			deployment.RequestDeploymentID = uint(requestDeploymentID)
 			deployment.Chart = installPayload.Chart
 			deployment.Processed = false
+			deployment.ChartVersion = installPayload.ChartVersion
+			deployment.DockerVersion = getDockerVersionFromVariables(variables)
 			deploymentID, _ := appContext.Repositories.DeploymentDAO.CreateDeployment(deployment)
 
 			queuePayload := rabbitmq.PayloadRabbit{
@@ -749,6 +751,15 @@ func (appContext *AppContext) simpleInstall(environment *model.Environment, inst
 		return getHelmMessage(name, args, environment, installPayload.Chart), nil
 	}
 	return "", nil
+}
+
+func getDockerVersionFromVariables(vars []model.Variable) string {
+	for _, variable := range vars {
+		if variable.Name == "image.tag" {
+			return variable.Value
+		}
+	}
+	return ""
 }
 
 func (appContext *AppContext) getChartName(name string) (string, error) {
