@@ -74,7 +74,7 @@ type RequestDeployments struct {
 	ID        uint
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	User      UserEmail `json:"user"`
+	User      string    `json:"user"`
 	Success   bool      `json:"success"`
 	Processed bool      `json:"processed"`
 }

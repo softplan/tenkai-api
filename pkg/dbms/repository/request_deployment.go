@@ -93,7 +93,7 @@ func (dao RequestDeploymentDAOImpl) ListRequestDeployments(startDate, endDate, e
 	var rdList []model.RequestDeployments
 	sql := prepareWhere(id, environmentID, userID)
 	rows, err := dao.Db.Table("request_deployments").Select(
-		"DISTINCT request_deployments.id, request_deployments.created_at, request_deployments.updated_at, request_deployments.processed, request_deployments.success, users.id as user_id, users.email as email",
+		"DISTINCT request_deployments.id, request_deployments.created_at, request_deployments.updated_at, request_deployments.processed, request_deployments.success, users.email as email",
 	).Joins(
 		"JOIN deployments ON deployments.request_deployment_id = request_deployments.id",
 	).Joins(
@@ -114,8 +114,7 @@ func (dao RequestDeploymentDAOImpl) ListRequestDeployments(startDate, endDate, e
 		request.UpdatedAt = updatedAt
 		request.Processed = processed
 		request.Success = success
-		request.User.ID = uint(userID)
-		request.User.Email = email
+		request.User = email
 
 		rdList = append(rdList, request)
 	}
