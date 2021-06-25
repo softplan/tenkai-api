@@ -101,12 +101,12 @@ func (dao RequestDeploymentDAOImpl) ListRequestDeployments(startDate, endDate, e
 	).Where(sql, startDate, endDate).Offset((pageNumber - 1) * pageSize).Limit(pageSize).Rows()
 
 	for rows.Next() {
-		id, userID := 0, 0
+		id := 0
 		createdAt := time.Time{}
 		updatedAt := time.Time{}
 		success, processed := false, false
 		email := ""
-		rows.Scan(&id, &createdAt, &updatedAt, &processed, &success, &userID, &email)
+		rows.Scan(&id, &createdAt, &updatedAt, &processed, &success, &email)
 
 		request := model.RequestDeployments{}
 		request.ID = uint(id)
