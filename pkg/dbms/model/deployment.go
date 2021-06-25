@@ -60,7 +60,7 @@ type Deployments struct {
 	UpdatedAt           time.Time
 	DeletedAt           *time.Time
 	RequestDeploymentID uint            `json:"request_deployment_id"`
-	Environment         EnvironmentName `json:"environment"`
+	Environment         string          `json:"environment"`
 	Chart               string          `json:"chart"`
 	Success             bool            `json:"success"`
 	Message             string          `json:"message"`
@@ -74,7 +74,7 @@ type RequestDeployments struct {
 	ID        uint
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	User      UserEmail `json:"user"`
+	User      string    `json:"user"`
 	Success   bool      `json:"success"`
 	Processed bool      `json:"processed"`
 }
