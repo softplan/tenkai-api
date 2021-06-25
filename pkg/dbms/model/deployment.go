@@ -60,7 +60,7 @@ type Deployments struct {
 	UpdatedAt           time.Time
 	DeletedAt           *time.Time
 	RequestDeploymentID uint            `json:"request_deployment_id"`
-	Environment         EnvironmentName `json:"environment"`
+	Environment         string          `json:"environment"`
 	Chart               string          `json:"chart"`
 	Success             bool            `json:"success"`
 	Message             string          `json:"message"`
